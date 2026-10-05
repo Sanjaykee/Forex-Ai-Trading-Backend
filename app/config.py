@@ -45,7 +45,7 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 10080
     TELEGRAM_BOT_TOKEN: str = "8885177423:AAFhpQFKhqCvc50OhtwvYywlu0vLs8BVcmk"
     FRONTEND_URL: str = "http://localhost:5173"
-    GEMINI_API_KEY: str = "AQ.Ab8RN6KMtUfC7hM7n3RxKwGAvSsw8fu1vi0nt35p5T5JpcnBnw"
+    GEMINI_API_KEY: str = ""
     STRIPE_SECRET_KEY: str = ""
     STRIPE_WEBHOOK_SECRET: str = ""
 
