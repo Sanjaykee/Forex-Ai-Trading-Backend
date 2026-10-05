@@ -1,6 +1,13 @@
-import MetaTrader5 as mt5
+try:
+    import MetaTrader5 as mt5
+    HAS_MT5 = True
+except ImportError:
+    mt5 = None
+    HAS_MT5 = False
 
 def place_order(symbol: str, direction: str, lot: float, entry: float, sl: float, tp: float, comment: str = "ForexAI") -> dict:
+    if not HAS_MT5 or mt5 is None:
+        return {"success": False, "error": "MT5 is only available when running locally on Windows"}
     order_type = mt5.ORDER_TYPE_BUY if direction == "BUY" else mt5.ORDER_TYPE_SELL
     request = {
         "action":       mt5.TRADE_ACTION_DEAL,

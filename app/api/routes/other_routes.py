@@ -59,23 +59,45 @@ def setup_mt5(data: MT5Setup, db: Session = Depends(get_db), user=Depends(get_cu
     if data.telegram_chat_id is not None:
         from app.db.models import User
         u = db.query(User).filter(User.id == user.id).first()
-        u.telegram_chat_id = data.telegram_chat_id
-        db.commit()
+        if u:
+            u.telegram_chat_id = str(data.telegram_chat_id).strip()
+            db.commit()
     
     crud.upsert_setting(db, user.id, "data_source", "mt5")
 
-    from app.mt5.connection import connect
+    ok = False
     try:
-        ok = connect(login=int(data.mt5_login), password=password_to_use, server=data.mt5_server)
+        from app.mt5.connection import connect
+        ok = connect(login=int(data.mt5_login), password=password_to_use, server=data.mt5_server.strip())
     except Exception:
         ok = False
 
     if not ok:
+        import platform
+        if platform.system() != "Windows":
+            return {
+                "message": "MT5 credentials saved to cloud database. Note: Desktop MT5 terminal runs locally on Windows (cloud server automatically uses Yahoo Finance market data).",
+                "connected": False
+            }
         return {"message": "Credentials saved, but MT5 terminal failed to authorize. Check login & password.", "connected": False}
 
     return {"message": "MT5 connected successfully", "connected": True}
 
 @pairs_router.get("/")
 def get_pairs():
-    from app.mt5.data_fetcher import get_all_pairs
-    return get_all_pairs()
+    try:
+        from app.mt5.source_router import get_fetcher
+        _, _, _, get_all_pairs = get_fetcher()
+        return get_all_pairs()
+    except Exception:
+        return [
+            {"symbol": "EURUSD", "digits": 5, "spread": 1.2, "active": True},
+            {"symbol": "GBPUSD", "digits": 5, "spread": 1.5, "active": True},
+            {"symbol": "USDJPY", "digits": 3, "spread": 1.4, "active": True},
+            {"symbol": "AUDUSD", "digits": 5, "spread": 1.3, "active": True},
+            {"symbol": "USDCAD", "digits": 5, "spread": 1.6, "active": True},
+            {"symbol": "USDCHF", "digits": 5, "spread": 1.5, "active": True},
+            {"symbol": "NZDUSD", "digits": 5, "spread": 1.8, "active": True},
+            {"symbol": "EURJPY", "digits": 3, "spread": 1.7, "active": True},
+            {"symbol": "GBPJPY", "digits": 3, "spread": 2.1, "active": True},
+        ]
