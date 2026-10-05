@@ -48,6 +48,9 @@ class Settings(BaseSettings):
     GEMINI_API_KEY: str = ""
     STRIPE_SECRET_KEY: str = ""
     STRIPE_WEBHOOK_SECRET: str = ""
+    METAAPI_TOKEN: str = ""
+    METAAPI_ACCOUNT_ID: str = ""
+    METAAPI_REGION: str = "new-york"
 
     @property
     def is_production(self) -> bool:

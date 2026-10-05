@@ -83,6 +83,53 @@ def setup_mt5(data: MT5Setup, db: Session = Depends(get_db), user=Depends(get_cu
 
     return {"message": "MT5 connected successfully", "connected": True}
 
+@settings_router.post("/metaapi")
+def setup_metaapi(data: dict, db: Session = Depends(get_db), user=Depends(get_current_user)):
+    token = data.get("metaapi_token", "").strip()
+    account_id = data.get("metaapi_account_id", "").strip()
+    region = data.get("metaapi_region", "new-york").strip() or "new-york"
+
+    if token:
+        crud.upsert_setting(db, user.id, "metaapi_token", token)
+    if account_id:
+        crud.upsert_setting(db, user.id, "metaapi_account_id", account_id)
+    crud.upsert_setting(db, user.id, "metaapi_region", region)
+    crud.upsert_setting(db, user.id, "data_source", "metaapi")
+
+    from app.mt5.metaapi_client import MetaApiClient
+    client = MetaApiClient(token=token, account_id=account_id, region=region)
+    info = client.get_account_information()
+    if info.get("connected"):
+        return {
+            "success": True,
+            "connected": True,
+            "message": f"Connected to MT5 ({info.get('server')})! Balance: ${info.get('balance')} {info.get('currency')}",
+            "account": info
+        }
+    return {
+        "success": False,
+        "connected": False,
+        "message": "MetaApi credentials saved, but could not authorize. Check Token and Account ID in app.metaapi.cloud."
+    }
+
+@settings_router.get("/metaapi/status")
+def get_metaapi_status(db: Session = Depends(get_db), user=Depends(get_current_user)):
+    from app.mt5.metaapi_client import metaapi_client, MetaApiClient
+    token = crud.get_setting(db, user.id, "metaapi_token") or metaapi_client.token
+    account_id = crud.get_setting(db, user.id, "metaapi_account_id") or metaapi_client.account_id
+    region = crud.get_setting(db, user.id, "metaapi_region") or metaapi_client.region
+
+    if not token or not account_id:
+        return {"configured": False, "connected": False}
+
+    client = MetaApiClient(token=token, account_id=account_id, region=region)
+    info = client.get_account_information()
+    return {
+        "configured": True,
+        "connected": bool(info.get("connected")),
+        "account": info
+    }
+
 @pairs_router.get("/")
 def get_pairs():
     try:
