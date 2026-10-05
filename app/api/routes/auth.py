@@ -7,6 +7,11 @@ from app.config import settings
 from jose import jwt
 from datetime import datetime, timedelta
 
+from sqlalchemy.exc import IntegrityError
+import logging
+
+logger = logging.getLogger(__name__)
+
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 def create_token(user_id: int) -> str:
@@ -19,9 +24,13 @@ def register(data: UserRegister, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="Email already registered")
     try:
         user = crud.create_user(db, data.email, data.password, data.full_name)
-    except Exception:
+    except IntegrityError:
         db.rollback()
         raise HTTPException(status_code=400, detail="Email already registered")
+    except Exception as e:
+        db.rollback()
+        logger.error(f"User registration error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Registration error: {str(e)}")
     token = create_token(user.id)
     return {"access_token": token, "token_type": "bearer", "user_id": user.id}
 

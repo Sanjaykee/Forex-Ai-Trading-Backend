@@ -1,9 +1,18 @@
 from sqlalchemy.orm import Session
 from app.db import models
+import bcrypt
 from passlib.context import CryptContext
 from datetime import datetime
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+def hash_password(password: str) -> str:
+    try:
+        pwd_bytes = password[:72].encode("utf-8")
+        salt = bcrypt.gensalt()
+        return bcrypt.hashpw(pwd_bytes, salt).decode("utf-8")
+    except Exception:
+        return pwd_context.hash(password[:72])
 
 # --- Users ---
 def get_user_by_email(db: Session, email: str):
@@ -15,7 +24,7 @@ def get_user_by_id(db: Session, user_id: int):
 def create_user(db: Session, email: str, password: str, full_name: str):
     user = models.User(
         email=email,
-        password_hash=pwd_context.hash(password[:72]),
+        password_hash=hash_password(password),
         full_name=full_name
     )
     db.add(user)
@@ -26,8 +35,16 @@ def create_user(db: Session, email: str, password: str, full_name: str):
     db.commit()
     return user
 
-def verify_password(plain: str, hashed: str):
-    return pwd_context.verify(plain[:72], hashed)
+def verify_password(plain: str, hashed: str) -> bool:
+    try:
+        plain_bytes = plain[:72].encode("utf-8")
+        hashed_bytes = hashed.encode("utf-8")
+        return bcrypt.checkpw(plain_bytes, hashed_bytes)
+    except Exception:
+        try:
+            return pwd_context.verify(plain[:72], hashed)
+        except Exception:
+            return False
 
 def update_mt5_credentials(db: Session, user_id: int, login: str, password: str, server: str):
     user = get_user_by_id(db, user_id)
