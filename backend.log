@@ -1,0 +1,9 @@
+INFO:     Will watch for changes in these directories: ['c:\\Users\\nts0218\\hepl project\\Ai Forex Trading\\backend']
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [41512] using StatReload
+INFO:app.main:Database tables created successfully
+INFO:     Started server process [38948]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  StatReload detected changes in 'app\signals\signal_engine.py'. Reloading...
+ 

@@ -1,0 +1,21 @@
+fastapi
+uvicorn
+python-dotenv
+MetaTrader5; platform_system == "Windows"
+yfinance
+pandas
+numpy
+pandas-ta
+lightgbm
+scikit-learn
+sqlalchemy
+psycopg2-binary
+alembic
+python-jose[cryptography]
+passlib[bcrypt]
+stripe
+requests
+schedule
+joblib
+pytz
+pydantic-settings
