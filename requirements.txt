@@ -5,7 +5,7 @@ MetaTrader5; platform_system == "Windows"
 yfinance
 pandas
 numpy
-pandas-ta
+pandas-ta==0.4.71b0
 lightgbm
 scikit-learn
 sqlalchemy
