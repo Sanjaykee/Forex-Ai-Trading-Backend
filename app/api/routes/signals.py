@@ -50,8 +50,9 @@ def scan(db: Session = Depends(get_db), user=Depends(get_current_user)):
                     "spread_at_signal": r.get("spread"),
                     "status":           "pending",
                 }
-                crud.create_signal(db, signal_data)
+                saved_signal = crud.create_signal(db, signal_data)
                 if user.telegram_chat_id:
+                    r["id"] = saved_signal.id
                     send_signal_alert(user.telegram_chat_id, r)
             except Exception as e:
                 pass  # don't fail the whole scan if saving one signal fails
@@ -91,10 +92,12 @@ def history(db: Session = Depends(get_db), user=Depends(get_current_user)):
 
 @router.post("/{signal_id}/approve")
 def approve(signal_id: int, db: Session = Depends(get_db), user=Depends(get_current_user)):
+    from app.signals.trade_monitor import activate_trade_from_signal
+    res = activate_trade_from_signal(db, user.id, signal_id)
+    if not res.get("success"):
+        raise HTTPException(400, res.get("message", "Could not activate trade"))
     signal = crud.update_signal_status(db, signal_id, "approved")
-    if not signal:
-        raise HTTPException(404, "Signal not found")
-    return signal
+    return {"status": "approved", "trade_id": res.get("trade_id"), "signal": signal}
 
 @router.post("/{signal_id}/reject")
 def reject(signal_id: int, db: Session = Depends(get_db), user=Depends(get_current_user)):

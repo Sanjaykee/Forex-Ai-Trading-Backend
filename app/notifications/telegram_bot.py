@@ -80,13 +80,25 @@ def send_signal_alert(chat_id: str, signal: dict) -> bool:
 
 ⚠️ _Manual approval required on your MT5 mobile app before entering_
 """
+    payload = {
+        "chat_id":    chat_id,
+        "text":       message.strip(),
+        "parse_mode": "Markdown"
+    }
+    signal_id = signal.get("id")
+    if signal_id:
+        payload["reply_markup"] = {
+            "inline_keyboard": [
+                [
+                    {"text": "✅ APPROVE TRADE", "callback_data": f"approve_{signal_id}"},
+                    {"text": "❌ REJECT", "callback_data": f"reject_{signal_id}"}
+                ]
+            ]
+        }
+
     url = f"https://api.telegram.org/bot{token}/sendMessage"
     try:
-        resp = requests.post(url, json={
-            "chat_id":    chat_id,
-            "text":       message.strip(),
-            "parse_mode": "Markdown"
-        }, timeout=6)
+        resp = requests.post(url, json=payload, timeout=6)
         if resp.status_code == 200:
             logger.info(f"Telegram signal alert sent successfully to {chat_id}")
             return True
@@ -95,6 +107,113 @@ def send_signal_alert(chat_id: str, signal: dict) -> bool:
             return False
     except Exception as e:
         logger.error(f"Failed to send Telegram alert: {e}")
+        return False
+
+def send_tp1_alert(chat_id: str, trade: dict) -> bool:
+    """Alert user that Milestone 1 (TP1) has been reached and SL is moved to Breakeven."""
+    token = _get_token()
+    if not chat_id or not token:
+        return False
+
+    direction_emoji = "📈" if trade.get("direction") == "BUY" else "📉"
+    text = f"""
+🎯 *MILESTONE 1 (TP1) REACHED!*
+
+*Pair:* {trade.get('symbol')}
+*Direction:* {direction_emoji} *{trade.get('direction')}*
+*Entry:* `{trade.get('entry')}`
+*Live Price:* `{trade.get('current_price')}` (+{trade.get('pips')} pips)
+
+🛡️ *Action:* Stop Loss moved to Breakeven (`{trade.get('breakeven_sl')}`)!
+🔒 *This trade is now 100% RISK-FREE.*
+🏃 Trailing runner moving towards TP2 & TP3...
+"""
+    url = f"https://api.telegram.org/bot{token}/sendMessage"
+    try:
+        requests.post(url, json={
+            "chat_id": chat_id,
+            "text": text.strip(),
+            "parse_mode": "Markdown"
+        }, timeout=6)
+        return True
+    except Exception as e:
+        logger.error(f"Failed to send TP1 alert: {e}")
+        return False
+
+def send_trade_closed_alert(chat_id: str, trade: dict) -> bool:
+    """Alert user when a trade finishes (WIN at TP, Breakeven, or Stop Loss)."""
+    token = _get_token()
+    if not chat_id or not token:
+        return False
+
+    result = trade.get("result", "WIN")
+    if result == "WIN":
+        icon = "🎉 🏆"
+        title = "TRADE CLOSED IN FULL PROFIT!"
+        outcome_text = f"💰 *Profit:* `+${trade.get('profit_usd'):.2f} USD` (+{trade.get('pips')} pips)"
+    elif result == "BREAKEVEN":
+        icon = "🛡️"
+        title = "TRADE CLOSED AT BREAKEVEN"
+        outcome_text = "🔒 *Profit:* `$0.00 USD` — Capital preserved 100% risk-free!"
+    else:
+        icon = "🛑"
+        title = "STOP LOSS HIT"
+        outcome_text = f"📉 *Loss:* `-${abs(trade.get('profit_usd', 1.0)):.2f} USD` (Risk strictly limited)"
+
+    direction_emoji = "📈" if trade.get("direction") == "BUY" else "📉"
+    text = f"""
+{icon} *{title}*
+
+*Pair:* {trade.get('symbol')}
+*Direction:* {direction_emoji} *{trade.get('direction')}*
+*Entry:* `{trade.get('entry')}`
+*Exit:*  `{trade.get('close_price')}`
+{outcome_text}
+
+📊 *Updated on Dashboard:*
+Open your web dashboard at `/trades` and `/performance` to view updated statistics.
+"""
+    url = f"https://api.telegram.org/bot{token}/sendMessage"
+    try:
+        requests.post(url, json={
+            "chat_id": chat_id,
+            "text": text.strip(),
+            "parse_mode": "Markdown"
+        }, timeout=6)
+        return True
+    except Exception as e:
+        logger.error(f"Failed to send trade closed alert: {e}")
+        return False
+
+def edit_telegram_message(chat_id: str, message_id: int, text: str) -> bool:
+    token = _get_token()
+    if not token:
+        return False
+    url = f"https://api.telegram.org/bot{token}/editMessageText"
+    try:
+        requests.post(url, json={
+            "chat_id": chat_id,
+            "message_id": message_id,
+            "text": text,
+            "parse_mode": "Markdown"
+        }, timeout=5)
+        return True
+    except Exception:
+        return False
+
+def answer_callback_query(callback_query_id: str, text: str) -> bool:
+    token = _get_token()
+    if not token:
+        return False
+    url = f"https://api.telegram.org/bot{token}/answerCallbackQuery"
+    try:
+        requests.post(url, json={
+            "callback_query_id": callback_query_id,
+            "text": text,
+            "show_alert": False
+        }, timeout=5)
+        return True
+    except Exception:
         return False
 
 def send_no_trade_alert(chat_id: str, symbol: str, reason: str):

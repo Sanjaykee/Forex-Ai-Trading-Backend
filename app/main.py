@@ -8,6 +8,7 @@ from app.api.routes.other_routes import (
     settings_router, pairs_router
 )
 from app.api.routes.chat import router as chat_router
+from app.api.routes.telegram_webhook import router as telegram_router
 from app.config import settings
 import logging
 
@@ -44,6 +45,14 @@ app.include_router(performance_router)
 app.include_router(settings_router)
 app.include_router(pairs_router)
 app.include_router(chat_router)
+app.include_router(telegram_router)
+
+@app.on_event("startup")
+async def startup_event():
+    import asyncio
+    from app.signals.trade_monitor import monitor_open_trades_loop
+    asyncio.create_task(monitor_open_trades_loop())
+    logger.info("[Startup] Real-Time Trade & Profit Monitor background task initiated.")
 
 @app.get("/")
 def root():
