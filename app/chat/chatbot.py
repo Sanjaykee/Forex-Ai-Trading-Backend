@@ -104,15 +104,77 @@ def process_chat_message(message: str) -> Dict[str, Any]:
             "reply": (
                 "👋 **Hello! I am ForexAI Analyst.**\n\n"
                 "You can ask me questions like:\n"
+                "- *'What is EURUSD current price now?'*\n"
                 "- *'Show me EURUSD entries on M3 for the last 1 week with win ratio'*\n"
                 "- *'What is the win rate for GBPUSD on M15 last 14 days?'*\n"
-                "- *'Compare London session vs Asian session on M5'* \n"
-                "- *'Which SMC confirmations gave the most wins on USDJPY?'*"
+                "- *'What is an Order Block or FVG?'*\n"
+                "- *'Compare London session vs Asian session on M5'*"
             )
         }
 
     # Extract parameters
     symbol, tf, days, session, rr = _extract_parameters(cleaned)
+
+    # 3. Live Price / Quote Inquiries (e.g. "give eurusd pair current price now")
+    price_words = ["price", "prise", "quote", "rate", "cost", "value", "now", "current", "currectnt", "live", "bid", "ask", "how much"]
+    backtest_words = ["backtest", "win rate", "win ratio", "historical", "signals", "test", "last week", "performance", "pnl", "profit", "statistic", "strategy"]
+
+    if any(w in lower_msg for w in price_words) and not any(w in lower_msg for w in backtest_words):
+        try:
+            from app.mt5.source_router import get_fetcher
+            _, get_live_price, _, _ = get_fetcher("auto")
+            price_data = get_live_price(symbol)
+            if price_data:
+                bid = price_data.get("bid")
+                ask = price_data.get("ask")
+                spread = price_data.get("spread", 0.0)
+                return {
+                    "reply": (
+                        f"📊 **Live Market Price: {symbol}**\n\n"
+                        f"• **Bid:** `{bid}`\n"
+                        f"• **Ask:** `{ask}`\n"
+                        f"• **Spread:** `{spread} pips`\n\n"
+                        f"🟢 *Live broker data feed active.*"
+                    ),
+                    "data": price_data
+                }
+            else:
+                return {"reply": f"⚠️ Live market data for **{symbol}** is currently unavailable. Please try again in a moment."}
+        except Exception as e:
+            return {"reply": f"⚠️ Could not fetch live price for **{symbol}**: {str(e)}"}
+
+    # 4. Educational SMC Concept Inquiries
+    if "order block" in lower_msg or ("ob" in lower_msg and "what" in lower_msg):
+        return {
+            "reply": (
+                "📚 **Smart Money Concepts: Order Block (OB)**\n\n"
+                "An **Order Block** is the last opposite-direction candle before an aggressive institutional expansion that creates a Break of Structure (BOS).\n\n"
+                "• **Bullish OB:** The last bearish down-candle before a rally breaking structure. Acts as a high-probability **BUY** entry.\n"
+                "• **Bearish OB:** The last bullish up-candle before a drop breaking structure. Acts as a high-probability **SELL** entry."
+            )
+        }
+    if "fvg" in lower_msg or "fair value gap" in lower_msg or "imbalance" in lower_msg:
+        return {
+            "reply": (
+                "📚 **Smart Money Concepts: Fair Value Gap (FVG)**\n\n"
+                "A **Fair Value Gap (FVG)** is a 3-candle imbalance where Candle 1's wick and Candle 3's wick do not overlap, leaving an unfilled market pocket.\n\n"
+                "• Institutions often return price to fill the FVG before continuing the macro trend."
+            )
+        }
+    if "choch" in lower_msg or "change of character" in lower_msg:
+        return {
+            "reply": (
+                "📚 **Smart Money Concepts: CHoCH (Change of Character)**\n\n"
+                "**CHoCH** is the earliest signal of a trend reversal. It happens when price breaks the most recent major swing point opposite to the current trend."
+            )
+        }
+    if "bos" in lower_msg or "break of structure" in lower_msg:
+        return {
+            "reply": (
+                "📚 **Smart Money Concepts: BOS (Break of Structure)**\n\n"
+                "**BOS** confirms trend continuation. When price breaks the previous High in an uptrend, or previous Low in a downtrend, institutional flow is continuing."
+            )
+        }
 
     # Multi-Pair Portfolio Scan
     if symbol == "ALL":
