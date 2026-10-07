@@ -5,11 +5,12 @@ except ImportError:
     mt5 = None
     HAS_MT5 = False
 
-def place_order(symbol: str, direction: str, lot: float, entry: float, sl: float, tp: float, comment: str = "ForexAI") -> dict:
-    # 1. MetaApi Cloud execution (Priority for 24/7 cloud deployments like Render)
-    from app.mt5.metaapi_client import metaapi_client
-    if metaapi_client.is_configured:
-        return metaapi_client.place_order(symbol=symbol, direction=direction, lot=lot, sl=sl, tp=tp, comment=comment)
+def place_order(symbol: str, direction: str, lot: float, entry: float, sl: float, tp: float, comment: str = "ForexAI", metaapi_token: str = None, metaapi_account_id: str = None) -> dict:
+    # 1. MetaApi Cloud execution — use per-user credentials if provided, else fall back to env
+    from app.mt5.metaapi_client import MetaApiClient
+    client = MetaApiClient(token=metaapi_token, account_id=metaapi_account_id)
+    if client.is_configured:
+        return client.place_order(symbol=symbol, direction=direction, lot=lot, sl=sl, tp=tp, comment=comment)
 
     # 2. Local Windows MT5 Terminal execution
     if HAS_MT5 and mt5 is not None:

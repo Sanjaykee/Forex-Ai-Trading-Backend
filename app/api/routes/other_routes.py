@@ -85,19 +85,24 @@ def setup_mt5(data: MT5Setup, db: Session = Depends(get_db), user=Depends(get_cu
 
 @settings_router.post("/metaapi")
 def setup_metaapi(data: dict, db: Session = Depends(get_db), user=Depends(get_current_user)):
+    from app.db.models import User
+    from app.mt5.metaapi_client import MetaApiClient
+
     token = data.get("metaapi_token", "").strip()
     account_id = data.get("metaapi_account_id", "").strip()
     region = data.get("metaapi_region", "new-york").strip() or "new-york"
 
-    if token:
-        crud.upsert_setting(db, user.id, "metaapi_token", token)
-    if account_id:
-        crud.upsert_setting(db, user.id, "metaapi_account_id", account_id)
-    crud.upsert_setting(db, user.id, "metaapi_region", region)
+    # Save per-user credentials directly on the User row
+    u = db.query(User).filter(User.id == user.id).first()
+    if u:
+        if token:
+            u.metaapi_token = token
+        if account_id:
+            u.metaapi_account_id = account_id
+        db.commit()
     crud.upsert_setting(db, user.id, "data_source", "metaapi")
 
-    from app.mt5.metaapi_client import MetaApiClient
-    client = MetaApiClient(token=token, account_id=account_id, region=region)
+    client = MetaApiClient(token=token or (u.metaapi_token if u else ""), account_id=account_id or (u.metaapi_account_id if u else ""), region=region)
     info = client.get_account_information()
     if info.get("connected"):
         return {
@@ -114,10 +119,13 @@ def setup_metaapi(data: dict, db: Session = Depends(get_db), user=Depends(get_cu
 
 @settings_router.get("/metaapi/status")
 def get_metaapi_status(db: Session = Depends(get_db), user=Depends(get_current_user)):
-    from app.mt5.metaapi_client import metaapi_client, MetaApiClient
-    token = crud.get_setting(db, user.id, "metaapi_token") or metaapi_client.token
-    account_id = crud.get_setting(db, user.id, "metaapi_account_id") or metaapi_client.account_id
-    region = crud.get_setting(db, user.id, "metaapi_region") or metaapi_client.region
+    from app.db.models import User
+    from app.mt5.metaapi_client import MetaApiClient
+
+    u = db.query(User).filter(User.id == user.id).first()
+    token = u.metaapi_token if u else None
+    account_id = u.metaapi_account_id if u else None
+    region = crud.get_setting(db, user.id, "metaapi_region") or "new-york"
 
     if not token or not account_id:
         return {"configured": False, "connected": False}

@@ -207,6 +207,27 @@ def activate_trade_from_signal(db, user_id: int, signal_id: int) -> dict:
     db.refresh(trade)
 
     user = db.query(models.User).filter(models.User.id == user_id).first()
+
+    # Execute the actual trade on MT5 using this user's own MetaApi credentials
+    from app.mt5.order_manager import place_order
+    result = place_order(
+        symbol=trade.symbol,
+        direction=trade.direction,
+        lot=trade.lot_size,
+        entry=trade.entry_price,
+        sl=trade.stop_loss,
+        tp=trade.take_profit,
+        comment="ForexAI",
+        metaapi_token=user.metaapi_token if user else None,
+        metaapi_account_id=user.metaapi_account_id if user else None,
+    )
+    if result.get("success"):
+        trade.mt5_ticket = str(result.get("ticket", ""))
+        db.commit()
+        logger.info(f"[TradeMonitor] MT5 order placed: ticket={trade.mt5_ticket} for {trade.symbol} {trade.direction}")
+    else:
+        logger.error(f"[TradeMonitor] MT5 order FAILED for trade #{trade.id}: {result.get('error')}")
+
     if user and user.telegram_chat_id:
         direction_emoji = "📈" if trade.direction == "BUY" else "📉"
         msg = f"""
