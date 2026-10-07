@@ -27,8 +27,11 @@ def get_settings(db: Session = Depends(get_db), user=Depends(get_current_user)):
     res["mt5_server"] = user.mt5_server or ""
     res["telegram_chat_id"] = user.telegram_chat_id or ""
     res["has_mt5_password"] = bool(user.mt5_password)
-    from app.chat.gemini_service import get_gemini_api_key
-    res["has_gemini_key"] = bool(get_gemini_api_key())
+    try:
+        from app.chat.gemini_service import get_gemini_api_key
+        res["has_gemini_key"] = bool(get_gemini_api_key())
+    except Exception:
+        res["has_gemini_key"] = False
     if not res.get("data_source"):
         res["data_source"] = "mt5" if user.mt5_login else "yfinance"
     return res

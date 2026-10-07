@@ -7,7 +7,11 @@ import logging
 import warnings
 warnings.filterwarnings("ignore", category=FutureWarning)
 from typing import Dict, Any, Optional
-import google.generativeai as genai
+try:
+    import google.generativeai as genai
+except ImportError:
+    genai = None
+
 from app.config import settings
 from app.backtest.engine import run_backtest
 
@@ -96,6 +100,8 @@ Guidelines:
 
 def chat_with_gemini(message: str) -> Optional[Dict[str, Any]]:
     """Send message to Gemini 2.5 Flash with function calling."""
+    if not genai:
+        return None
     api_key = get_gemini_api_key()
     if not api_key:
         return None

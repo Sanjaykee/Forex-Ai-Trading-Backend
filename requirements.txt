@@ -19,3 +19,4 @@ schedule
 joblib
 pytz
 pydantic-settings
+google-generativeai
