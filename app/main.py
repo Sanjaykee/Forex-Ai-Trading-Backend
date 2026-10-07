@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.db.database import Base, engine
+from app.db.database import Base, engine, sync_table_columns
 from app.api.routes.auth        import router as auth_router
 from app.api.routes.signals     import router as signals_router
 from app.api.routes.other_routes import (
@@ -15,10 +15,11 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Create tables — wrapped so server starts even if DB is briefly unavailable
+# Create tables and sync schema columns
 try:
     Base.metadata.create_all(bind=engine)
-    logger.info("Database tables created successfully")
+    sync_table_columns()
+    logger.info("Database tables and columns synced successfully")
 except Exception as e:
     logger.warning(f"Database connection issue on startup: {e}")
 
