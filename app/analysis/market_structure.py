@@ -1,15 +1,23 @@
 import pandas as pd
 
-def detect_structure(df: pd.DataFrame) -> str:
-    if len(df) < 10:
+def detect_structure(df: pd.DataFrame, lookback: int = 50) -> str:
+    if len(df) < lookback:
         return "RANGING"
-    highs = df["high"].values[-10:]
-    lows  = df["low"].values[-10:]
 
-    hh = highs[-1] > highs[-5]
-    hl = lows[-1]  > lows[-5]
-    ll = lows[-1]  < lows[-5]
-    lh = highs[-1] < highs[-5]
+    highs = df["high"].values[-lookback:]
+    lows  = df["low"].values[-lookback:]
+    mid   = lookback // 2
+
+    # Compare recent half vs older half for proper HH/HL/LL/LH
+    recent_high = max(highs[mid:])
+    recent_low  = min(lows[mid:])
+    prior_high  = max(highs[:mid])
+    prior_low   = min(lows[:mid])
+
+    hh = recent_high > prior_high
+    hl = recent_low  > prior_low
+    ll = recent_low  < prior_low
+    lh = recent_high < prior_high
 
     if hh and hl:
         return "BULLISH"

@@ -8,16 +8,51 @@ without needing a local Windows PC running.
 import requests
 import pandas as pd
 from datetime import datetime
-from app.config import settings
 import logging
 
 logger = logging.getLogger(__name__)
 
 class MetaApiClient:
     def __init__(self, token: str = None, account_id: str = None, region: str = None):
-        self.token = token or settings.METAAPI_TOKEN
-        self.account_id = account_id or settings.METAAPI_ACCOUNT_ID
-        self.region = region or getattr(settings, "METAAPI_REGION", "new-york")
+        self._token = token
+        self._account_id = account_id
+        self._region = region
+
+    def _ensure_loaded(self):
+        if not self._token or not self._account_id:
+            try:
+                from app.db.database import SessionLocal
+                from app.db.models import User
+                from app.db import crud
+                db = SessionLocal()
+                u = db.query(User).first()
+                if u:
+                    if not self._token and u.metaapi_token:
+                        self._token = u.metaapi_token
+                    if not self._account_id and u.metaapi_account_id:
+                        self._account_id = u.metaapi_account_id
+                    if not self._region:
+                        self._region = crud.get_setting(db, u.id, "metaapi_region") or "backup-new-york"
+                db.close()
+            except Exception:
+                pass
+        if not self._region:
+            self._region = "backup-new-york"
+
+    @property
+    def token(self) -> str:
+        self._ensure_loaded()
+        return self._token or ""
+
+    @property
+    def account_id(self) -> str:
+        self._ensure_loaded()
+        return self._account_id or ""
+
+    @property
+    def region(self) -> str:
+        self._ensure_loaded()
+        return self._region or "backup-new-york"
 
     @property
     def is_configured(self) -> bool:
@@ -59,7 +94,7 @@ class MetaApiClient:
                     "connected": True
                 }
             logger.warning(f"MetaApi accountInformation returned {res.status_code}: {res.text}")
-            return {}
+            return {"connected": False, "error": f"{res.status_code}: {res.json().get('message','')[:120]}"}
         except Exception as e:
             logger.error(f"MetaApi get_account_information failed: {e}")
             return {}
@@ -68,7 +103,7 @@ class MetaApiClient:
         """Fetch exact real-time bid, ask, and spread from broker's MT5 feed"""
         if not self.is_configured:
             return {}
-        url = f"{self.market_base_url}/symbols/{symbol}/current-price"
+        url = f"{self.client_base_url}/symbols/{symbol}/current-price"
         try:
             res = requests.get(url, headers=self.headers, timeout=8)
             if res.status_code == 200:

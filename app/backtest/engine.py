@@ -41,8 +41,8 @@ CONFIRMATION_WEIGHTS = {
     "Liquidity sweep":   10,
     "BOS":               15,
     "BOS confirmed":     15,
-    "CHoCH":             15,
-    "CHoCH confirmed":   15,
+    "CHoCH":             20,   # CHoCH weighted higher than plain BOS
+    "CHoCH confirmed":   20,
     "Order Block":       15,
     "Fair Value Gap":    10,
     "Support Zone":       5,
@@ -54,12 +54,10 @@ CONFIRMATION_WEIGHTS = {
     "Price Action":       5,
 }
 
-# ICT Killzones in UTC
+# Only high-probability ICT Killzones — London Open & New York Open
 KILLZONES = {
-    "London Open":    (7,  10),  # 07:00 - 10:00 UTC
-    "New York Open":  (12, 15),  # 12:00 - 15:00 UTC
-    "London Close":   (15, 17),  # 15:00 - 17:00 UTC
-    "Asian Range":    (0,  4),   # 00:00 - 04:00 UTC
+    "London Open":   (7,  9),   # 07:00 - 09:00 UTC
+    "New York Open": (12, 14),  # 12:00 - 14:00 UTC
 }
 HIGH_PROBABILITY_KZ = ["London Open", "New York Open"]
 
@@ -87,22 +85,79 @@ def calculate_win_probability(confirmations: list, kz: dict) -> int:
     return min(score, 99)
 
 
+def _normalize_df(df: pd.DataFrame) -> pd.DataFrame:
+    """Normalize candle dataframe so time column is strictly timezone-naive UTC datetime."""
+    if df is not None and not df.empty and "time" in df.columns:
+        df = df.copy()
+        time_col = pd.to_datetime(df["time"], errors="coerce")
+        if getattr(time_col.dt, "tz", None) is not None:
+            time_col = time_col.dt.tz_convert("UTC").dt.tz_localize(None)
+        df["time"] = time_col
+        return df.dropna(subset=["time"]).sort_values("time").reset_index(drop=True)
+    return df if df is not None else pd.DataFrame()
+
+
 def _load_candles(symbol: str, timeframe: str) -> pd.DataFrame:
-    """Load candles from local sample_data or MT5 fallback."""
+    """Load candles: local CSV first for fast instant backtests, then MetaApi for extra symbols (Gold, BTC, etc.), then MT5."""
+    # 1. Local CSV sample data (instant response, 0 network latency)
     csv_path = SAMPLE_DIR / f"{symbol}_{timeframe}.csv"
     if csv_path.exists():
         try:
             df = pd.read_csv(csv_path)
-            df["time"] = pd.to_datetime(df["time"])
-            return df.sort_values("time").reset_index(drop=True)
+            normalized = _normalize_df(df)
+            if not normalized.empty and len(normalized) >= 50:
+                return normalized
         except Exception:
             pass
 
+    # 2. MetaApi Cloud (for non-standard pairs like Gold XAUUSD, BTC, etc.)
+    try:
+        from app.mt5.metaapi_client import MetaApiClient
+        from app.db.database import SessionLocal
+        from app.db.models import User
+        db = SessionLocal()
+        user = db.query(User).filter(
+            User.metaapi_token != None,
+            User.metaapi_account_id != None
+        ).first()
+        db.close()
+        if user and user.metaapi_token and user.metaapi_account_id:
+            client = MetaApiClient(token=user.metaapi_token, account_id=user.metaapi_account_id)
+            if client.is_configured:
+                df = client.get_candles(symbol, timeframe, count=500)
+                if not df.empty and len(df) >= 50:
+                    return _normalize_df(df)
+    except Exception:
+        pass
+
+    # 3. Local MT5 terminal
     try:
         from app.mt5.data_fetcher import get_candles
-        return get_candles(symbol, timeframe, 10000)
+        return _normalize_df(get_candles(symbol, timeframe, 10000))
     except Exception:
         return pd.DataFrame()
+
+
+def _get_pip_sizes(symbol: str):
+    """Return pip_unit and pip_mult for any symbol including Gold, Silver, Oil."""
+    s = symbol.upper()
+    if "XAU" in s or "GOLD" in s:   return 0.01,  100.0   # Gold: 1 pip = $0.01
+    if "XAG" in s or "SILVER" in s: return 0.001, 1000.0  # Silver
+    if "OIL" in s or "WTI" in s:    return 0.01,  100.0   # Oil
+    if "BTC" in s:                  return 1.0,   1.0      # Bitcoin
+    if "JPY" in s:                  return 0.01,  100.0   # JPY pairs
+    return 0.0001, 10000.0                                  # Standard Forex
+
+
+def _get_sl_range(symbol: str) -> tuple:
+    """Return (min_sl_pips, max_sl_pips) per instrument type."""
+    s = symbol.upper()
+    if any(x in s for x in ("XAU", "GOLD", "GC")):          return 150, 400
+    if any(x in s for x in ("XAG", "SILVER")):              return 100, 300
+    if any(x in s for x in ("OIL", "WTI", "BRENT", "CL")): return 100, 300
+    if any(x in s for x in ("BTC", "ETH")):                 return 200, 800
+    if "JPY" in s:                                           return 3,   15
+    return 3, 15
 
 
 def _get_session(hour: int) -> str:
@@ -149,12 +204,13 @@ def run_backtest(
     bias_tf = tf_cfg["bias"]
     trend_tf = tf_cfg["trend"]
 
-    df_bias = _load_candles(symbol, bias_tf) if timeframe != bias_tf else pd.DataFrame()
+    df_bias  = _load_candles(symbol, bias_tf)  if timeframe != bias_tf  else pd.DataFrame()
     df_trend = _load_candles(symbol, trend_tf) if timeframe != trend_tf else pd.DataFrame()
+    df_d1    = _load_candles(symbol, "D1")     if timeframe not in ("D1",) else pd.DataFrame()
     if not df_trend.empty:
         df_trend = add_indicators(df_trend)
 
-    pip_mult = 100.0 if "JPY" in symbol else 10000.0
+    pip_unit, pip_mult = _get_pip_sizes(symbol)
     trades = []
     confs_win_counter = {}
 
@@ -170,56 +226,75 @@ def run_backtest(
         current_slice = df_window.iloc[:i + 1]
         candle = current_slice.iloc[-1]
         c_time = candle["time"]
+        if getattr(c_time, "tzinfo", None) is not None:
+            c_time = c_time.tz_convert("UTC").tz_localize(None)
         session = _get_session(c_time.hour)
 
-        # 2. Session Filter
+        # 2. Session Filter — only London Open & New York Open killzones
         if session_filter:
             if session_filter.upper() not in session.upper():
                 continue
         else:
-            if session == "Asian" and timeframe in ("M1", "M3", "M5"):
+            kz = _get_killzone_for_hour(c_time.hour)
+            if not kz["active"]:
                 continue
 
-        # 3. Dual Higher-Timeframe Alignment Gate (Macro Bias == Intermediate Trend)
+        # 3. D1 bias — top of chain
+        d1_bias = "ANY"
+        if not df_d1.empty:
+            d1_slice = df_d1[df_d1["time"] <= c_time].tail(60)
+            if len(d1_slice) >= 50:
+                d1_bias = detect_structure(d1_slice)
+        if d1_bias == "RANGING":
+            continue
+
+        # 4. Dual Higher-Timeframe Alignment Gate (Macro Bias == Intermediate Trend)
         macro_bias = "ANY"
         if not df_bias.empty:
-            b_slice = df_bias[df_bias["time"] <= c_time].tail(25)
-            if len(b_slice) >= 10:
+            b_slice = df_bias[df_bias["time"] <= c_time].tail(60)
+            if len(b_slice) >= 50:
                 macro_bias = detect_structure(b_slice)
 
         inter_trend = "ANY"
         if not df_trend.empty:
-            t_slice = df_trend[df_trend["time"] <= c_time].tail(25)
+            t_slice = df_trend[df_trend["time"] <= c_time].tail(60)
             if len(t_slice) >= 10:
                 inter_trend = detect_trend(t_slice)
 
-        # Skip if macro structure is ranging or if there is trend conflict
-        if macro_bias in ("RANGING", "ANY") or inter_trend in ("RANGING", "ANY"):
+        if macro_bias in ("RANGING", "ANY"):
             continue
-        if macro_bias != inter_trend:
+        if inter_trend != "RANGING" and macro_bias != inter_trend:
+            continue
+        # D1 must align with macro bias
+        if d1_bias != "ANY" and d1_bias != macro_bias:
             continue
 
         direction = "BUY" if macro_bias == "BULLISH" else "SELL"
 
-        # 4. Lower-Timeframe SMC Detectors
-        bos = detect_bos_choch(current_slice)
-        ob = detect_order_block(current_slice)
-        fvg = detect_fvg(current_slice)
+        # 5. Lower-Timeframe SMC Detectors
         sweep = detect_liquidity_sweep(current_slice)
-        sr = detect_sr_zones(current_slice)
-        kz = _get_killzone_for_hour(c_time.hour)
+        # Mandatory liquidity sweep
+        if not sweep["detected"] or sweep["direction"] != macro_bias:
+            continue
 
-        confs = []
-        if bos["bos"] and bos["direction"] == macro_bias:
-            confs.append("BOS")
+        bos = detect_bos_choch(current_slice)
+        ob  = detect_order_block(current_slice)
+        fvg = detect_fvg(current_slice)
+        sr  = detect_sr_zones(current_slice)
+        kz  = _get_killzone_for_hour(c_time.hour)
+
+        confs = ["Liquidity Sweep"]
+
+        # CHoCH preferred over plain BOS
         if bos["choch"] and bos["direction"] == macro_bias:
             confs.append("CHoCH")
+        elif bos["bos"] and bos["direction"] == macro_bias:
+            confs.append("BOS")
+
         if ob["detected"] and ob["direction"] == macro_bias:
             confs.append("Order Block")
         if fvg["detected"] and fvg["direction"] == macro_bias:
             confs.append("Fair Value Gap")
-        if sweep["detected"] and sweep["direction"] == macro_bias:
-            confs.append("Liquidity Sweep")
         if direction == "BUY" and sr["at_support"]:
             confs.append("Support Zone")
         if direction == "SELL" and sr["at_resistance"]:
@@ -227,16 +302,15 @@ def run_backtest(
         if kz["active"]:
             confs.append(f"ICT Killzone: {kz['name']}")
 
-        if len(confs) < 2:
+        if len(confs) < 3:
             continue
 
-        # 5. Strict Win Probability Gatekeeper (>= min_win_prob, default 60%)
+        # 6. Win Probability Gatekeeper — minimum 70%
         win_prob = calculate_win_probability(confs, kz)
         if win_prob < min_win_prob:
             continue
 
         # 6. Precision Sniper Entry at 50% Equilibrium & Wick Stop Loss
-        pip_unit = 0.01 if "JPY" in symbol else 0.0001
         buffer = 1.0 * pip_unit
         market_price = float(candle["close"])
         atr = float(candle["atr"]) if "atr" in candle and not np.isnan(candle["atr"]) else (0.0010 if "JPY" not in symbol else 0.10)
@@ -276,9 +350,9 @@ def run_backtest(
             sl_dist = max(atr * 1.2, 0.0004 if "JPY" not in symbol else 0.04)
             sl = entry_price - sl_dist if direction == "BUY" else entry_price + sl_dist
 
-        # Institutional sanity check: SL between 3.5 pips and 12 pips
-        min_sl = 3.5 * pip_unit
-        max_sl = 12.0 * pip_unit
+        min_sl_pips, max_sl_pips = _get_sl_range(symbol)
+        min_sl = min_sl_pips * pip_unit
+        max_sl = max_sl_pips * pip_unit
         sl_dist = min(max_sl, max(min_sl, abs(sl_dist)))
 
         if direction == "BUY":
@@ -506,5 +580,6 @@ def run_backtest(
         "worst_trade": worst_trade,
         "sessions": sessions,
         "top_confirmations": top_confs,
+        "all_trades": trades,
         "recent_trades": trades[-5:],
     }

@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from datetime import datetime
 from app.db.database import get_db
 from app.db import crud
 from app.signals.scanner import scan_all_pairs
@@ -15,12 +16,31 @@ def scan(db: Session = Depends(get_db), user=Depends(get_current_user)):
         rr          = float(crud.get_setting(db, user.id, "rr_ratio") or 2.0)
         risk        = float(crud.get_setting(db, user.id, "max_risk_usd") or 1.0)
         data_source = crud.get_setting(db, user.id, "data_source") or "yfinance"
+        max_trades  = int(crud.get_setting(db, user.id, "max_trades_day") or 999)
+        max_losses  = int(crud.get_setting(db, user.id, "max_losses_day") or 999)
+
+        # Enforce daily trade & loss limits
+        from datetime import date
+        from app.db.models import Trade
+        today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+        todays_trades = db.query(Trade).filter(
+            Trade.user_id == user.id,
+            Trade.open_time >= today_start
+        ).all()
+        todays_losses = [t for t in todays_trades if t.result == "LOSS"]
+        if len(todays_trades) >= max_trades:
+            return [{"symbol": "ALL", "direction": "NO TRADE",
+                     "reason": [f"Daily trade limit reached ({max_trades} trades)"]}]
+        if len(todays_losses) >= max_losses:
+            return [{"symbol": "ALL", "direction": "NO TRADE",
+                     "reason": [f"Daily loss limit reached ({max_losses} losses) — trading stopped for today"]}]
 
         # Auto-connect MT5 using saved credentials if source is mt5
         if data_source == "mt5" and all([user.mt5_login, user.mt5_password, user.mt5_server]):
             try:
                 from app.mt5.connection import connect
-                connect(login=int(user.mt5_login), password=user.mt5_password, server=user.mt5_server)
+                from app.db.crud import get_mt5_password
+                connect(login=int(user.mt5_login), password=get_mt5_password(user), server=user.mt5_server)
             except Exception:
                 pass
 
@@ -28,8 +48,20 @@ def scan(db: Session = Depends(get_db), user=Depends(get_current_user)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Scan failed: {str(e)}")
 
+    # Deduplicate: skip saving if this pair already has a pending/approved signal
+    from app.db.models import Signal as SignalModel
+    pending_symbols = {
+        s.symbol for s in db.query(SignalModel).filter(
+            SignalModel.user_id == user.id,
+            SignalModel.status.in_(["pending", "approved"])
+        ).all()
+    }
+
     for r in results:
         if r.get("direction") in ("BUY", "SELL"):
+            if r["symbol"] in pending_symbols:
+                r["reason"] = ["Signal already active for this pair — skipped duplicate"]
+                continue
             try:
                 signal_data = {
                     "user_id":          user.id,
@@ -54,8 +86,8 @@ def scan(db: Session = Depends(get_db), user=Depends(get_current_user)):
                 if user.telegram_chat_id:
                     r["id"] = saved_signal.id
                     send_signal_alert(user.telegram_chat_id, r)
-            except Exception as e:
-                pass  # don't fail the whole scan if saving one signal fails
+            except Exception:
+                pass
 
     return results
 
@@ -75,7 +107,8 @@ def retrain_model(db: Session = Depends(get_db), user=Depends(get_current_user))
             if source == "mt5":
                 try:
                     from app.mt5.connection import connect
-                    connect(login=int(login), password=password, server=server)
+                    from app.db.crud import get_mt5_password
+                    connect(login=int(login), password=get_mt5_password(user), server=server)
                 except Exception:
                     pass
             train(source=source)

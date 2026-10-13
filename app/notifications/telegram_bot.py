@@ -25,7 +25,7 @@ def _get_token() -> str:
                                 return val
             except Exception:
                 pass
-    return "8885177423:AAFhpQFKhqCvc50OhtwvYywlu0vLs8BVcmk"
+    return ""
 
 def send_signal_alert(chat_id: str, signal: dict) -> bool:
     token = _get_token()

@@ -53,18 +53,32 @@ async def check_open_trades():
                 direction = (trade.direction or "BUY").upper()
                 current_price = bid if direction == "BUY" else ask
                 entry = float(trade.entry_price or current_price)
-                sl = float(trade.stop_loss or 0.0)
-                tp = float(trade.take_profit or 0.0)
+                sl    = float(trade.stop_loss or 0.0)
+                tp    = float(trade.take_profit or 0.0)
 
-                # Pip calculation
-                pip_size = 0.01 if ("JPY" in symbol or entry > 50) else 0.0001
-                sl_distance = abs(entry - sl) if sl > 0 else (atr_fallback := 25 * pip_size)
-
-                # TP1 target = 1:1.0 RR or half distance to TP
-                if direction == "BUY":
-                    tp1_target = entry + sl_distance
+                # Correct pip size per instrument
+                s = symbol.upper()
+                if "XAU" in s or "GOLD" in s:
+                    pip_size = 0.01
+                elif "XAG" in s or "SILVER" in s:
+                    pip_size = 0.001
+                elif "OIL" in s or "WTI" in s or "BRENT" in s:
+                    pip_size = 0.01
+                elif "BTC" in s or "ETH" in s:
+                    pip_size = 1.0
+                elif "JPY" in s:
+                    pip_size = 0.01
                 else:
-                    tp1_target = entry - sl_distance
+                    pip_size = 0.0001
+
+                sl_distance = abs(entry - sl) if sl > 0 else 25 * pip_size
+
+                # TP1 milestone fires at actual_rr (matches signal engine Dynamic Ladder M1)
+                actual_rr = float(trade.actual_rr or 2.0)
+                if direction == "BUY":
+                    tp1_target = entry + (sl_distance * actual_rr)
+                else:
+                    tp1_target = entry - (sl_distance * actual_rr)
 
                 # Fetch user for Telegram alerts
                 user = db.query(models.User).filter(models.User.id == trade.user_id).first()

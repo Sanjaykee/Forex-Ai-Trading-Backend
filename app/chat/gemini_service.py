@@ -20,9 +20,7 @@ logger = logging.getLogger(__name__)
 
 def get_gemini_api_key() -> str:
     """Retrieve Gemini API key from settings, environment, or database."""
-    key = settings.GEMINI_API_KEY or os.getenv("GEMINI_API_KEY", "")
-    if key and key.strip():
-        return key.strip()
+    candidates = [settings.GEMINI_API_KEY, os.getenv("GEMINI_API_KEY", "")]
     try:
         from app.db.database import SessionLocal
         from app.db import crud
@@ -31,12 +29,15 @@ def get_gemini_api_key() -> str:
         u = db.query(User).filter(User.mt5_login != None).first()
         if u:
             db_key = crud.get_setting(db, u.id, "gemini_api_key")
-            if db_key and db_key.strip():
-                db.close()
-                return db_key.strip()
+            if db_key:
+                candidates.append(db_key)
         db.close()
     except Exception:
         pass
+
+    for k in candidates:
+        if k and k.strip() and k.strip().startswith("AIza"):
+            return k.strip()
     return ""
 
 
@@ -85,21 +86,37 @@ SYSTEM_INSTRUCTION = """
 You are ForexAI Analyst, an expert institutional Smart Money Concepts (SMC) trading assistant.
 You have access to two real-time tools:
 1. `get_live_market_price_tool`: Returns live bid, ask, and spread for any currency pair.
-2. `run_backtest_tool`: Analyzes real MT5 broker candles using Scanner Parity entry rules (Multi-Timeframe Hierarchy: M1/M3/M5 checks H1+M15, M15 checks H4+H1, and filters for setups with >=60% Win Probability).
+2. `run_backtest_tool`: Analyzes real MT5 broker candles using Scanner Parity entry rules.
 
-Guidelines:
-1. When a user asks for current prices, live quotes, or bid/ask rates, call `get_live_market_price_tool`.
-2. When a user asks about win rates, signal entries, timeframes (like M3, M5, M15), or performance over a period (e.g. last 1 week), call `run_backtest_tool`.
-3. Format responses cleanly using GitHub Markdown:
-   - For live prices: Show Symbol, Bid, Ask, Spread, and quick session context.
-   - For backtests: Highlight Setup Quality (Scanner Parity >=60% Win Prob), Timeframe Hierarchy used, Total Signals, Wins, Losses, Win Rate %, Net Pips, Risk:Reward (1:2), and Session breakdowns.
-4. If the user asks conceptual questions (e.g. "What is an Order Block?", "Explain BOS vs CHoCH"), answer clearly with practical trading examples.
-5. Keep answers professional, data-driven, and concise.
+The user message may contain [REAL MARKET DATA] blocks with live backtest results and loss analysis.
+Always use this real data in your answer — never make up numbers.
+
+## Response Rules:
+
+1. LIVE PRICE questions → call `get_live_market_price_tool`, show Bid/Ask/Spread + session context.
+
+2. BACKTEST questions → use the [BACKTEST ...] data already injected. Show:
+   - Total Signals, Wins, Losses, Win Rate %, Net Pips
+   - Session breakdown (which session performed best/worst)
+   - Top confirmations that led to wins
+
+3. LOW WIN RATE (below 65%) → when [LOSS PATTERN ANALYSIS] is present, diagnose and suggest fixes:
+   - If WorstSession has >50% of losses → suggest blocking that session
+   - If MarketEntryLossPct > 60% → suggest requiring OB or FVG entry only
+   - If AvgConfirmationsOnLoss < 2.5 → suggest raising min confirmations to 3
+   - If AvgWinProbOnLoss < 68% → suggest raising win probability filter to 70%
+   - If PureLosses is high → suggest tightening SL or reducing lot size
+   Always give the SPECIFIC fix with the exact parameter to change.
+   Format as numbered list: Problem → Root Cause → Fix → Expected Impact.
+
+4. SMC concept questions → explain clearly with practical examples.
+
+5. Keep answers concise, data-driven, and professional.
 """
 
 
 def chat_with_gemini(message: str) -> Optional[Dict[str, Any]]:
-    """Send message to Gemini 2.5 Flash with function calling."""
+    """Send message to Gemini with real market data already injected in message context."""
     if not genai:
         return None
     api_key = get_gemini_api_key()
@@ -108,35 +125,24 @@ def chat_with_gemini(message: str) -> Optional[Dict[str, Any]]:
 
     try:
         genai.configure(api_key=api_key)
-
         available_tools = [run_backtest_tool, get_live_market_price_tool]
 
-        # Use gemini-2.5-flash or gemini-flash-latest
-        model_name = "gemini-2.5-flash"
-        try:
-            model = genai.GenerativeModel(
-                model_name=model_name,
-                tools=available_tools,
-                system_instruction=SYSTEM_INSTRUCTION,
-            )
-            chat = model.start_chat(enable_automatic_function_calling=True)
-            response = chat.send_message(message)
-        except Exception:
-            model = genai.GenerativeModel(
-                model_name="gemini-flash-latest",
-                tools=available_tools,
-                system_instruction=SYSTEM_INSTRUCTION,
-            )
-            chat = model.start_chat(enable_automatic_function_calling=True)
-            response = chat.send_message(message)
-
-        if response and response.text:
-            return {
-                "reply": response.text,
-                "source": "gemini-2.5-flash",
-            }
+        for model_name in ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-pro"]:
+            try:
+                model = genai.GenerativeModel(
+                    model_name=model_name,
+                    tools=available_tools,
+                    system_instruction=SYSTEM_INSTRUCTION,
+                )
+                chat = model.start_chat(enable_automatic_function_calling=True)
+                response = chat.send_message(message)
+                if response and response.text:
+                    return {"reply": response.text, "source": model_name}
+                break
+            except Exception as model_err:
+                logger.warning(f"Model {model_name} failed: {model_err}")
+                continue
     except Exception as e:
         logger.warning(f"Gemini API call failed: {e}")
-        return None
 
     return None

@@ -47,12 +47,19 @@ def verify_password(plain: str, hashed: str) -> bool:
             return False
 
 def update_mt5_credentials(db: Session, user_id: int, login: str, password: str, server: str):
+    from app.db.crypto import encrypt_password
     user = get_user_by_id(db, user_id)
-    user.mt5_login = login
-    user.mt5_password = password
-    user.mt5_server = server
+    user.mt5_login    = login
+    user.mt5_password = encrypt_password(password)
+    user.mt5_server   = server
     db.commit()
     return user
+
+
+def get_mt5_password(user) -> str:
+    """Decrypt MT5 password from user object."""
+    from app.db.crypto import decrypt_password
+    return decrypt_password(user.mt5_password or "")
 
 # --- Signals ---
 def create_signal(db: Session, signal_data: dict):

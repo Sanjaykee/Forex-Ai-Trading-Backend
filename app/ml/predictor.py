@@ -29,19 +29,22 @@ def predict_win_probability(df_h4: pd.DataFrame, df_h1: pd.DataFrame,
                             df_m15: pd.DataFrame, confirmations: list,
                             direction: str) -> int | None:
     """
-    Returns win probability (0-99) from ML model.
-    Returns None if model not available → caller uses rule-based fallback.
+    Returns win probability from ML model.
+    Returns None if model not available or not trained on real MT5 data.
+    Caller (signal_engine) uses rule-based score as fallback.
     """
     bundle = _load_model()
     if bundle is None:
         return None
-
+    # Only use model if it was trained on real MT5/MetaApi data (not frankfurter daily)
+    if bundle.get("data_source", "unknown") not in ("mt5", "metaapi"):
+        return None
     try:
         model    = bundle["model"]
         features = bundle.get("features", FEATURE_COLUMNS)
         feats    = extract_features(df_h4, df_h1, df_m15, confirmations, direction)
         row      = pd.DataFrame([feats])[features].fillna(0)
-        prob     = float(model.predict_proba(row)[0][1])  # probability of WIN
+        prob     = float(model.predict_proba(row)[0][1])
         return min(int(prob * 100), 99)
     except Exception:
         return None
