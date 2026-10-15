@@ -134,20 +134,20 @@ class MetaApiClient:
             return {}
 
     def get_candles(self, symbol: str, timeframe: str, count: int = 500) -> pd.DataFrame:
-        """Fetch historical OHLC candles directly from broker"""
+        """Fetch historical OHLC candles directly from broker.
+        Paginates in batches of 1000 to cover the full requested count.
+        """
         if not self.is_configured:
             return pd.DataFrame()
 
-        # Map MT5 timeframes to MetaApi format (e.g., "15m", "1h", "4h", "1d")
         tf_map = {
             "M1": "1m", "M3": "3m", "M5": "5m", "M15": "15m", "M30": "30m",
             "H1": "1h", "H4": "4h", "D1": "1d"
         }
         meta_tf = tf_map.get(timeframe.upper(), "15m")
         url = f"{self.market_base_url}/historical-market-data/symbols/{symbol}/timeframes/{meta_tf}/candles"
-        params = {"limit": min(count, 1000)}
 
-        def _parse_candles(candles) -> pd.DataFrame:
+        def _parse_batch(candles: list) -> pd.DataFrame:
             if not candles:
                 return pd.DataFrame()
             df = pd.DataFrame(candles)
@@ -157,28 +157,74 @@ class MetaApiClient:
                 df.rename(columns={"tickVolume": "volume"}, inplace=True)
             elif "volume" not in df.columns:
                 df["volume"] = 100
+            for col in ["open", "high", "low", "close"]:
+                if col not in df.columns:
+                    return pd.DataFrame()
             return df[["time", "open", "high", "low", "close", "volume"]]
 
-        try:
-            res = requests.get(url, headers=self.headers, params=params, timeout=20)
-            if res.status_code == 200:
-                return _parse_candles(res.json())
-            logger.error("MetaApi get_candles HTTP %d for %s %s: %s", res.status_code, symbol, timeframe, res.text[:200])
-            return pd.DataFrame()
-        except requests.exceptions.Timeout:
-            alt_region = "backup-new-york" if self.region == "new-york" else "new-york"
-            alt_url = f"https://mt-market-data-client-api-v1.{alt_region}.agiliumtrade.ai/users/current/accounts/{self.account_id.strip()}/historical-market-data/symbols/{symbol}/timeframes/{meta_tf}/candles"
+        def _fetch_batch(params: dict) -> pd.DataFrame:
+            """Single request with region fallback on timeout."""
             try:
-                res = requests.get(alt_url, headers=self.headers, params=params, timeout=20)
+                res = requests.get(url, headers=self.headers, params=params, timeout=20)
                 if res.status_code == 200:
-                    logger.info(f"MetaApi get_candles succeeded via fallback region {alt_region} for {symbol} {timeframe}")
-                    return _parse_candles(res.json())
-            except Exception as e2:
-                logger.error(f"MetaApi get_candles fallback also failed for {symbol} {timeframe}: {e2}")
+                    return _parse_batch(res.json())
+                logger.error("MetaApi get_candles HTTP %d for %s %s: %s",
+                             res.status_code, symbol, timeframe, res.text[:200])
+                return pd.DataFrame()
+            except requests.exceptions.Timeout:
+                alt_region = "backup-new-york" if self.region == "new-york" else "new-york"
+                alt_url = (
+                    f"https://mt-market-data-client-api-v1.{alt_region}.agiliumtrade.ai"
+                    f"/users/current/accounts/{self.account_id.strip()}"
+                    f"/historical-market-data/symbols/{symbol}/timeframes/{meta_tf}/candles"
+                )
+                try:
+                    res = requests.get(alt_url, headers=self.headers, params=params, timeout=20)
+                    if res.status_code == 200:
+                        logger.info("MetaApi get_candles fallback region %s OK for %s %s", alt_region, symbol, timeframe)
+                        return _parse_batch(res.json())
+                except Exception as e2:
+                    logger.error("MetaApi get_candles fallback failed for %s %s: %s", symbol, timeframe, e2)
+                return pd.DataFrame()
+            except Exception as e:
+                logger.error("MetaApi get_candles failed for %s %s: %s", symbol, timeframe, e)
+                return pd.DataFrame()
+
+        # Paginate: fetch up to `count` candles in batches of 1000
+        BATCH = 1000
+        all_frames = []
+        remaining  = count
+        start_time = None   # None = most recent batch first
+
+        while remaining > 0:
+            params = {"limit": min(remaining, BATCH)}
+            if start_time:
+                params["startTime"] = start_time
+
+            batch = _fetch_batch(params)
+            if batch.empty:
+                break
+
+            all_frames.append(batch)
+            remaining -= len(batch)
+
+            # If we got fewer than BATCH candles, broker has no more history
+            if len(batch) < BATCH:
+                break
+
+            # Next batch: start before the oldest candle we have
+            oldest = batch["time"].min()
+            start_time = oldest.strftime("%Y-%m-%dT%H:%M:%S.000Z")
+            logger.info("MetaApi paginating %s %s: fetched %d so far, next startTime=%s",
+                        symbol, timeframe, sum(len(f) for f in all_frames), start_time)
+
+        if not all_frames:
             return pd.DataFrame()
-        except Exception as e:
-            logger.error(f"MetaApi get_candles failed for {symbol} {timeframe}: {e}")
-            return pd.DataFrame()
+
+        combined = pd.concat(all_frames, ignore_index=True)
+        combined = combined.drop_duplicates(subset=["time"]).sort_values("time").reset_index(drop=True)
+        logger.info("MetaApi total candles fetched for %s %s: %d", symbol, timeframe, len(combined))
+        return combined
 
     def place_order(self, symbol: str, direction: str, lot: float, sl: float = None, tp: float = None, comment: str = "ForexAI") -> dict:
         """
