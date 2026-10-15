@@ -14,7 +14,7 @@ directly as AI training data without hindsight labeling.
 import logging
 from app.analysis.indicators          import add_indicators
 from app.analysis.market_structure    import detect_structure, detect_trend
-from app.analysis.smc.liquidity_sweep import detect_liquidity_sweep, detect_inducement_sweep
+from app.analysis.smc.liquidity_sweep import detect_liquidity_sweep, detect_inducement
 from app.analysis.smc.bos_choch      import detect_bos_choch
 from app.analysis.smc.order_block    import detect_order_block
 from app.analysis.smc.fvg            import detect_fvg
@@ -254,10 +254,10 @@ def analyze_pair(symbol: str, risk_usd: float = 1.0, rr_ratio: float = 2.0, data
     bos   = detect_bos_choch(df_m15)
 
     sweep_ok = sweep["detected"] and sweep["direction"] == h4_structure
-    bos_ok   = (bos["choch"] or bos["bos"]) and bos["direction"] == h4_structure
+    bos_ok   = bos["detected"] and bos["direction"] == h4_structure
 
     confirmation_steps["step4_sweep"]    = sweep_ok
-    confirmation_steps["step4_bos_choch"] = "CHoCH" if bos["choch"] else ("BOS" if bos["bos"] else "None")
+    confirmation_steps["step4_bos_choch"] = bos.get("type", "None") if bos["detected"] else "None"
 
     if not sweep_ok:
         base["reason"].append("Step 4 FAIL: No M15 liquidity sweep in trade direction")
@@ -267,7 +267,9 @@ def analyze_pair(symbol: str, risk_usd: float = 1.0, rr_ratio: float = 2.0, data
         return base
 
     # ── Step 5: M15 OB or FVG zone ───────────────────────────────────────────
-    ob  = detect_order_block(df_m15)
+    ob_bull = detect_order_block(df_m15, "BULLISH")
+    ob_bear = detect_order_block(df_m15, "BEARISH")
+    ob  = ob_bull if h4_structure == "BULLISH" else ob_bear
     fvg = detect_fvg(df_m15)
     sr  = detect_sr_zones(df_m15)
 
@@ -294,7 +296,7 @@ def analyze_pair(symbol: str, risk_usd: float = 1.0, rr_ratio: float = 2.0, data
     # ── Step 5b: Inducement sweep (optional — high-conviction bonus) ──────────
     # Price makes a fake move sweeping a nearby swing level then returns to OB.
     # Adds +20 to win probability and "Inducement Sweep" to confirmations.
-    inducement = detect_inducement_sweep(df_m15, zone_high, zone_low, direction)
+    inducement = detect_inducement(df_m15, direction)
     confirmation_steps["step5b_inducement"] = inducement["detected"]
 
     # ── Step 6: M3 confirmation inside the zone ───────────────────────────────
@@ -307,7 +309,7 @@ def analyze_pair(symbol: str, risk_usd: float = 1.0, rr_ratio: float = 2.0, data
 
     # ── Build confirmations list ──────────────────────────────────────────────
     confirmations = ["Liquidity Sweep"]
-    confirmations.append("CHoCH" if bos["choch"] else "BOS")
+    confirmations.append(bos.get("type", "BOS"))
     confirmations.append(zone_type)
     confirmations.append(m3_result["trigger"])
     if inducement["detected"]:
