@@ -29,6 +29,31 @@ def get_settings(db: Session = Depends(get_db), user=Depends(get_current_user)):
     res["has_mt5_password"] = bool(user.mt5_password)
     res["has_metaapi"] = bool(user.metaapi_token and user.metaapi_account_id)
     res["metaapi_account_id"] = user.metaapi_account_id or ""
+    # Show connected status + live account info on page load
+    from app.config import settings as _cfg
+    token      = user.metaapi_token      or _cfg.METAAPI_TOKEN      or ""
+    account_id = user.metaapi_account_id or _cfg.METAAPI_ACCOUNT_ID or ""
+    region     = crud.get_setting(db, user.id, "metaapi_region") or _cfg.METAAPI_REGION or "backup-new-york"
+    if token and account_id:
+        res["has_metaapi"] = True
+        res["metaapi_account_id"] = account_id
+        try:
+            from app.mt5.metaapi_client import MetaApiClient
+            _client = MetaApiClient(token=token, account_id=account_id, region=region)
+            _info = _client.get_account_information()
+            if _info.get("connected"):
+                res["metaapi_connected"] = True
+                res["metaapi_balance"]   = _info.get("balance", 0)
+                res["metaapi_currency"]  = _info.get("currency", "USD")
+                res["metaapi_server"]    = _info.get("server", "")
+                crud.upsert_setting(db, user.id, "metaapi_connected", "true")
+                crud.upsert_setting(db, user.id, "metaapi_region", region)
+            else:
+                res["metaapi_connected"] = False
+        except Exception:
+            res["metaapi_connected"] = crud.get_setting(db, user.id, "metaapi_connected") == "true"
+    else:
+        res["metaapi_connected"] = False
     res["ctrader_account_id"] = user.ctrader_account_id or ""
     res["ctrader_server"]     = user.ctrader_server     or "demo.ctrader.com"
     res["ctrader_connected"]  = bool(user.ctrader_access_token)
@@ -103,7 +128,7 @@ def setup_metaapi(data: dict, db: Session = Depends(get_db), user=Depends(get_cu
 
     token = data.get("metaapi_token", "").strip()
     account_id = data.get("metaapi_account_id", "").strip()
-    region = data.get("metaapi_region", "new-york").strip() or "new-york"
+    region = data.get("metaapi_region", "backup-new-york").strip() or "backup-new-york"
 
     u = db.query(User).filter(User.id == user.id).first()
     if u:
@@ -239,11 +264,29 @@ def get_metaapi_status(db: Session = Depends(get_db), user=Depends(get_current_u
     u = db.query(User).filter(User.id == user.id).first()
     if not u or not u.metaapi_token or not u.metaapi_account_id:
         return {"configured": False, "connected": False}
+    region = crud.get_setting(db, user.id, "metaapi_region") or "backup-new-york"
+    # Test candle fetch live so user can see exactly what fails
+    candle_status = "not_tested"
+    candle_count  = 0
+    candle_error  = None
+    try:
+        from app.mt5.metaapi_client import MetaApiClient
+        client = MetaApiClient(token=u.metaapi_token, account_id=u.metaapi_account_id, region=region)
+        df = client.get_candles("EURUSD", "M15", count=100)
+        candle_count  = len(df)
+        candle_status = "ok" if candle_count >= 50 else "insufficient"
+    except Exception as e:
+        candle_status = "error"
+        candle_error  = str(e)
     return {
-        "configured": True,
-        "connected": crud.get_setting(db, user.id, "metaapi_connected") == "true",
-        "account_id": u.metaapi_account_id,
-        "region": crud.get_setting(db, user.id, "metaapi_region") or "new-york"
+        "configured":    True,
+        "connected":     crud.get_setting(db, user.id, "metaapi_connected") == "true",
+        "account_id":    u.metaapi_account_id,
+        "token_prefix":  u.metaapi_token[:8] + "..." if u.metaapi_token else None,
+        "region":        region,
+        "candle_test":   candle_status,
+        "candle_count":  candle_count,
+        "candle_error":  candle_error,
     }
 
 @pairs_router.get("/")
@@ -264,3 +307,22 @@ def get_pairs():
             {"symbol": "EURJPY", "digits": 3, "spread": 1.7, "active": True},
             {"symbol": "GBPJPY", "digits": 3, "spread": 2.1, "active": True},
         ]
+
+
+# ── Debug backtest endpoint (no auth needed) ──────────────────────────────────
+backtest_router = APIRouter(prefix="/debug", tags=["debug"])
+
+@backtest_router.get("/backtest")
+def debug_backtest(
+    symbol: str = "EURUSD",
+    timeframe: str = "M15",
+    days: int = 14,
+    rr: float = 2.0,
+):
+    """Direct backtest endpoint for debugging — no auth required."""
+    from app.backtest.engine import run_backtest
+    result = run_backtest(symbol=symbol, timeframe=timeframe, days=days, rr_ratio=rr)
+    return {
+        "params": {"symbol": symbol, "timeframe": timeframe, "days": days, "rr": rr},
+        "result": result,
+    }

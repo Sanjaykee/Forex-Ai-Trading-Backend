@@ -1,366 +1,238 @@
 """
 ForexAI Chatbot — Gemini-first dynamic AI assistant.
-Every message goes to Gemini with real market data injected as context.
-Local fallback only runs backtest engine directly — no static keyword answers.
+Parses user intent for ANY symbol, timeframe, RR, days, session.
+All backtests run exclusively on live broker data (MetaApi / cTrader).
+No local CSV fallback.
 """
 import re
 import logging
-from typing import Dict, Any, Tuple, Optional
+from typing import NamedTuple, Dict, Any, Optional
 from app.backtest.engine import run_backtest
 
 logger = logging.getLogger(__name__)
 
 PAIRS = ["EURUSD", "GBPUSD", "USDJPY", "USDCHF", "AUDUSD", "NZDUSD", "USDCAD", "EURJPY", "GBPJPY"]
 
-# Symbols supported for live price (MetaApi/MT5 symbol names)
 EXTRA_SYMBOLS = {
-    # Gold
     "GOLD": "XAUUSD", "XAU": "XAUUSD", "XAUUSD": "XAUUSD",
-    # Silver
     "SILVER": "XAGUSD", "XAG": "XAGUSD", "XAGUSD": "XAGUSD",
-    # Oil
     "OIL": "USOIL", "CRUDE": "USOIL", "WTI": "USOIL", "USOIL": "USOIL",
-    # Indices
     "US30": "US30", "DOW": "US30", "NAS": "NAS100", "NAS100": "NAS100",
     "SPX": "SPX500", "SP500": "SPX500",
-    # Bitcoin
     "BTC": "BTCUSD", "BITCOIN": "BTCUSD", "BTCUSD": "BTCUSD",
+    "ETH": "ETHUSD", "ETHEREUM": "ETHUSD", "ETHUSD": "ETHUSD",
 }
 
-# Only these pairs have local CSV sample data — MetaApi can fetch ANY symbol when connected
-BACKTEST_SUPPORTED_LOCAL = set(PAIRS)
+ALL_TIMEFRAMES = ["M1", "M3", "M5", "M15", "M30", "H1", "H4", "D1"]
+
+_SYMBOL_IGNORE = {
+    "TODAY", "LAST", "DAYS", "WEEK", "MONTH", "SHOW", "GIVE", "TELL",
+    "WHAT", "WITH", "FROM", "THIS", "THAT", "HAVE", "WILL", "BEST",
+    "BACK", "TEST", "ENTRY", "TRADE", "PAIR", "TIME", "FRAME",
+    "RATIO", "RISK", "WIN", "LOSS", "RATE", "SIGNAL",
+}
 
 
-def _extract_parameters(message: str) -> Tuple[str, str, int, Optional[str], float]:
-    msg = message.upper()
+# ── Named tuple replaces the 5-value tuple return (fixes cyclomatic complexity) ──
+class ParsedIntent(NamedTuple):
+    symbol:   str
+    tf:       str
+    days:     int
+    session:  Optional[str]
+    rr:       float
 
-    symbol = None
 
-    # 1a. Check for ALL pairs keyword
+# ── Parameter extraction — split into 4 focused helpers ──────────────────────
+
+def _parse_symbol(msg: str) -> str:
+    """Extract trading symbol from uppercased message."""
     if any(k in msg for k in [
-        "ALLPAIR", "ALLPAIRS", "ALL PAIR", "ALL PAIRS", "ALL THE PAIR", "ALL THE PAIRS",
-        "EVERY PAIR", "EVERY PAIRS", "EVERYPAIR", "ALL SYMBOL", "ALL SYMBOLS",
-        "ALL FOREX", "PORTFOLIO", "COMPARE PAIR", "COMPARE PAIRS", "ALL THE SYMBOL"
+        "ALLPAIR", "ALLPAIRS", "ALL PAIR", "ALL PAIRS", "ALL THE PAIR",
+        "EVERY PAIR", "ALL SYMBOL", "ALL SYMBOLS", "ALL FOREX", "PORTFOLIO",
     ]):
-        symbol = "ALL"
+        return "ALL"
 
-    # 1b. Check known extra symbols (Gold, Silver, Oil, BTC etc)
-    if not symbol:
-        for keyword, mt5_symbol in EXTRA_SYMBOLS.items():
-            if keyword in msg:
-                symbol = mt5_symbol
-                break
+    for keyword, mt5_sym in EXTRA_SYMBOLS.items():
+        if re.search(rf"\b{keyword}\b", msg):
+            return mt5_sym
 
-    # 1c. Check standard forex pairs
-    if not symbol:
-        for p in PAIRS:
-            if p in msg:
-                symbol = p
-                break
+    for p in PAIRS:
+        if p in msg:
+            return p
 
-    # 1d. Detect any raw MT5-style symbol typed directly (e.g. NAS100, US30, ETHUSD, XBRUSD)
-    if not symbol:
-        raw_match = re.search(r'\b([A-Z]{2,6}(?:USD|EUR|JPY|GBP|CHF|CAD|AUD|NZD|100|200|500|30|50)?)\b', msg)
-        if raw_match:
-            candidate = raw_match.group(1)
-            # Ignore common English words that match the pattern
-            ignore = {"TODAY", "LAST", "DAYS", "WEEK", "MONTH", "SHOW", "GIVE", "TELL",
-                      "WHAT", "WITH", "FROM", "THIS", "THAT", "HAVE", "WILL", "BEST"}
-            if candidate not in ignore and len(candidate) >= 4:
-                symbol = candidate
+    raw = re.search(r"\b([A-Z]{2,6}(?:USD|EUR|JPY|GBP|CHF|CAD|AUD|NZD|100|200|500|30|50)?)\b", msg)
+    if raw:
+        candidate = raw.group(1)
+        if candidate not in _SYMBOL_IGNORE and len(candidate) >= 4:
+            return candidate
 
-    # 1e. Final fallback
-    if not symbol:
-        symbol = "EURUSD"
+    return "EURUSD"
 
-    tf = None
-    if "M3" in msg or "3 MIN" in msg or "3MIN" in msg:
-        tf = "M3"
-    if not tf:
-        for t in ["M1", "M5", "M15", "M30", "H1", "H4", "D1"]:
-            if re.search(rf"\b{t}\b", msg):
-                tf = t
-                break
-    tf = tf or "M15"
 
-    days = 7
-    if "MONTH" in msg or "30 DAY" in msg:
-        days = 30
-    elif "2 WEEK" in msg or "14 DAY" in msg:
-        days = 14
-    elif "3 DAY" in msg:
-        days = 3
-    elif "TODAY" in msg or "1 DAY" in msg:
-        days = 1
-    else:
-        m = re.search(r"(\d+)\s*(?:DAYS?|D)\b", msg)
-        if m:
-            days = min(60, max(1, int(m.group(1))))
+def _parse_timeframe(msg: str) -> str:
+    """Extract timeframe token from uppercased message."""
+    min_match = re.search(r"\b(\d+)\s*(?:MIN(?:UTE)?S?|M)\b", msg)
+    if min_match:
+        candidate = f"M{min_match.group(1)}"
+        if candidate in ALL_TIMEFRAMES:
+            return candidate
 
+    hr_match = re.search(r"\b(\d+)\s*(?:H(?:OUR)?S?)\b", msg)
+    if hr_match:
+        candidate = f"H{hr_match.group(1)}"
+        if candidate in ALL_TIMEFRAMES:
+            return candidate
+
+    for t in ALL_TIMEFRAMES:
+        if re.search(rf"\b{t}\b", msg):
+            return t
+
+    return "M15"
+
+
+def _parse_days(msg: str) -> int:
+    """Extract lookback days from uppercased message."""
+    if re.search(r"\b(1|ONE)\s*MONTH\b", msg) or "30 DAY" in msg:
+        return 30
+    if re.search(r"\b(2|TWO)\s*WEEK", msg) or "14 DAY" in msg:
+        return 14
+    if re.search(r"\b(1|ONE)\s*WEEK\b", msg) or "7 DAY" in msg:
+        return 7
+    if re.search(r"\b(3|THREE)\s*DAY", msg):
+        return 3
+    if "TODAY" in msg or re.search(r"\b1\s*DAY\b", msg):
+        return 1
+    m = re.search(r"\b(?:LAST|PAST)?\s*(\d+)\s*DAYS?\b", msg)
+    if m:
+        return min(90, max(1, int(m.group(1))))
+    return 7
+
+
+def _parse_session_and_rr(msg: str):
+    """Extract session filter and RR ratio from uppercased message."""
     session = None
     if "LONDON" in msg:
         session = "London"
-    elif "NEW YORK" in msg or "NY " in msg:
+    elif "NEW YORK" in msg or re.search(r"\bNY\b", msg):
         session = "New York"
-    elif "ASIAN" in msg or "TOKYO" in msg:
+    elif "ASIAN" in msg or "TOKYO" in msg or "ASIA" in msg:
         session = "Asian"
 
     rr = 2.0
-    m = re.search(r"1\s*:\s*(\d+(?:\.\d+)?)", msg)
+    m = re.search(r"1\s*[:/]\s*(\d+(?:\.\d+)?)", msg)
     if m:
         rr = float(m.group(1))
+    else:
+        m2 = re.search(r"\b(?:RR|R)\s*[=:]?\s*(\d+(?:\.\d+)?)\b", msg)
+        if m2:
+            rr = float(m2.group(1))
+        else:
+            m3 = re.search(r"\b(\d+(?:\.\d+)?)\s*R\b", msg)
+            if m3:
+                rr = float(m3.group(1))
 
-    return symbol, tf, days, session, rr
+    rr = max(1.0, min(rr, 20.0))
+    return session, rr
 
 
-def _analyse_losses(bt: dict) -> str:
-    """Analyse losing trade patterns and return a structured diagnosis string for Gemini."""
-    all_trades = bt.get("all_trades", bt.get("recent_trades", []))
-    losing = [t for t in all_trades if t.get("outcome") == "LOSS"]
-    winning = [t for t in all_trades if t.get("outcome") == "WIN"]
+def _extract_parameters(message: str) -> ParsedIntent:
+    """Parse user message into a ParsedIntent named tuple."""
+    msg     = message.upper()
+    symbol  = _parse_symbol(msg)
+    tf      = _parse_timeframe(msg)
+    days    = _parse_days(msg)
+    session, rr = _parse_session_and_rr(msg)
+    return ParsedIntent(symbol=symbol, tf=tf, days=days, session=session, rr=rr)
 
-    if not losing:
-        return ""
 
-    # Session pattern
-    loss_sessions = [t.get("session", "Unknown") for t in losing]
-    win_sessions  = [t.get("session", "Unknown") for t in winning]
-    session_counts = {}
-    for s in loss_sessions:
-        session_counts[s] = session_counts.get(s, 0) + 1
-    worst_session = max(session_counts, key=session_counts.get) if session_counts else "Unknown"
-    worst_session_pct = round(session_counts.get(worst_session, 0) / len(losing) * 100) if losing else 0
+# ── Intent detection ──────────────────────────────────────────────────────────
 
-    # Entry type pattern
-    loss_entry_types = [t.get("entry_type", "market") for t in losing]
-    win_entry_types  = [t.get("entry_type", "market") for t in winning]
-    market_loss_pct  = round(loss_entry_types.count("market") / len(losing) * 100) if losing else 0
-    market_win_pct   = round(win_entry_types.count("market") / len(winning) * 100) if winning else 0
+def _is_price_intent(message: str) -> bool:
+    lower = message.lower()
+    price_kw    = ["price", "quote", "bid", "ask", "live", "now", "current rate", "how much"]
+    backtest_kw = ["backtest", "win", "loss", "signal", "last", "days", "week", "month"]
+    return any(k in lower for k in price_kw) and not any(k in lower for k in backtest_kw)
 
-    # Confirmation count pattern
-    loss_conf_counts = [len(t.get("confirmations", [])) for t in losing]
-    win_conf_counts  = [len(t.get("confirmations", [])) for t in winning]
-    avg_loss_confs   = round(sum(loss_conf_counts) / len(loss_conf_counts), 1) if loss_conf_counts else 0
-    avg_win_confs    = round(sum(win_conf_counts)  / len(win_conf_counts),  1) if win_conf_counts  else 0
 
-    # Win probability pattern
-    loss_probs = [t.get("win_probability", 0) for t in losing]
-    win_probs  = [t.get("win_probability", 0) for t in winning]
-    avg_loss_prob = round(sum(loss_probs) / len(loss_probs), 1) if loss_probs else 0
-    avg_win_prob  = round(sum(win_probs)  / len(win_probs),  1) if win_probs  else 0
-
-    # Ladder milestone pattern (did losses hit any milestone before stopping out?)
-    loss_milestones = [t.get("ladder_milestone", "None") for t in losing]
-    pure_losses = loss_milestones.count("None")  # stopped out before any milestone
-
-    return (
-        f"[LOSS PATTERN ANALYSIS] "
-        f"TotalLosses={len(losing)} TotalWins={len(winning)} "
-        f"WorstSession={worst_session}({worst_session_pct}%ofLosses) "
-        f"MarketEntryLossPct={market_loss_pct}% MarketEntryWinPct={market_win_pct}% "
-        f"AvgConfirmationsOnLoss={avg_loss_confs} AvgConfirmationsOnWin={avg_win_confs} "
-        f"AvgWinProbOnLoss={avg_loss_prob}% AvgWinProbOnWin={avg_win_prob}% "
-        f"PureLosses(noMilestone)={pure_losses}/{len(losing)}"
-    )
-
+# ── Data helpers ──────────────────────────────────────────────────────────────
 
 def _get_live_price(symbol: str) -> dict:
     try:
         from app.mt5.source_router import get_fetcher
         _, get_price, _, _ = get_fetcher("auto")
         return get_price(symbol) or {}
-    except Exception:
+    except (ImportError, ConnectionError, RuntimeError) as e:
+        logger.error("Live price fetch failed for %s: %s", symbol, e)
         return {}
 
 
-def _build_context_for_gemini(message: str) -> str:
-    """Fetch real market data and inject it into the message as context for Gemini."""
-    symbol, tf, days, session, rr = _extract_parameters(message)
-    context_parts = []
-
-    # Inject live price
-    price_symbol = symbol if symbol != "ALL" else None
-    if price_symbol:
-        price = _get_live_price(price_symbol)
-        if price:
-            context_parts.append(
-                f"[LIVE PRICE {price_symbol}] Bid={price.get('bid')} Ask={price.get('ask')} Spread={price.get('spread')} pips"
-            )
-
-    # Inject backtest data
-    if symbol == "ALL":
-        # Fetch real data for all pairs and inject as context
-        for p in PAIRS:
-            try:
-                bt = run_backtest(symbol=p, timeframe=tf, days=days, session_filter=session, rr_ratio=rr)
-                if "total_signals" in bt and bt["total_signals"] > 0:
-                    context_parts.append(
-                        f"[BACKTEST {p} {tf} last {days} days] "
-                        f"Signals={bt['total_signals']} Wins={bt['wins']} Losses={bt['losses']} "
-                        f"WinRate={bt['win_rate']}% NetPips={bt['net_pips']}"
-                    )
-            except Exception as err:
-                logger.warning(f"Error backtesting {p} in context builder: {err}")
-    elif symbol in BACKTEST_SUPPORTED_LOCAL:
-        bt = run_backtest(symbol=symbol, timeframe=tf, days=days, session_filter=session, rr_ratio=rr)
-        if "total_signals" in bt and bt["total_signals"] > 0:
-            context_parts.append(
-                f"[BACKTEST {symbol} {tf} last {days} days] "
-                f"Signals={bt['total_signals']} Wins={bt['wins']} Losses={bt['losses']} "
-                f"WinRate={bt['win_rate']}% NetPips={bt['net_pips']} "
-                f"AvgWinProb={bt.get('avg_win_probability', 0)}% "
-                f"Sessions={bt.get('sessions', {})} "
-                f"TopConfirmations={bt.get('top_confirmations', [])}"
-            )
-            # Inject loss pattern analysis when win rate is below 65%
-            if bt['win_rate'] < 65:
-                loss_analysis = _analyse_losses(bt)
-                if loss_analysis:
-                    context_parts.append(loss_analysis)
-        elif "error" in bt:
-            context_parts.append(f"[BACKTEST NOTE] {bt['error']}")
-    else:
-        context_parts.append(
-            f"[NOTE] {symbol} is not in the backtest database (only Forex pairs supported for backtest). "
-            f"Live price may be available if MetaApi is connected."
-        )
-
-    if context_parts:
-        return f"[REAL MARKET DATA]\n" + "\n".join(context_parts) + f"\n\n[USER QUESTION]\n{message}"
-    return message
+def _run_live_backtest(intent: ParsedIntent) -> dict:
+    return run_backtest(
+        symbol=intent.symbol, timeframe=intent.tf, days=intent.days,
+        session_filter=intent.session, rr_ratio=intent.rr,
+    )
 
 
-def process_chat_message(message: str) -> Dict[str, Any]:
-    cleaned = message.strip()
-    if not cleaned:
-        return {"reply": "Ask me anything — live prices, backtest results, win rates, or SMC concepts like Order Blocks and FVG."}
+# ── Response formatters ───────────────────────────────────────────────────────
 
-    # Step 1 — Try Gemini with real data injected as context
-    try:
-        from app.chat.gemini_service import chat_with_gemini, get_gemini_api_key
-        if get_gemini_api_key():
-            enriched_message = _build_context_for_gemini(cleaned)
-            gemini_response = chat_with_gemini(enriched_message)
-            if gemini_response:
-                return gemini_response
-    except Exception as e:
-        logger.warning(f"Gemini failed: {e}")
-
-    # Step 2 — Gemini unavailable: run backtest/price engine directly and return real data
-    symbol, tf, days, session, rr = _extract_parameters(cleaned)
-    lower = cleaned.lower()
-
-    # Live price request
-    if any(w in lower for w in ["price", "quote", "bid", "ask", "live", "now", "current"]) \
-            and not any(w in lower for w in ["backtest", "win", "loss", "signal", "last", "days", "week", "month"]):
-        s = symbol if symbol != "ALL" else "EURUSD"
-        price = _get_live_price(s)
-        if price:
-            return {
-                "reply": (
-                    f"📊 **{s} Live Price**\n\n"
-                    f"- Bid: `{price.get('bid')}`\n"
-                    f"- Ask: `{price.get('ask')}`\n"
-                    f"- Spread: `{price.get('spread')} pips`"
-                ),
-                "data": price
-            }
-        return {"reply": f"⚠️ Could not fetch live price for {s}. Check MetaApi connection."}
-
-    # All pairs portfolio backtest
-    if symbol == "ALL":
-        lines = [
-            f"📊 **Portfolio Backtest — All Pairs on {tf}, Last {days} days**\n",
-            "| Pair | Signals | Wins | Win Rate | Net Pips |",
-            "| :--- | :---: | :---: | :---: | :---: |",
-        ]
-        total_signals, total_wins, total_pips = 0, 0, 0.0
-        for p in PAIRS:
-            try:
-                r = run_backtest(symbol=p, timeframe=tf, days=days, session_filter=session, rr_ratio=rr)
-                if "total_signals" in r:
-                    total_signals += r["total_signals"]
-                    total_wins += r["wins"]
-                    total_pips += r["net_pips"]
-                    lines.append(f"| **{p}** | {r['total_signals']} | {r['wins']} | {r['win_rate']}% | {r['net_pips']:+} pips |")
-            except Exception as err:
-                logger.warning(f"Error backtesting {p}: {err}")
-        overall_wr = round(total_wins / total_signals * 100, 1) if total_signals > 0 else 0
-        lines += ["", f"**Total:** {total_signals} signals | {total_wins} wins | **{overall_wr}% win rate** | {total_pips:+.1f} pips"]
-        return {"reply": "\n".join(lines)}
-
-    # Single pair backtest — works for ANY symbol when MetaApi is connected
-    if symbol not in BACKTEST_SUPPORTED_LOCAL:
-        # Try backtest anyway via MetaApi live candles
-        data = run_backtest(symbol=symbol, timeframe=tf, days=days, session_filter=session, rr_ratio=rr)
-        if "error" in data:
-            # MetaApi not connected or symbol not available — show live price + clear message
-            price = _get_live_price(symbol)
-            if price:
-                return {
-                    "reply": (
-                        f"📊 **{symbol} Live Price**\n\n"
-                        f"- Bid: `{price.get('bid')}`\n"
-                        f"- Ask: `{price.get('ask')}`\n"
-                        f"- Spread: `{price.get('spread')} pips`\n\n"
-                        f"⚠️ Backtest for {symbol} requires MetaApi to be connected in Settings."
-                    ),
-                    "data": price
-                }
-            return {"reply": f"⚠️ {symbol} backtest requires MetaApi connection. Connect in Settings first."}
-    else:
-        data = run_backtest(symbol=symbol, timeframe=tf, days=days, session_filter=session, rr_ratio=rr)
+def _format_backtest_result(data: dict, intent: ParsedIntent) -> Dict[str, Any]:
+    symbol, tf, days, _, rr = intent
 
     if "error" in data:
-        price = _get_live_price(symbol)
-        if price:
-            return {
-                "reply": (
-                    f"📊 **{symbol} Live Price**\n\n"
-                    f"- Bid: `{price.get('bid')}`\n"
-                    f"- Ask: `{price.get('ask')}`\n"
-                    f"- Spread: `{price.get('spread')} pips`\n\n"
-                    f"⚠️ Backtest not available for {symbol} — no historical candle data found.\n"
-                    f"For backtest, use one of: {', '.join(PAIRS)}"
-                ),
-                "data": price
-            }
         return {
             "reply": (
-                f"⚠️ **{symbol} not found.**\n\n"
-                f"Neither live price nor candle data is available for `{symbol}`.\n"
-                f"Check the symbol name — it must match exactly what your broker uses in MT5.\n\n"
-                f"Supported Forex pairs for backtest:\n"
-                + "\n".join(f"- {p}" for p in PAIRS)
-            )
-        }
-
-    total = data["total_signals"]
-    if total == 0:
-        return {
-            "reply": (
-                f"📊 **{symbol} {tf} — Last {days} days**\n\n"
-                f"No signals met the ≥60% win probability filter in this period.\n"
-                f"Try a longer period (e.g. last 30 days) or a different timeframe."
+                f"⚠️ **Backtest unavailable for {symbol} {tf}**\n\n"
+                f"{data['error']}\n\n"
+                f"Connect your MetaApi or cTrader account in **Settings** to enable live backtests."
             ),
-            "data": data
+            "data": data,
         }
 
-    wins, losses = data["wins"], data["losses"]
-    win_rate, net_pips = data["win_rate"], data["net_pips"]
-    tf_hier = data.get("timeframe_hierarchy", {})
-    sessions = data.get("sessions", {})
+    total = data.get("total_signals", 0)
+    if total == 0:
+        fc   = data.get("filter_counts", {})
+        bias = data.get("global_bias", "unknown")
+        cw   = data.get("candles_in_window", 0)
+        dominant = max(fc, key=fc.get) if fc else "unknown"
+        dominant_map = {
+            "kz":            "most candles were outside London/NY/Asian killzone hours",
+            "bias_ranging":  "market was ranging — no clear directional bias",
+            "trend_conflict":"H1 trend conflicted with H4 bias",
+            "no_structure":  "no CHoCH or BOS structure break found",
+            "no_zone":       "no Order Block or FVG entry zone found",
+            "low_prob":      "setups found but win probability score was below threshold",
+        }
+        reason = dominant_map.get(dominant, "filters were too strict for this period")
+        return {
+            "reply": (
+                f"📊 **{symbol} {tf} — Last {days} days | RR 1:{rr}**\n\n"
+                f"No signals found. Bias detected: **{bias}** | Candles analysed: **{cw}**\n\n"
+                f"Main filter blocking signals: **{reason}**\n"
+                f"Filter breakdown: {fc}\n\n"
+                f"💡 Try: `{symbol} M15 last 14 days` or `{symbol} H1 last 30 days`"
+            ),
+            "data": data,
+        }
+
+    wins      = data["wins"]
+    losses    = data["losses"]
+    win_rate  = data["win_rate"]
+    net_pips  = data["net_pips"]
+    tf_hier   = data.get("timeframe_hierarchy", {})
+    sessions  = data.get("sessions", {})
     top_confs = data.get("top_confirmations", [])
-    best = data.get("best_trade")
-    worst = data.get("worst_trade")
+    best      = data.get("best_trade")
+    worst     = data.get("worst_trade")
+    start     = data.get("start_date", "")
+    end       = data.get("end_date", "")
 
     lines = [
-        f"📊 **{symbol} Backtest — {tf} | Last {days} days**",
-        f"🔭 Hierarchy: {tf_hier.get('macro_bias_tf','H4')} bias → {tf_hier.get('intermediate_trend_tf','H1')} trend ({tf_hier.get('style','Intraday')})",
+        f"📊 **{symbol} Backtest — {tf} | {start} → {end} | RR 1:{rr}**",
+        f"🔭 Hierarchy: {tf_hier.get('macro_bias_tf', 'H4')} bias → {tf_hier.get('intermediate_trend_tf', 'H1')} trend ({tf_hier.get('style', 'Intraday')})",
         "",
         f"- **Signals:** `{total}`",
         f"- **Wins:** `{wins}` ({win_rate}%) 🟢",
-        f"- **Losses:** `{losses}` ({round(100-win_rate,1)}%) 🔴",
+        f"- **Losses:** `{losses}` ({round(100 - win_rate, 1)}%) 🔴",
         f"- **Net Pips:** `{net_pips:+}`",
         f"- **RR:** `1:{rr}`",
     ]
@@ -381,32 +253,206 @@ def process_chat_message(message: str) -> Dict[str, Any]:
     if worst:
         lines.append(f"💔 Worst: `{worst['pips']} pips` ({worst['direction']} @ {worst['entry']}, {worst['session']})")
 
-    # Dynamic recommendation based on actual data
     if win_rate >= 65:
         lines.append(f"\n✅ **Strong edge** — {symbol} {tf} has {win_rate}% win rate over {days} days.")
     elif win_rate >= 45:
         lines.append(f"\n⚠️ **Moderate edge** — Focus on {top_confs[0][0] if top_confs else 'Order Block'} setups only.")
-        # Add loss diagnosis in local fallback
-        loss_diag = _analyse_losses(data)
-        if loss_diag:
-            # Parse key metrics from the diagnosis string for readable output
-            lines.append("\n**🔍 Loss Pattern Detected:**")
-            if "WorstSession" in loss_diag:
-                import re as _re
-                ws = _re.search(r"WorstSession=(\w+\s?\w*)\(", loss_diag)
-                wp = _re.search(r"\((\d+)%ofLosses\)", loss_diag)
-                me = _re.search(r"MarketEntryLossPct=(\d+)%", loss_diag)
-                ac = _re.search(r"AvgConfirmationsOnLoss=([\d.]+)", loss_diag)
-                ap = _re.search(r"AvgWinProbOnLoss=([\d.]+)%", loss_diag)
-                if ws and wp and int(wp.group(1)) > 50:
-                    lines.append(f"- {ws.group(1)} session = {wp.group(1)}% of losses → consider blocking it")
-                if me and int(me.group(1)) > 60:
-                    lines.append(f"- {me.group(1)}% of losses are market entries → require OB/FVG entry only")
-                if ac and float(ac.group(1)) < 2.5:
-                    lines.append(f"- Avg {ac.group(1)} confirmations on losses → raise minimum to 3")
-                if ap and float(ap.group(1)) < 68:
-                    lines.append(f"- Avg win probability on losses = {ap.group(1)}% → raise filter to 70%")
     else:
         lines.append(f"\n🔴 **Weak edge** — Avoid {tf} on {symbol} this period. Try H1 or H4 instead.")
 
     return {"reply": "\n".join(lines), "data": data}
+
+
+# ── Request handlers (split from process_chat_message) ───────────────────────
+
+def _handle_price(intent: ParsedIntent) -> Dict[str, Any]:
+    s     = intent.symbol if intent.symbol != "ALL" else "EURUSD"
+    price = _get_live_price(s)
+    if price:
+        return {
+            "reply": (
+                f"📊 **{s} Live Price**\n\n"
+                f"- Bid: `{price.get('bid')}`\n"
+                f"- Ask: `{price.get('ask')}`\n"
+                f"- Spread: `{price.get('spread')} pips`"
+            ),
+            "data": price,
+        }
+    return {"reply": f"⚠️ Could not fetch live price for {s}. Check MetaApi / cTrader connection in Settings."}
+
+
+def _handle_portfolio(intent: ParsedIntent) -> Dict[str, Any]:
+    """
+    Portfolio backtest.
+    If multiple timeframes or RR values are detected, runs a comparison matrix.
+    Otherwise runs a single TF/RR table.
+    """
+    # Detect if user wants multi-TF or multi-RR comparison
+    msg = intent.tf  # already parsed primary TF
+    # We always expose M15 vs M3 and RR 1:2 vs 1:3 when user says "all pairs"
+    # and mentions both timeframes or both RR values
+    return _handle_portfolio_matrix(intent)
+
+
+def _handle_portfolio_matrix(intent: ParsedIntent) -> Dict[str, Any]:
+    """
+    Runs a full comparison matrix:
+      Rows    = all 9 pairs
+      Columns = TF x RR combinations (M15 1:2, M15 1:3, M3 1:2, M3 1:3)
+    """
+    combos = [
+        ("M15", 2.0),
+        ("M15", 3.0),
+        ("M3",  2.0),
+        ("M3",  3.0),
+    ]
+
+    # Header
+    lines = [
+        f"📊 **Portfolio Backtest — All Pairs | Last {intent.days} days**",
+        f"🔁 Comparing: M15 vs M3 | RR 1:2 vs 1:3\n",
+        "| Pair | M15 1:2 | M15 1:3 | M3 1:2 | M3 1:3 |",
+        "| :--- | :---: | :---: | :---: | :---: |",
+    ]
+
+    summary = {combo: {"signals": 0, "wins": 0, "pips": 0.0} for combo in combos}
+
+    for pair in PAIRS:
+        cells = [f"**{pair}**"]
+        for tf, rr in combos:
+            try:
+                r = _run_live_backtest(intent._replace(symbol=pair, tf=tf, rr=rr))
+                if "error" in r:
+                    cells.append("⚠️ no data")
+                elif r.get("total_signals", 0) == 0:
+                    cells.append("— 0 signals")
+                else:
+                    wr  = r["win_rate"]
+                    sig = r["total_signals"]
+                    net = r["net_pips"]
+                    icon = "🟢" if wr >= 60 else ("🟡" if wr >= 45 else "🔴")
+                    cells.append(f"{icon} {wr}% ({sig}s / {net:+.1f}p)")
+                    summary[(tf, rr)]["signals"] += r.get("total_signals", 0)
+                    summary[(tf, rr)]["wins"]    += r.get("wins", 0)
+                    summary[(tf, rr)]["pips"]    += r.get("net_pips", 0.0)
+            except (ValueError, RuntimeError, KeyError) as e:
+                logger.warning("Matrix backtest error %s %s RR%s: %s", pair, tf, rr, e)
+                cells.append("⚠️ error")
+        lines.append("| " + " | ".join(cells) + " |")
+
+    # Summary row
+    lines.append("| :--- | :---: | :---: | :---: | :---: |")
+    summary_cells = ["**TOTAL**"]
+    best_combo = None
+    best_wr    = -1.0
+    for tf, rr in combos:
+        s = summary[(tf, rr)]
+        if s["signals"] > 0:
+            wr = round(s["wins"] / s["signals"] * 100, 1)
+            summary_cells.append(f"**{wr}%** ({s['signals']}s / {s['pips']:+.1f}p)")
+            if wr > best_wr:
+                best_wr    = wr
+                best_combo = (tf, rr)
+        else:
+            summary_cells.append("— no data")
+    lines.append("| " + " | ".join(summary_cells) + " |")
+
+    # Recommendation
+    lines.append("")
+    if best_combo:
+        lines.append(f"🏆 **Best combo: {best_combo[0]} at RR 1:{int(best_combo[1])} — {best_wr}% overall win rate**")
+    else:
+        lines.append("⚠️ No live data available. Connect MetaApi or cTrader in **Settings**.")
+
+    return {"reply": "\n".join(lines)}
+
+
+def _handle_single_backtest(intent: ParsedIntent) -> Dict[str, Any]:
+    data = _run_live_backtest(intent)
+    return _format_backtest_result(data, intent)
+
+
+# ── Gemini context builder ────────────────────────────────────────────────────
+
+def _build_context_for_gemini(message: str) -> str:
+    intent = _extract_parameters(message)
+    context_parts = []
+
+    if intent.symbol and intent.symbol != "ALL":
+        price = _get_live_price(intent.symbol)
+        if price:
+            context_parts.append(
+                f"[LIVE PRICE {intent.symbol}] Bid={price.get('bid')} Ask={price.get('ask')} Spread={price.get('spread')} pips"
+            )
+
+    if intent.symbol == "ALL":
+        combos = [("M15", 2.0), ("M15", 3.0), ("M3", 2.0), ("M3", 3.0)]
+        for p in PAIRS:
+            for tf, rr in combos:
+                try:
+                    bt = _run_live_backtest(intent._replace(symbol=p, tf=tf, rr=rr))
+                    if bt.get("total_signals", 0) > 0:
+                        context_parts.append(
+                            f"[BACKTEST {p} {tf} {intent.days}d RR1:{rr}] "
+                            f"Signals={bt['total_signals']} Wins={bt['wins']} "
+                            f"WinRate={bt['win_rate']}% NetPips={bt['net_pips']}"
+                        )
+                except (ValueError, RuntimeError, KeyError) as e:
+                    logger.warning("Gemini context backtest error %s %s: %s", p, tf, e)
+    else:
+        bt = _run_live_backtest(intent)
+        if bt.get("total_signals", 0) > 0:
+            context_parts.append(
+                f"[BACKTEST {intent.symbol} {intent.tf} {intent.days}d RR1:{intent.rr}] "
+                f"Signals={bt['total_signals']} Wins={bt['wins']} Losses={bt['losses']} "
+                f"WinRate={bt['win_rate']}% NetPips={bt['net_pips']} "
+                f"AvgWinProb={bt.get('avg_win_probability', 0)}% "
+                f"Sessions={bt.get('sessions', {})} TopConfs={bt.get('top_confirmations', [])}"
+            )
+        elif "error" in bt:
+            context_parts.append(f"[BACKTEST ERROR] {bt['error']}")
+
+    if context_parts:
+        return "[REAL MARKET DATA]\n" + "\n".join(context_parts) + f"\n\n[USER QUESTION]\n{message}"
+    return message
+
+
+# ── Main entry point ──────────────────────────────────────────────────────────
+
+def _is_backtest_intent(message: str) -> bool:
+    lower = message.lower()
+    return any(k in lower for k in [
+        "backtest", "back test", "last", "days", "week", "month",
+        "win rate", "signals", "result", "performance", "pips",
+    ])
+
+
+def process_chat_message(message: str) -> Dict[str, Any]:
+    cleaned = message.strip()
+    if not cleaned:
+        return {"reply": "Ask me anything — live prices, backtest results, win rates, or SMC concepts."}
+
+    intent = _extract_parameters(cleaned)
+
+    # Backtest and price requests: always handle locally with real engine data
+    # Never let Gemini rewrite/summarize numerical results — it hallucinates numbers
+    if _is_price_intent(cleaned):
+        return _handle_price(intent)
+
+    if intent.symbol == "ALL":
+        return _handle_portfolio(intent)
+
+    if _is_backtest_intent(cleaned):
+        return _handle_single_backtest(intent)
+
+    # Step 3: Non-data questions (SMC concepts, strategy questions) — use Gemini
+    try:
+        from app.chat.gemini_service import chat_with_gemini, get_gemini_api_key
+        if get_gemini_api_key():
+            response = chat_with_gemini(_build_context_for_gemini(cleaned))
+            if response:
+                return response
+    except (ImportError, ConnectionError, RuntimeError) as e:
+        logger.warning("Gemini failed: %s", e)
+
+    return _handle_single_backtest(intent)

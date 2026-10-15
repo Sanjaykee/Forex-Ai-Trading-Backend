@@ -5,7 +5,7 @@ from app.api.routes.auth        import router as auth_router
 from app.api.routes.signals     import router as signals_router
 from app.api.routes.other_routes import (
     trades_router, performance_router,
-    settings_router, pairs_router
+    settings_router, pairs_router, backtest_router
 )
 from app.api.routes.chat import router as chat_router
 from app.api.routes.telegram_webhook import router as telegram_router
@@ -45,6 +45,7 @@ app.include_router(trades_router)
 app.include_router(performance_router)
 app.include_router(settings_router)
 app.include_router(pairs_router)
+app.include_router(backtest_router)
 app.include_router(chat_router)
 app.include_router(telegram_router)
 

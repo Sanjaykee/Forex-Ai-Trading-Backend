@@ -32,7 +32,7 @@ class MetaApiClient:
                     if not self._account_id and u.metaapi_account_id:
                         self._account_id = u.metaapi_account_id
                     if not self._region:
-                        self._region = crud.get_setting(db, u.id, "metaapi_region") or "backup-new-york"
+                        self._region = crud.get_setting(db, u.id, "metaapi_region") or "new-york"
                 db.close()
             except Exception:
                 pass
@@ -105,13 +105,29 @@ class MetaApiClient:
             return {}
         url = f"{self.client_base_url}/symbols/{symbol}/current-price"
         try:
-            res = requests.get(url, headers=self.headers, timeout=8)
+            res = requests.get(url, headers=self.headers, timeout=15)
             if res.status_code == 200:
                 data = res.json()
                 bid = data.get("bid", 0.0)
                 ask = data.get("ask", 0.0)
                 spread = round((ask - bid) * (100 if "JPY" in symbol else 10000), 1)
                 return {"bid": bid, "ask": ask, "spread": spread}
+            return {}
+        except requests.exceptions.Timeout:
+            # Primary region timed out — try alternate region once
+            alt_region = "new-york" if "backup" in self.region else "backup-new-york"
+            alt_url = f"https://mt-client-api-v1.{alt_region}.agiliumtrade.ai/users/current/accounts/{self.account_id.strip()}/symbols/{symbol}/current-price"
+            try:
+                res = requests.get(alt_url, headers=self.headers, timeout=15)
+                if res.status_code == 200:
+                    data = res.json()
+                    bid = data.get("bid", 0.0)
+                    ask = data.get("ask", 0.0)
+                    spread = round((ask - bid) * (100 if "JPY" in symbol else 10000), 1)
+                    logger.info(f"MetaApi get_live_price succeeded via fallback region {alt_region}")
+                    return {"bid": bid, "ask": ask, "spread": spread}
+            except Exception as e2:
+                logger.error(f"MetaApi get_live_price fallback also failed: {e2}")
             return {}
         except Exception as e:
             logger.error(f"MetaApi get_live_price failed: {e}")
@@ -124,31 +140,44 @@ class MetaApiClient:
 
         # Map MT5 timeframes to MetaApi format (e.g., "15m", "1h", "4h", "1d")
         tf_map = {
-            "M1": "1m", "M5": "5m", "M15": "15m", "M30": "30m",
+            "M1": "1m", "M3": "3m", "M5": "5m", "M15": "15m", "M30": "30m",
             "H1": "1h", "H4": "4h", "D1": "1d"
         }
         meta_tf = tf_map.get(timeframe.upper(), "15m")
         url = f"{self.market_base_url}/historical-market-data/symbols/{symbol}/timeframes/{meta_tf}/candles"
         params = {"limit": min(count, 1000)}
 
+        def _parse_candles(candles) -> pd.DataFrame:
+            if not candles:
+                return pd.DataFrame()
+            df = pd.DataFrame(candles)
+            if "time" in df.columns:
+                df["time"] = pd.to_datetime(df["time"])
+            if "tickVolume" in df.columns:
+                df.rename(columns={"tickVolume": "volume"}, inplace=True)
+            elif "volume" not in df.columns:
+                df["volume"] = 100
+            return df[["time", "open", "high", "low", "close", "volume"]]
+
         try:
-            res = requests.get(url, headers=self.headers, params=params, timeout=12)
+            res = requests.get(url, headers=self.headers, params=params, timeout=20)
             if res.status_code == 200:
-                candles = res.json()
-                if not candles:
-                    return pd.DataFrame()
-                df = pd.DataFrame(candles)
-                # MetaApi returns time, open, high, low, close, tickVolume
-                if "time" in df.columns:
-                    df["time"] = pd.to_datetime(df["time"])
-                if "tickVolume" in df.columns:
-                    df.rename(columns={"tickVolume": "volume"}, inplace=True)
-                elif "volume" not in df.columns:
-                    df["volume"] = 100
-                return df[["time", "open", "high", "low", "close", "volume"]]
+                return _parse_candles(res.json())
+            logger.error("MetaApi get_candles HTTP %d for %s %s: %s", res.status_code, symbol, timeframe, res.text[:200])
+            return pd.DataFrame()
+        except requests.exceptions.Timeout:
+            alt_region = "backup-new-york" if self.region == "new-york" else "new-york"
+            alt_url = f"https://mt-market-data-client-api-v1.{alt_region}.agiliumtrade.ai/users/current/accounts/{self.account_id.strip()}/historical-market-data/symbols/{symbol}/timeframes/{meta_tf}/candles"
+            try:
+                res = requests.get(alt_url, headers=self.headers, params=params, timeout=20)
+                if res.status_code == 200:
+                    logger.info(f"MetaApi get_candles succeeded via fallback region {alt_region} for {symbol} {timeframe}")
+                    return _parse_candles(res.json())
+            except Exception as e2:
+                logger.error(f"MetaApi get_candles fallback also failed for {symbol} {timeframe}: {e2}")
             return pd.DataFrame()
         except Exception as e:
-            logger.error(f"MetaApi get_candles failed: {e}")
+            logger.error(f"MetaApi get_candles failed for {symbol} {timeframe}: {e}")
             return pd.DataFrame()
 
     def place_order(self, symbol: str, direction: str, lot: float, sl: float = None, tp: float = None, comment: str = "ForexAI") -> dict:
