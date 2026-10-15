@@ -2,7 +2,6 @@
 Backtest Engine — Simulates SMC strategy execution candle-by-candle on intraday & swing timeframes.
 Computes Win/Loss ratio, Pips gained, Session analytics, and Multi-Timeframe Institutional Win Probability.
 """
-from pathlib import Path
 from datetime import datetime, timezone
 from typing import Dict, Any, Optional
 import pandas as pd
@@ -16,8 +15,6 @@ from app.analysis.smc.order_block import detect_order_block
 from app.analysis.smc.fvg import detect_fvg
 from app.analysis.support_resistance import detect_sr_zones
 from app.analysis.price_action import detect_price_action
-
-SAMPLE_DIR = Path(__file__).resolve().parents[2] / "sample_data"
 
 # Universal Multi-Timeframe Triad Hierarchy Matrix
 TIMEFRAME_HIERARCHY = {
@@ -98,44 +95,46 @@ def _normalize_df(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def _load_candles(symbol: str, timeframe: str) -> pd.DataFrame:
-    """Load candles: local CSV first for fast instant backtests, then MetaApi for extra symbols (Gold, BTC, etc.), then MT5."""
-    # 1. Local CSV sample data (instant response, 0 network latency)
-    csv_path = SAMPLE_DIR / f"{symbol}_{timeframe}.csv"
-    if csv_path.exists():
+    """Load live candles — MetaApi first, cTrader second. No local files."""
+    from app.db.database import SessionLocal
+    from app.db.models import User
+    try:
+        db = SessionLocal()
+        user = db.query(User).first()
+        db.close()
+    except Exception:
+        user = None
+
+    # 1. MetaApi
+    if user and user.metaapi_token and user.metaapi_account_id:
         try:
-            df = pd.read_csv(csv_path)
-            normalized = _normalize_df(df)
-            if not normalized.empty and len(normalized) >= 50:
-                return normalized
+            from app.mt5.metaapi_client import MetaApiClient
+            client = MetaApiClient(token=user.metaapi_token, account_id=user.metaapi_account_id)
+            if client.is_configured:
+                df = client.get_candles(symbol, timeframe, count=1000)
+                if not df.empty and len(df) >= 50:
+                    return _normalize_df(df)
         except Exception:
             pass
 
-    # 2. MetaApi Cloud (for non-standard pairs like Gold XAUUSD, BTC, etc.)
-    try:
-        from app.mt5.metaapi_client import MetaApiClient
-        from app.db.database import SessionLocal
-        from app.db.models import User
-        db = SessionLocal()
-        user = db.query(User).filter(
-            User.metaapi_token != None,
-            User.metaapi_account_id != None
-        ).first()
-        db.close()
-        if user and user.metaapi_token and user.metaapi_account_id:
-            client = MetaApiClient(token=user.metaapi_token, account_id=user.metaapi_account_id)
+    # 2. cTrader
+    if user and user.ctrader_client_id and user.ctrader_client_secret and user.ctrader_account_id:
+        try:
+            from app.mt5.ctrader_client import CTraderClient
+            client = CTraderClient(
+                client_id=user.ctrader_client_id,
+                client_secret=user.ctrader_client_secret,
+                account_id=user.ctrader_account_id,
+                server=user.ctrader_server or "demo.ctrader.com",
+            )
             if client.is_configured:
-                df = client.get_candles(symbol, timeframe, count=500)
+                df = client.get_candles(symbol, timeframe, count=1000)
                 if not df.empty and len(df) >= 50:
                     return _normalize_df(df)
-    except Exception:
-        pass
+        except Exception:
+            pass
 
-    # 3. Local MT5 terminal
-    try:
-        from app.mt5.data_fetcher import get_candles
-        return _normalize_df(get_candles(symbol, timeframe, 10000))
-    except Exception:
-        return pd.DataFrame()
+    return pd.DataFrame()
 
 
 def _get_pip_sizes(symbol: str):
@@ -187,7 +186,17 @@ def run_backtest(
     """
     df = _load_candles(symbol, timeframe)
     if df.empty or len(df) < 50:
-        return {"error": f"Insufficient historical candle data for {symbol} on {timeframe}."}
+        return {
+            "error": f"No data available for {symbol} {timeframe}. Connect your MetaApi account in Settings to run backtests.",
+            "symbol": symbol,
+            "timeframe": timeframe,
+            "days": days,
+            "total_signals": 0,
+            "wins": 0,
+            "losses": 0,
+            "win_rate": 0.0,
+            "net_pips": 0.0,
+        }
 
     # Filter for the last N days
     latest_time = df["time"].max()
