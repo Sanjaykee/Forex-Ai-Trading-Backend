@@ -1,8 +1,7 @@
 """
-Real-Time Trade & Profit Ladder Monitor
+Real-Time Trade Monitor
 Runs continuously in the background, monitoring all active trades against live market ticks.
-Automatically ratchets Stop Loss to Breakeven at TP1, closes trades at TP targets or SL,
-updates the database performance records, and sends instant milestone alerts to Telegram.
+Closes trades at full TP (WIN) or original SL (LOSS). Pure 1:RR — no breakeven ratchet, no partial closes.
 """
 
 import asyncio
@@ -11,7 +10,7 @@ from datetime import datetime
 from app.db.database import SessionLocal
 from app.db import models
 from app.mt5.source_router import get_fetcher
-from app.notifications.telegram_bot import send_tp1_alert, send_trade_closed_alert
+from app.notifications.telegram_bot import send_trade_closed_alert
 
 logger = logging.getLogger(__name__)
 
@@ -28,9 +27,8 @@ async def monitor_open_trades_loop():
 async def check_open_trades():
     db = SessionLocal()
     try:
-        # Fetch trades with OPEN or TP1_HIT status
         active_trades = db.query(models.Trade).filter(
-            models.Trade.result.in_(["OPEN", "TP1_HIT"])
+            models.Trade.result == "OPEN"
         ).all()
 
         if not active_trades:
@@ -71,15 +69,6 @@ async def check_open_trades():
                 else:
                     pip_size = 0.0001
 
-                sl_distance = abs(entry - sl) if sl > 0 else 25 * pip_size
-
-                # TP1 milestone fires at actual_rr (matches signal engine Dynamic Ladder M1)
-                actual_rr = float(trade.actual_rr or 2.0)
-                if direction == "BUY":
-                    tp1_target = entry + (sl_distance * actual_rr)
-                else:
-                    tp1_target = entry - (sl_distance * actual_rr)
-
                 # Fetch user for Telegram alerts
                 user = db.query(models.User).filter(models.User.id == trade.user_id).first()
                 chat_id = user.telegram_chat_id if user else None
@@ -90,7 +79,7 @@ async def check_open_trades():
                 hit_tp = (current_price >= tp) if direction == "BUY" else (current_price <= tp)
                 if tp > 0 and hit_tp:
                     actual_rr = trade.actual_rr or 3.0
-                    profit_usd = round(trade.risk_usd * actual_rr, 2)
+                    profit_usd = round(float(trade.risk_usd or 1.0) * actual_rr, 2)
                     pips = round(abs(current_price - entry) / pip_size, 1)
 
                     trade.close_price = current_price
@@ -121,9 +110,8 @@ async def check_open_trades():
                 # ==============================================================
                 hit_sl = (current_price <= sl) if direction == "BUY" else (current_price >= sl)
                 if sl > 0 and hit_sl:
-                    is_breakeven = (trade.result == "TP1_HIT")
-                    profit_usd = 0.0 if is_breakeven else round(-abs(trade.risk_usd), 2)
-                    result_status = "BREAKEVEN" if is_breakeven else "LOSS"
+                    profit_usd = round(-abs(float(trade.risk_usd or 1.0)), 2)
+                    result_status = "LOSS"
                     pips = round(abs(current_price - entry) / pip_size, 1)
 
                     trade.close_price = current_price
@@ -149,32 +137,6 @@ async def check_open_trades():
                         )
                     continue
 
-                # ==============================================================
-                # 3. CHECK MILESTONE 1 (TP1) -> RATCHET SL TO BREAKEVEN
-                # ==============================================================
-                if trade.result == "OPEN":
-                    hit_tp1 = (current_price >= tp1_target) if direction == "BUY" else (current_price <= tp1_target)
-                    if hit_tp1:
-                        # Move Stop Loss to Entry price (Risk-free Breakeven)
-                        trade.stop_loss = entry
-                        trade.result = "TP1_HIT"
-                        db.commit()
-
-                        pips = round(abs(current_price - entry) / pip_size, 1)
-                        logger.info(f"[TradeMonitor] Trade #{trade.id} ({symbol}) REACHED TP1 (+{pips} pips). SL moved to Breakeven.")
-                        if chat_id:
-                            send_tp1_alert(
-                                chat_id=chat_id,
-                                trade={
-                                    "symbol": symbol,
-                                    "direction": direction,
-                                    "entry": entry,
-                                    "current_price": current_price,
-                                    "breakeven_sl": entry,
-                                    "pips": pips,
-                                    "ticket": trade.mt5_ticket or str(trade.id),
-                                }
-                            )
 
             except Exception as trade_err:
                 logger.error(f"[TradeMonitor] Error processing trade #{trade.id}: {trade_err}")
@@ -254,8 +216,7 @@ def activate_trade_from_signal(db, user_id: int, signal_id: int) -> dict:
 *Take Profit:* `{trade.take_profit}`
 *Risk:* ${trade.risk_usd:.2f} | *Target RR:* 1:{rr_val}
 
-🛡️ *Background Price Monitor Active:*
-When price hits TP1 (+25 pips), Stop Loss will automatically ratchet to Breakeven (100% Risk-Free)!
+📊 *Price monitor active — trade will close at full TP or SL.*
 """
         from app.notifications.telegram_bot import _get_token
         import requests

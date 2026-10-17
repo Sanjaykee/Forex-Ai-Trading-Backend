@@ -20,7 +20,12 @@ def scan(db: Session = Depends(get_db), user=Depends(get_current_user)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Scan failed: {str(e)}")
 
-    # Save new signals to DB and send Telegram alerts
+    # Load user's actual risk settings
+    risk_usd = float(crud.get_setting(db, user.id, "max_risk_usd") or 1.0)
+    rr_ratio = float(crud.get_setting(db, user.id, "rr_ratio") or 3.0)
+    rr_key   = f"tp_1_{int(rr_ratio)}" if int(rr_ratio) in (2, 3, 5) else "tp_1_3"
+
+    from app.risk.position_sizer import calculate_lot_size
     from app.db.models import Signal as SignalModel
     pending_symbols = {
         s.symbol for s in db.query(SignalModel).filter(
@@ -34,19 +39,30 @@ def scan(db: Session = Depends(get_db), user=Depends(get_current_user)):
         if key in pending_symbols:
             continue
         try:
+            entry = float(r.get("entry_price") or r.get("entry") or 0)
+            sl    = float(r.get("stop_loss")   or r.get("sl")    or 0)
+            tp    = float(r.get(rr_key) or r.get("tp_1_3") or 0)
+            lot   = calculate_lot_size(
+                risk_usd=risk_usd,
+                entry=entry,
+                stop_loss=sl,
+                symbol_info={"volume_min": 0.01, "volume_step": 0.01},
+                symbol=r["symbol"]
+            ) if entry and sl else 0.01
+
             signal_data = {
                 "user_id":          user.id,
                 "symbol":           r["symbol"],
                 "direction":        r["direction"],
                 "strategy":         r.get("pattern_name"),
-                "entry_price":      r.get("entry"),
-                "stop_loss":        r.get("sl"),
-                "take_profit":      r.get("tp_1_3"),   # default 1:3
+                "entry_price":      entry,
+                "stop_loss":        sl,
+                "take_profit":      tp,
                 "sl_pips":          r.get("sl_pips"),
                 "tp_pips":          None,
-                "rr_ratio":         "1:3",
-                "lot_size":         None,
-                "risk_usd":         1.0,
+                "rr_ratio":         f"1:{int(rr_ratio)}",
+                "lot_size":         lot,
+                "risk_usd":         risk_usd,
                 "h4_trend":         r.get("htf_bias"),
                 "h1_trend":         None,
                 "session":          r.get("session"),
@@ -58,8 +74,13 @@ def scan(db: Session = Depends(get_db), user=Depends(get_current_user)):
             if getattr(user, "telegram_chat_id", None):
                 try:
                     from app.notifications.telegram_bot import send_signal_alert
-                    r["id"] = saved.id
-                    send_signal_alert(user.telegram_chat_id, r)
+                    alert_payload = dict(r)
+                    alert_payload["id"]       = saved.id
+                    alert_payload["risk_usd"] = risk_usd
+                    alert_payload["rr_ratio"] = f"1:{int(rr_ratio)}"
+                    alert_payload["lot_size"] = lot
+                    alert_payload["take_profit"] = tp
+                    send_signal_alert(user.telegram_chat_id, alert_payload)
                 except Exception:
                     pass
         except Exception:

@@ -53,8 +53,10 @@ app.include_router(telegram_router)
 async def startup_event():
     import asyncio
     from app.signals.trade_monitor import monitor_open_trades_loop
+    from app.signals.auto_scanner import auto_scan_loop
     asyncio.create_task(monitor_open_trades_loop())
-    logger.info("[Startup] Real-Time Trade & Profit Monitor background task initiated.")
+    asyncio.create_task(auto_scan_loop())
+    logger.info("[Startup] Trade monitor + Auto-scanner background tasks started.")
 
 @app.get("/")
 def root():

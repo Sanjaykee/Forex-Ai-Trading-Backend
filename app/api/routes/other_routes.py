@@ -21,7 +21,7 @@ def get_performance(db: Session = Depends(get_db), user=Depends(get_current_user
 @settings_router.get("/")
 def get_settings(db: Session = Depends(get_db), user=Depends(get_current_user)):
     keys = ["max_risk_usd", "max_trades_day", "max_losses_day", "rr_ratio",
-            "london_session", "newyork_session", "telegram_alerts", "data_source"]
+            "london_session", "newyork_session", "telegram_alerts", "data_source", "execution_mode"]
     res = {k: crud.get_setting(db, user.id, k) for k in keys}
     res["mt5_login"] = user.mt5_login or ""
     res["mt5_server"] = user.mt5_server or ""

@@ -7,6 +7,13 @@ import logging
 import pandas as pd
 import numpy as np
 from typing import Optional
+from datetime import datetime, timezone
+
+# ── In-memory candle cache ────────────────────────────────────────────────────
+# Structure: { "EURUSD_M15": {"df": DataFrame, "fetched_at": datetime} }
+_candle_cache: dict = {}
+CACHE_TTL_HOURS  = 4   # full refresh every 4 hours
+CACHE_TAIL_FETCH = 5   # candles fetched on incremental update
 
 logger = logging.getLogger(__name__)
 
@@ -42,12 +49,13 @@ def _session(hour: int) -> str:
     return "Off-Session"
 
 
-def _load_live(symbol: str, tf: str, count: int) -> pd.DataFrame:
-    """Load latest candles from MetaApi."""
+def _get_client():
+    """Return configured MetaApiClient or None."""
     from app.db.database import SessionLocal
     from app.db.models   import User
     from app.db          import crud
     from app.config      import settings as _cfg
+    from app.mt5.metaapi_client import MetaApiClient
 
     user = None
     region = "backup-new-york"
@@ -63,23 +71,71 @@ def _load_live(symbol: str, tf: str, count: int) -> pd.DataFrame:
 
     token      = (user.metaapi_token      if user else None) or _cfg.METAAPI_TOKEN      or ""
     account_id = (user.metaapi_account_id if user else None) or _cfg.METAAPI_ACCOUNT_ID or ""
-
     if not token or not account_id:
+        return None
+    return MetaApiClient(token=token, account_id=account_id, region=region)
+
+
+def _normalise(df: pd.DataFrame) -> pd.DataFrame:
+    """Ensure time is tz-naive UTC and rows are sorted."""
+    t = pd.to_datetime(df["time"], errors="coerce")
+    if getattr(t.dt, "tz", None) is not None:
+        t = t.dt.tz_convert("UTC").dt.tz_localize(None)
+    df = df.copy()
+    df["time"] = t
+    return df.dropna(subset=["time"]).sort_values("time").reset_index(drop=True)
+
+
+def _load_live(symbol: str, tf: str, count: int) -> pd.DataFrame:
+    """
+    Load candles with in-memory cache.
+    First call / cache expired (>4h): full fetch of `count` candles.
+    Subsequent calls within TTL: fetch only last 5 candles and merge.
+    """
+    from app.analysis.indicators import add_indicators
+
+    key   = f"{symbol}_{tf}"
+    now   = datetime.now(timezone.utc)
+    entry = _candle_cache.get(key)
+
+    need_full = (
+        entry is None or
+        (now - entry["fetched_at"]).total_seconds() > CACHE_TTL_HOURS * 3600
+    )
+
+    client = _get_client()
+    if client is None:
         return pd.DataFrame()
 
     try:
-        from app.mt5.metaapi_client import MetaApiClient
-        from app.analysis.indicators import add_indicators
-        client = MetaApiClient(token=token, account_id=account_id, region=region)
-        df = client.get_candles(symbol, tf, count=count)
-        if df.empty or len(df) < 30:
+        if need_full:
+            raw = client.get_candles(symbol, tf, count=count)
+            if raw.empty or len(raw) < 30:
+                return pd.DataFrame()
+            df = _normalise(raw)
+            _candle_cache[key] = {"df": df, "fetched_at": now}
+            logger.debug("[Cache] Full fetch %s %s — %d candles", symbol, tf, len(df))
+        else:
+            raw_new = client.get_candles(symbol, tf, count=CACHE_TAIL_FETCH)
+            cached  = entry["df"]
+            if raw_new.empty:
+                df = cached
+            else:
+                new_df   = _normalise(raw_new)
+                combined = pd.concat([cached, new_df], ignore_index=True)
+                combined = combined.drop_duplicates(subset=["time"]) \
+                                   .sort_values("time") \
+                                   .tail(count) \
+                                   .reset_index(drop=True)
+                _candle_cache[key] = {"df": combined, "fetched_at": now}
+                df = combined
+                logger.debug("[Cache] Incremental %s %s — +%d new, total %d",
+                             symbol, tf, len(new_df), len(df))
+
+        if len(df) < 30:
             return pd.DataFrame()
-        t = pd.to_datetime(df["time"], errors="coerce")
-        if getattr(t.dt, "tz", None) is not None:
-            t = t.dt.tz_convert("UTC").dt.tz_localize(None)
-        df["time"] = t
-        df = df.dropna(subset=["time"]).sort_values("time").reset_index(drop=True)
         return add_indicators(df)
+
     except Exception as e:
         logger.error("Live load %s %s: %s", symbol, tf, e)
         return pd.DataFrame()
