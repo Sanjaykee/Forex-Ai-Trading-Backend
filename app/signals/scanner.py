@@ -130,9 +130,10 @@ def scan_pair(symbol: str, tf: str = "M15") -> Optional[dict]:
     in_kz, kz_name = _in_killzone(hour)
     sess = _session(hour)
 
-    if not in_kz:
-        # Outside killzone — still scan but score will be lower (no +15 bonus)
-        pass  # do not return None
+    if sess == "Off-Session":
+        return None  # Off-Session = low quality, skip
+
+    # Outside killzone but still in London/NY/Asian — score only, no hard block
 
     # Candle slices
     sl60 = df.tail(60)

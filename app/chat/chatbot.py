@@ -238,10 +238,12 @@ def _format_backtest_result(data: dict, intent: ParsedIntent) -> Dict[str, Any]:
     ]
 
     if sessions:
-        lines.append("\n**Sessions:**")
+        lines.append("\n**Session Breakdown:**")
+        lines.append("| Session | Signals | Wins | WR% |")
+        lines.append("| :--- | :---: | :---: | :---: |")
         for s_name, s_data in sessions.items():
-            icon = "🟢" if s_data["win_rate"] >= 50 else "🔴"
-            lines.append(f"- {s_name}: {s_data['wins']}/{s_data['total']} ({s_data['win_rate']}%) {icon}")
+            icon = "🟢" if s_data["win_rate"] >= 60 else ("🟡" if s_data["win_rate"] >= 45 else "🔴")
+            lines.append(f"| {s_name} | {s_data['total']} | {s_data['wins']} | {icon} {s_data['win_rate']}% |")
 
     if top_confs:
         lines.append("\n**Top Confirmations:**")
@@ -299,6 +301,7 @@ def _handle_portfolio(intent: ParsedIntent) -> Dict[str, Any]:
 
     total_sig = total_w = total_l = 0
     total_pips = 0.0
+    session_agg = {"London": {"w": 0, "t": 0}, "New York": {"w": 0, "t": 0}, "Asian": {"w": 0, "t": 0}, "Off-Session": {"w": 0, "t": 0}}
 
     for pair in PAIRS:
         try:
@@ -317,6 +320,11 @@ def _handle_portfolio(intent: ParsedIntent) -> Dict[str, Any]:
                 total_w    += w
                 total_l    += l
                 total_pips += net
+                for sn in ("London", "New York", "Asian", "Off-Session"):
+                    sd = r.get("sessions", {}).get(sn)
+                    if sd:
+                        session_agg[sn]["w"] += sd["wins"]
+                        session_agg[sn]["t"] += sd["total"]
         except Exception as e:
             logger.warning("Portfolio backtest error %s: %s", pair, e)
             lines.append(f"| **{pair}** | ⚠️ error | — | — | — | — |")
@@ -324,6 +332,20 @@ def _handle_portfolio(intent: ParsedIntent) -> Dict[str, Any]:
     overall_wr = round(total_w / total_sig * 100, 1) if total_sig else 0
     icon_total = "🟢" if overall_wr >= 60 else ("🟡" if overall_wr >= 45 else "🔴")
     lines.append(f"| **TOTAL** | **{total_sig}** | **{total_w}** | **{total_l}** | {icon_total} **{overall_wr}%** | **{total_pips:+.1f}p** |")
+
+    # Session breakdown
+    lines.append("\n**Session Breakdown (All Pairs Combined):**")
+    lines.append("| Session | Signals | Wins | WR% |")
+    lines.append("| :--- | :---: | :---: | :---: |")
+    for sn in ("London", "New York", "Asian", "Off-Session"):
+        t = session_agg[sn]["t"]
+        w = session_agg[sn]["w"]
+        if t > 0:
+            wr  = round(w / t * 100, 1)
+            icon = "🟢" if wr >= 60 else ("🟡" if wr >= 45 else "🔴")
+            lines.append(f"| {sn} | {t} | {w} | {icon} {wr}% |")
+        else:
+            lines.append(f"| {sn} | 0 | — | — |")
 
     lines.append("")
     if total_sig == 0:

@@ -221,11 +221,13 @@ def run_backtest(
         sess    = _session(hour)
         in_kz, kz_name = _in_killzone(hour)
 
-        # Session filter — only hard-block if user explicitly set a session
+        # Session filter — block Off-Session, only allow London, NY, Asian
         if session_filter:
             if session_filter.upper() not in sess.upper():
                 fc["kz"] += 1; continue
-        # No session_filter = killzone only affects score, never blocks
+        else:
+            if sess == "Off-Session":
+                fc["kz"] += 1; continue
 
         # Candle slices
         sl60 = df.iloc[max(0, i - 59): i + 1]
@@ -380,7 +382,7 @@ def run_backtest(
 
     # Session breakdown
     sessions = {}
-    for sn in ("London", "New York", "Asian"):
+    for sn in ("London", "New York", "Asian", "Off-Session"):
         st = [t for t in trades if t["session"] == sn]
         if st:
             sw = len([t for t in st if t["outcome"] == "WIN"])
