@@ -221,13 +221,11 @@ def run_backtest(
         sess    = _session(hour)
         in_kz, kz_name = _in_killzone(hour)
 
-        # Session filter
+        # Session filter — only hard-block if user explicitly set a session
         if session_filter:
             if session_filter.upper() not in sess.upper():
                 fc["kz"] += 1; continue
-        else:
-            if not in_kz:
-                fc["kz"] += 1; continue
+        # No session_filter = killzone only affects score, never blocks
 
         # Candle slices
         sl60 = df.iloc[max(0, i - 59): i + 1]

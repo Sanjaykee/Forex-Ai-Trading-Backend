@@ -283,86 +283,55 @@ def _handle_price(intent: ParsedIntent) -> Dict[str, Any]:
 
 def _handle_portfolio(intent: ParsedIntent) -> Dict[str, Any]:
     """
-    Portfolio backtest.
-    If multiple timeframes or RR values are detected, runs a comparison matrix.
-    Otherwise runs a single TF/RR table.
+    Portfolio backtest — all 9 pairs on the user's exact TF and RR.
+    Simple table: one column per pair, user's TF and RR only.
     """
-    # Detect if user wants multi-TF or multi-RR comparison
-    msg = intent.tf  # already parsed primary TF
-    # We always expose M15 vs M3 and RR 1:2 vs 1:3 when user says "all pairs"
-    # and mentions both timeframes or both RR values
-    return _handle_portfolio_matrix(intent)
+    tf   = intent.tf
+    rr   = intent.rr
+    days = intent.days
 
-
-def _handle_portfolio_matrix(intent: ParsedIntent) -> Dict[str, Any]:
-    """
-    Runs a full comparison matrix:
-      Rows    = all 9 pairs
-      Columns = TF x RR combinations (M15 1:2, M15 1:3, M3 1:2, M3 1:3)
-    """
-    combos = [
-        ("M15", 2.0),
-        ("M15", 3.0),
-        ("M3",  2.0),
-        ("M3",  3.0),
-    ]
-
-    # Header
+    day_label = "Today" if days == 1 else f"Last {days} days"
     lines = [
-        f"📊 **Portfolio Backtest — All Pairs | Last {intent.days} days**",
-        f"🔁 Comparing: M15 vs M3 | RR 1:2 vs 1:3\n",
-        "| Pair | M15 1:2 | M15 1:3 | M3 1:2 | M3 1:3 |",
-        "| :--- | :---: | :---: | :---: | :---: |",
+        f"📊 **Portfolio Backtest — All Pairs | {day_label} | {tf} | RR 1:{rr}**\n",
+        "| Pair | Signals | Wins | Losses | WR% | Net Pips |",
+        "| :--- | :---: | :---: | :---: | :---: | :---: |",
     ]
 
-    summary = {combo: {"signals": 0, "wins": 0, "pips": 0.0} for combo in combos}
+    total_sig = total_w = total_l = 0
+    total_pips = 0.0
 
     for pair in PAIRS:
-        cells = [f"**{pair}**"]
-        for tf, rr in combos:
-            try:
-                r = _run_live_backtest(intent._replace(symbol=pair, tf=tf, rr=rr))
-                if "error" in r:
-                    cells.append("⚠️ no data")
-                elif r.get("total_signals", 0) == 0:
-                    cells.append("— 0 signals")
-                else:
-                    wr  = r["win_rate"]
-                    sig = r["total_signals"]
-                    net = r["net_pips"]
-                    icon = "🟢" if wr >= 60 else ("🟡" if wr >= 45 else "🔴")
-                    cells.append(f"{icon} {wr}% ({sig}s / {net:+.1f}p)")
-                    summary[(tf, rr)]["signals"] += r.get("total_signals", 0)
-                    summary[(tf, rr)]["wins"]    += r.get("wins", 0)
-                    summary[(tf, rr)]["pips"]    += r.get("net_pips", 0.0)
-            except (ValueError, RuntimeError, KeyError) as e:
-                logger.warning("Matrix backtest error %s %s RR%s: %s", pair, tf, rr, e)
-                cells.append("⚠️ error")
-        lines.append("| " + " | ".join(cells) + " |")
+        try:
+            r = _run_live_backtest(intent._replace(symbol=pair))
+            if "error" in r or r.get("total_signals", 0) == 0:
+                lines.append(f"| **{pair}** | 0 | — | — | — | — |")
+            else:
+                sig  = r["total_signals"]
+                w    = r["wins"]
+                l    = r["losses"]
+                wr   = r["win_rate"]
+                net  = r["net_pips"]
+                icon = "🟢" if wr >= 60 else ("🟡" if wr >= 45 else "🔴")
+                lines.append(f"| **{pair}** | {sig} | {w} | {l} | {icon} {wr}% | {net:+.1f}p |")
+                total_sig  += sig
+                total_w    += w
+                total_l    += l
+                total_pips += net
+        except Exception as e:
+            logger.warning("Portfolio backtest error %s: %s", pair, e)
+            lines.append(f"| **{pair}** | ⚠️ error | — | — | — | — |")
 
-    # Summary row
-    lines.append("| :--- | :---: | :---: | :---: | :---: |")
-    summary_cells = ["**TOTAL**"]
-    best_combo = None
-    best_wr    = -1.0
-    for tf, rr in combos:
-        s = summary[(tf, rr)]
-        if s["signals"] > 0:
-            wr = round(s["wins"] / s["signals"] * 100, 1)
-            summary_cells.append(f"**{wr}%** ({s['signals']}s / {s['pips']:+.1f}p)")
-            if wr > best_wr:
-                best_wr    = wr
-                best_combo = (tf, rr)
-        else:
-            summary_cells.append("— no data")
-    lines.append("| " + " | ".join(summary_cells) + " |")
+    overall_wr = round(total_w / total_sig * 100, 1) if total_sig else 0
+    icon_total = "🟢" if overall_wr >= 60 else ("🟡" if overall_wr >= 45 else "🔴")
+    lines.append(f"| **TOTAL** | **{total_sig}** | **{total_w}** | **{total_l}** | {icon_total} **{overall_wr}%** | **{total_pips:+.1f}p** |")
 
-    # Recommendation
     lines.append("")
-    if best_combo:
-        lines.append(f"🏆 **Best combo: {best_combo[0]} at RR 1:{int(best_combo[1])} — {best_wr}% overall win rate**")
+    if total_sig == 0:
+        lines.append(f"⚠️ No signals found on {tf} today. Market may be outside killzone hours or no clean pattern formed.")
+    elif overall_wr >= 60:
+        lines.append(f"✅ **Strong day** — {overall_wr}% win rate across {total_sig} signals on {tf} RR 1:{rr}")
     else:
-        lines.append("⚠️ No live data available. Connect MetaApi or cTrader in **Settings**.")
+        lines.append(f"⚠️ **Moderate day** — {overall_wr}% win rate. Focus on high-score setups only.")
 
     return {"reply": "\n".join(lines)}
 
@@ -386,19 +355,17 @@ def _build_context_for_gemini(message: str) -> str:
             )
 
     if intent.symbol == "ALL":
-        combos = [("M15", 2.0), ("M15", 3.0), ("M3", 2.0), ("M3", 3.0)]
         for p in PAIRS:
-            for tf, rr in combos:
-                try:
-                    bt = _run_live_backtest(intent._replace(symbol=p, tf=tf, rr=rr))
-                    if bt.get("total_signals", 0) > 0:
-                        context_parts.append(
-                            f"[BACKTEST {p} {tf} {intent.days}d RR1:{rr}] "
-                            f"Signals={bt['total_signals']} Wins={bt['wins']} "
-                            f"WinRate={bt['win_rate']}% NetPips={bt['net_pips']}"
-                        )
-                except (ValueError, RuntimeError, KeyError) as e:
-                    logger.warning("Gemini context backtest error %s %s: %s", p, tf, e)
+            try:
+                bt = _run_live_backtest(intent._replace(symbol=p))
+                if bt.get("total_signals", 0) > 0:
+                    context_parts.append(
+                        f"[BACKTEST {p} {intent.tf} {intent.days}d RR1:{intent.rr}] "
+                        f"Signals={bt['total_signals']} Wins={bt['wins']} "
+                        f"WinRate={bt['win_rate']}% NetPips={bt['net_pips']}"
+                    )
+            except (ValueError, RuntimeError, KeyError) as e:
+                logger.warning("Gemini context backtest error %s: %s", p, e)
     else:
         bt = _run_live_backtest(intent)
         if bt.get("total_signals", 0) > 0:
@@ -423,8 +390,66 @@ def _is_backtest_intent(message: str) -> bool:
     lower = message.lower()
     return any(k in lower for k in [
         "backtest", "back test", "last", "days", "week", "month",
-        "win rate", "signals", "result", "performance", "pips",
+        "win rate", "result", "performance", "pips",
     ])
+
+
+def _is_live_signal_intent(message: str) -> bool:
+    lower = message.lower()
+    live_kw = ["live signal", "scan now", "any signal", "signal now",
+               "current signal", "active signal", "find signal",
+               "give signal", "show signal", "what signal", "trade now",
+               "entry now", "setup now", "any setup", "scan all"]
+    return any(k in lower for k in live_kw)
+
+
+def _handle_live_scan() -> Dict[str, Any]:
+    """Run live scanner on all pairs M15+M3 and format results."""
+    try:
+        from app.signals.scanner import scan_all_pairs
+        signals = scan_all_pairs(timeframes=("M15", "M3"), min_confidence="LOW")
+    except Exception as e:
+        return {"reply": f"⚠️ Scanner error: {e}"}
+
+    if not signals:
+        return {
+            "reply": (
+                "🔍 **Live Scan — All Pairs (M15 + M3)**\n\n"
+                "No signals right now.\n"
+                "Market is either outside London/NY killzone or no clean CHoCH/BOS pattern forming.\n\n"
+                "💡 Best times to scan: **07:00–11:00 UTC** (London) or **12:00–17:00 UTC** (NY)"
+            )
+        }
+
+    conf_icon = {"HIGH": "🟢", "MEDIUM": "🟡", "LOW": "🔴"}
+    pattern_short = {
+        "A_CHOCH":     "CHoCH+OB",
+        "B_BOS_SWEEP": "BOS+Sweep",
+        "C_ACCUM":     "Accum+OB",
+    }
+
+    lines = [f"🔍 **Live Scan — {len(signals)} Signal(s) Found**\n"]
+
+    for s in signals:
+        icon   = conf_icon.get(s["confidence"], "⚪")
+        pt     = pattern_short.get(s["pattern"], s["pattern"])
+        htf_ok = "✅" if s.get("htf_aligned") else "⚠️"
+        ind    = "✅ Inducement" if s.get("inducement") else ""
+        fvg    = "✅ FVG" if s.get("fvg") else ""
+        extras = "  ".join(filter(None, [ind, fvg]))
+
+        lines.append(
+            f"{icon} **{s['symbol']} {s['timeframe']} — {s['direction']}** | {pt} | Score: {s['score']}\n"
+            f"  Entry: `{s['entry']}`  SL: `{s['sl']}`  TP(1:3): `{s['tp_1_3']}`\n"
+            f"  SL: {s['sl_pips']} pips | HTF: {s['htf_bias']} {htf_ok} | Session: {s['session']}\n"
+            + (f"  {extras}\n" if extras else "")
+        )
+
+    high = [s for s in signals if s["confidence"] == "HIGH"]
+    if high:
+        lines.append(f"\n🏆 **Best setup: {high[0]['symbol']} {high[0]['timeframe']} {high[0]['direction']} — Score {high[0]['score']}**")
+
+    return {"reply": "\n".join(lines), "data": signals}
 
 
 def process_chat_message(message: str) -> Dict[str, Any]:
@@ -438,6 +463,9 @@ def process_chat_message(message: str) -> Dict[str, Any]:
     # Never let Gemini rewrite/summarize numerical results — it hallucinates numbers
     if _is_price_intent(cleaned):
         return _handle_price(intent)
+
+    if _is_live_signal_intent(cleaned):
+        return _handle_live_scan()
 
     if intent.symbol == "ALL":
         return _handle_portfolio(intent)
