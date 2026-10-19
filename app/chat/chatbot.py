@@ -250,6 +250,19 @@ def _format_backtest_result(data: dict, intent: ParsedIntent) -> Dict[str, Any]:
         for c_name, count in top_confs:
             lines.append(f"- {c_name}: {count} wins")
 
+    # Per-trade score table
+    all_trades = data.get("all_trades", [])
+    if all_trades:
+        lines.append("\n**Signal Scores:**")
+        lines.append("| Time | Dir | Pattern | Score | Conf | Result | Pips |")
+        lines.append("| :--- | :---: | :--- | :---: | :---: | :---: | :---: |")
+        for t in all_trades:
+            time_short = str(t.get("time", ""))[11:16]
+            icon = "✅" if t["outcome"] == "WIN" else "❌"
+            pat = {"A_CHOCH": "CHoCH+OB", "B_BOS_SWEEP": "BOS+Sweep", "C_ACCUM": "Accum"}.get(t["pattern"], t["pattern"])
+            pips_str = f"+{t['pips']}" if t['pips'] > 0 else str(t['pips'])
+            lines.append(f"| {time_short} | {t['direction']} | {pat} | **{t['score']}** | {t['confidence']} | {icon} {t['outcome']} | {pips_str}p |")
+
     if best:
         lines.append(f"\n🏆 Best: `+{best['pips']} pips` ({best['direction']} @ {best['entry']}, {best['session']})")
     if worst:
@@ -295,8 +308,8 @@ def _handle_portfolio(intent: ParsedIntent) -> Dict[str, Any]:
     day_label = "Today" if days == 1 else f"Last {days} days"
     lines = [
         f"📊 **Portfolio Backtest — All Pairs | {day_label} | {tf} | RR 1:{rr}**\n",
-        "| Pair | Signals | Wins | Losses | WR% | Net Pips |",
-        "| :--- | :---: | :---: | :---: | :---: | :---: |",
+        "| Pair | Signals | Wins | Losses | WR% | Avg Score | Net Pips |",
+        "| :--- | :---: | :---: | :---: | :---: | :---: | :---: |",
     ]
 
     total_sig = total_w = total_l = 0
@@ -307,15 +320,17 @@ def _handle_portfolio(intent: ParsedIntent) -> Dict[str, Any]:
         try:
             r = _run_live_backtest(intent._replace(symbol=pair))
             if "error" in r or r.get("total_signals", 0) == 0:
-                lines.append(f"| **{pair}** | 0 | — | — | — | — |")
+                lines.append(f"| **{pair}** | 0 | — | — | — | — | — |")
             else:
                 sig  = r["total_signals"]
                 w    = r["wins"]
                 l    = r["losses"]
                 wr   = r["win_rate"]
                 net  = r["net_pips"]
+                trades = r.get("all_trades", [])
+                avg_score = round(sum(t.get("score", 0) for t in trades) / len(trades), 0) if trades else 0
                 icon = "🟢" if wr >= 60 else ("🟡" if wr >= 45 else "🔴")
-                lines.append(f"| **{pair}** | {sig} | {w} | {l} | {icon} {wr}% | {net:+.1f}p |")
+                lines.append(f"| **{pair}** | {sig} | {w} | {l} | {icon} {wr}% | {int(avg_score)} | {net:+.1f}p |")
                 total_sig  += sig
                 total_w    += w
                 total_l    += l
@@ -327,11 +342,11 @@ def _handle_portfolio(intent: ParsedIntent) -> Dict[str, Any]:
                         session_agg[sn]["t"] += sd["total"]
         except Exception as e:
             logger.warning("Portfolio backtest error %s: %s", pair, e)
-            lines.append(f"| **{pair}** | ⚠️ error | — | — | — | — |")
+            lines.append(f"| **{pair}** | ⚠️ error | — | — | — | — | — |")
 
     overall_wr = round(total_w / total_sig * 100, 1) if total_sig else 0
     icon_total = "🟢" if overall_wr >= 60 else ("🟡" if overall_wr >= 45 else "🔴")
-    lines.append(f"| **TOTAL** | **{total_sig}** | **{total_w}** | **{total_l}** | {icon_total} **{overall_wr}%** | **{total_pips:+.1f}p** |")
+    lines.append(f"| **TOTAL** | **{total_sig}** | **{total_w}** | **{total_l}** | {icon_total} **{overall_wr}%** | — | **{total_pips:+.1f}p** |")
 
     # Session breakdown
     lines.append("\n**Session Breakdown (All Pairs Combined):**")
