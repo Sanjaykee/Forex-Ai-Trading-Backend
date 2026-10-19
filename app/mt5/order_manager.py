@@ -10,7 +10,7 @@ def place_order(symbol: str, direction: str, lot: float, entry: float, sl: float
     from app.mt5.metaapi_client import MetaApiClient
     client = MetaApiClient(token=metaapi_token, account_id=metaapi_account_id)
     if client.is_configured:
-        return client.place_order(symbol=symbol, direction=direction, lot=lot, sl=sl, tp=tp, comment=comment)
+        return client.place_order(symbol=symbol, direction=direction, lot=lot, entry=entry, sl=sl, tp=tp, comment=comment)
 
     # 2. Local Windows MT5 Terminal execution
     if HAS_MT5 and mt5 is not None:

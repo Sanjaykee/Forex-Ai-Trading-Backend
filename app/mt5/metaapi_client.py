@@ -226,15 +226,21 @@ class MetaApiClient:
         logger.info("MetaApi total candles fetched for %s %s: %d", symbol, timeframe, len(combined))
         return combined
 
-    def place_order(self, symbol: str, direction: str, lot: float, sl: float = None, tp: float = None, comment: str = "ForexAI") -> dict:
+    def place_order(self, symbol: str, direction: str, lot: float, entry: float = None, sl: float = None, tp: float = None, comment: str = "ForexAI") -> dict:
         """
-        Executes a real order directly onto the broker's MT5 server.
-        The trade appears immediately inside your MT5 Mobile App!
+        Places a LIMIT order at the OB entry price — matches backtest scenario exactly.
+        Order waits at entry price until price returns to the OB zone, then fills.
         """
         if not self.is_configured:
             return {"success": False, "error": "MetaApi credentials not configured in backend"}
 
-        action = "ORDER_TYPE_BUY" if direction.upper() == "BUY" else "ORDER_TYPE_SELL"
+        digits = 3 if "JPY" in symbol else 5
+        # Use limit order to match backtest entry — waits for OB retest
+        if entry:
+            action = "ORDER_TYPE_BUY_LIMIT" if direction.upper() == "BUY" else "ORDER_TYPE_SELL_LIMIT"
+        else:
+            action = "ORDER_TYPE_BUY" if direction.upper() == "BUY" else "ORDER_TYPE_SELL"
+
         url = f"{self.client_base_url}/trade"
 
         body = {
@@ -243,10 +249,12 @@ class MetaApiClient:
             "volume": float(lot),
             "comment": comment
         }
+        if entry:
+            body["openPrice"] = round(float(entry), digits)
         if sl:
-            body["stopLoss"] = round(float(sl), 5 if "JPY" not in symbol else 3)
+            body["stopLoss"] = round(float(sl), digits)
         if tp:
-            body["takeProfit"] = round(float(tp), 5 if "JPY" not in symbol else 3)
+            body["takeProfit"] = round(float(tp), digits)
 
         try:
             res = requests.post(url, headers=self.headers, json=body, timeout=15)
