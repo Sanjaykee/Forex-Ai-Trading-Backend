@@ -197,16 +197,17 @@ def activate_trade_from_signal(db, user_id: int, signal_id: int) -> dict:
         metaapi_token=user.metaapi_token if user else None,
         metaapi_account_id=user.metaapi_account_id if user else None,
     )
+    from app.notifications.telegram_bot import _get_token
+    import requests
+
     if result.get("success"):
         trade.mt5_ticket = str(result.get("ticket", ""))
         db.commit()
         logger.info(f"[TradeMonitor] MT5 order placed: ticket={trade.mt5_ticket} for {trade.symbol} {trade.direction}")
-    else:
-        logger.error(f"[TradeMonitor] MT5 order FAILED for trade #{trade.id}: {result.get('error')}")
 
-    if user and user.telegram_chat_id:
-        direction_emoji = "📈" if trade.direction == "BUY" else "📉"
-        msg = f"""
+        if user and user.telegram_chat_id:
+            direction_emoji = "📈" if trade.direction == "BUY" else "📉"
+            msg = f"""
 🚀 *TRADE ENTERED & ACTIVATED!*
 
 *Pair:* {trade.symbol}
@@ -216,19 +217,47 @@ def activate_trade_from_signal(db, user_id: int, signal_id: int) -> dict:
 *Take Profit:* `{trade.take_profit}`
 *Risk:* ${trade.risk_usd:.2f} | *Target RR:* 1:{rr_val}
 
-📊 *Price monitor active — trade will close at full TP or SL.*
-"""
-        from app.notifications.telegram_bot import _get_token
-        import requests
-        token = _get_token()
-        if token:
-            try:
-                requests.post(f"https://api.telegram.org/bot{token}/sendMessage", json={
-                    "chat_id": user.telegram_chat_id,
-                    "text": msg.strip(),
-                    "parse_mode": "Markdown"
-                }, timeout=5)
-            except Exception as e:
-                logger.error(f"Failed to send trade activation alert: {e}")
+📊 *Price monitor active — trade will close at full TP or SL.*"""
+            token = _get_token()
+            if token:
+                try:
+                    requests.post(f"https://api.telegram.org/bot{token}/sendMessage", json={
+                        "chat_id": user.telegram_chat_id,
+                        "text": msg.strip(),
+                        "parse_mode": "Markdown"
+                    }, timeout=5)
+                except Exception as e:
+                    logger.error(f"Failed to send trade activation alert: {e}")
 
-    return {"success": True, "message": "Trade activated and monitored", "trade_id": trade.id}
+        return {"success": True, "message": "Trade activated and monitored", "trade_id": trade.id}
+
+    else:
+        error_msg = result.get("error", "Unknown error")
+        logger.error(f"[TradeMonitor] MT5 order FAILED for trade #{trade.id}: {error_msg}")
+        trade.result = "REJECTED"
+        signal.status = "rejected"
+        db.commit()
+
+        if user and user.telegram_chat_id:
+            msg = f"""
+❌ *ORDER REJECTED — NOT PLACED*
+
+*Pair:* {trade.symbol}
+*Direction:* {trade.direction}
+*Entry:* `{trade.entry_price}`
+
+*Reason:* {error_msg}
+
+⚠️ No trade was opened on MT5. Signal has been marked rejected."""
+            token = _get_token()
+            if token:
+                try:
+                    requests.post(f"https://api.telegram.org/bot{token}/sendMessage", json={
+                        "chat_id": user.telegram_chat_id,
+                        "text": msg.strip(),
+                        "parse_mode": "Markdown"
+                    }, timeout=5)
+                except Exception as e:
+                    logger.error(f"Failed to send order rejection alert: {e}")
+
+        return {"success": False, "message": error_msg, "trade_id": trade.id}

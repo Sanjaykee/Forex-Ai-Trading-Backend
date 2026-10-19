@@ -241,6 +241,34 @@ class MetaApiClient:
         else:
             action = "ORDER_TYPE_BUY" if direction.upper() == "BUY" else "ORDER_TYPE_SELL"
 
+        # Pre-validate: fetch live price and check limit order condition + minimum distance
+        if entry:
+            price_data = self.get_live_price(symbol)
+            if price_data:
+                ask = price_data.get("ask", 0)
+                bid = price_data.get("bid", 0)
+                entry_r = round(float(entry), digits)
+                is_jpy = "JPY" in symbol
+                min_distance = 0.03 if is_jpy else 0.00030  # 3 pips minimum
+                pip_mult = 100 if is_jpy else 10000
+
+                if direction.upper() == "BUY":
+                    if ask <= entry_r:
+                        return {"success": False, "error": f"BUY LIMIT invalid: current ask {ask} is at or below entry {entry_r}. Price already passed the OB zone."}
+                    gap = ask - entry_r
+                    if gap < min_distance:
+                        return {"success": False, "error": f"BUY LIMIT too close: only {round(gap * pip_mult, 1)} pips from entry {entry_r} (ask={ask}). Broker requires minimum 3 pips distance."}
+                else:
+                    if bid >= entry_r:
+                        return {"success": False, "error": f"SELL LIMIT invalid: current bid {bid} is at or above entry {entry_r}. Price already passed the OB zone."}
+                    gap = entry_r - bid
+                    if gap < min_distance:
+                        return {"success": False, "error": f"SELL LIMIT too close: only {round(gap * pip_mult, 1)} pips from entry {entry_r} (bid={bid}). Broker requires minimum 3 pips distance."}
+
+                logger.info(f"Price validation passed: {direction} LIMIT at {entry_r}, ask={ask}, bid={bid}, gap={round(gap * pip_mult, 1)} pips")
+            else:
+                logger.warning(f"Could not fetch live price for {symbol} — skipping pre-validation")
+
         url = f"{self.client_base_url}/trade"
 
         body = {
@@ -256,12 +284,14 @@ class MetaApiClient:
             expiry = (datetime.utcnow() + timedelta(hours=4)).strftime("%Y-%m-%dT%H:%M:%S.000Z")
             body["expirationType"] = "ORDER_TIME_SPECIFIED"
             body["expirationTime"] = expiry
+            logger.info(f"Limit order {action} at {body['openPrice']} expires at {expiry}")
         if sl:
             body["stopLoss"] = round(float(sl), digits)
         if tp:
             body["takeProfit"] = round(float(tp), digits)
 
         try:
+            logger.info(f"MetaApi placing order: {body}")
             res = requests.post(url, headers=self.headers, json=body, timeout=15)
             data = res.json()
             if res.status_code in (200, 201) and data.get("numericCode") in (10008, 10009, None):
