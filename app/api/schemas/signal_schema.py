@@ -79,6 +79,7 @@ class SettingsUpdate(BaseModel):
     newyork_session:   Optional[bool]  = True
     telegram_alerts:   Optional[bool]  = True
     data_source:       Optional[str]   = "yfinance"
+    execution_mode:    Optional[str]   = "manual"
     gemini_api_key:    Optional[str]   = None
     telegram_chat_id:  Optional[str]   = None
     pairs:             Optional[List[str]] = None
