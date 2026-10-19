@@ -263,15 +263,16 @@ def scan_pair(symbol: str, tf: str = "M15") -> Optional[dict]:
     else:
         entry = round(zh, 5)
 
+    ob_width = zh - zl  # full OB zone width
     if trade_dir == "BUY":
-        sl_dist  = abs(entry - zl) + pip_unit * 2
+        sl_dist  = ob_width + pip_unit * 2   # full OB width below entry + 2 pip buffer
         sl_dist  = min(max_sl * pip_unit, max(min_sl * pip_unit, sl_dist))
         sl_price = round(entry - sl_dist, 5)
         tp2      = round(entry + sl_dist * 2.0, 5)
         tp3      = round(entry + sl_dist * 3.0, 5)
         tp5      = round(entry + sl_dist * 5.0, 5)
     else:
-        sl_dist  = abs(zh - entry) + pip_unit * 2
+        sl_dist  = ob_width + pip_unit * 2   # full OB width above entry + 2 pip buffer
         sl_dist  = min(max_sl * pip_unit, max(min_sl * pip_unit, sl_dist))
         sl_price = round(entry + sl_dist, 5)
         tp2      = round(entry - sl_dist * 2.0, 5)

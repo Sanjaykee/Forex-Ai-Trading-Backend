@@ -278,12 +278,13 @@ class MetaApiClient:
                 min_sl_dist  = broker_min if broker_min > 0 else (0.05 if "JPY" in symbol else 0.00050)
 
                 if direction.upper() == "BUY":
-                    if sl and ask <= round(float(sl), digits):
-                        return {"success": False, "error": f"BUY rejected: current ask {ask} is at or below SL {round(float(sl), digits)}. OB structure broken."}
+                    sl_r = round(float(sl), digits) if sl else None
+                    if sl_r and ask <= sl_r:
+                        return {"success": False, "error": f"BUY rejected: current ask {ask} is at or below SL {sl_r}. OB structure broken."}
                     elif ask <= entry_r:
                         # Price inside OB zone (between entry and SL) — market order immediately
                         action = "ORDER_TYPE_BUY"
-                        logger.info(f"BUY: price {ask} inside OB zone (entry={entry_r}, SL={sl}) — placing MARKET order")
+                        logger.info(f"BUY MARKET: price {ask} inside OB zone (entry={entry_r}, SL={sl_r})")
                     else:
                         # Price above entry — limit order, wait for pullback
                         action = "ORDER_TYPE_BUY_LIMIT"
@@ -291,12 +292,13 @@ class MetaApiClient:
                         if gap < min_distance:
                             return {"success": False, "error": f"BUY LIMIT too close: only {round(gap * pip_mult, 1)} pips gap (ask={ask}, entry={entry_r}). Broker {symbol} requires minimum {round(min_distance * pip_mult, 1)} pips."}
                 else:
-                    if sl and bid >= round(float(sl), digits):
-                        return {"success": False, "error": f"SELL rejected: current bid {bid} is at or above SL {round(float(sl), digits)}. OB structure broken."}
+                    sl_r = round(float(sl), digits) if sl else None
+                    if sl_r and bid >= sl_r:
+                        return {"success": False, "error": f"SELL rejected: current bid {bid} is at or above SL {sl_r}. OB structure broken."}
                     elif bid >= entry_r:
                         # Price inside OB zone (between entry and SL) — market order immediately
                         action = "ORDER_TYPE_SELL"
-                        logger.info(f"SELL: price {bid} inside OB zone (entry={entry_r}, SL={sl}) — placing MARKET order")
+                        logger.info(f"SELL MARKET: price {bid} inside OB zone (entry={entry_r}, SL={sl_r})")
                     else:
                         # Price below entry — limit order, wait for rally
                         action = "ORDER_TYPE_SELL_LIMIT"
@@ -304,13 +306,7 @@ class MetaApiClient:
                         if gap < min_distance:
                             return {"success": False, "error": f"SELL LIMIT too close: only {round(gap * pip_mult, 1)} pips gap (bid={bid}, entry={entry_r}). Broker {symbol} requires minimum {round(min_distance * pip_mult, 1)} pips."}
 
-                if sl:
-                    sl_r = round(float(sl), digits)
-                    sl_distance = abs(entry_r - sl_r)
-                    if sl_distance < min_sl_dist:
-                        return {"success": False, "error": f"Stop Loss too tight for {symbol}: only {round(sl_distance * pip_mult, 1)} pips (entry={entry_r}, SL={sl_r}). Broker requires minimum {round(min_sl_dist * pip_mult, 1)} pips SL distance."}
-
-                logger.info(f"Validation passed: {symbol} {direction} entry={entry_r}, gap={round(gap * pip_mult, 1)} pips, SL OK")
+                logger.info(f"Validation passed: {symbol} {direction} {action} entry={entry_r}")
 
         url = f"{self.client_base_url}/trade"
 
