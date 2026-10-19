@@ -131,8 +131,8 @@ async def auto_scan_loop():
                     direction = r["direction"]
                     score     = r.get("score", 0)
 
-                    # Auto-execute only fires on HIGH confidence (score >= 75)
-                    if exec_mode == "auto" and score < 75:
+                    # Auto-execute fires on MEDIUM+ confidence (score >= 55)
+                    if exec_mode == "auto" and score < 55:
                         continue
 
                     # Skip if duplicate within cooldown window
