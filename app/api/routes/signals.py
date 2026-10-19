@@ -106,33 +106,35 @@ def scan_single(symbol: str, tf: str = "M15",
 
 
 @router.get("/backtest-quick")
-def backtest_quick(days: int = 2, db: Session = Depends(get_db), user=Depends(get_current_user)):
+def backtest_quick(days: int = 15, tf: str = "M3", db: Session = Depends(get_db), user=Depends(get_current_user)):
     """
-    Run 2-day backtest across all 9 pairs on M15 + M3.
-    Returns every detected signal with its score, pattern, outcome (WIN/LOSS).
+    Run backtest across all 9 pairs. Default: 15 days on M3.
+    Params: days (default 15), tf (default M3, options: M3/M15/both)
     """
     from app.backtest.engine import run_backtest
 
     PAIRS = ["EURUSD", "GBPUSD", "USDJPY", "USDCHF", "AUDUSD",
              "NZDUSD", "USDCAD", "EURJPY", "GBPJPY"]
 
+    timeframes = ("M15", "M3") if tf.upper() == "BOTH" else (tf.upper(),)
+
     all_trades = []
     summary = {"total": 0, "wins": 0, "losses": 0, "pairs_scanned": 0, "errors": []}
 
     for symbol in PAIRS:
-        for tf in ("M15", "M3"):
+        for timeframe in timeframes:
             try:
-                result = run_backtest(symbol=symbol, timeframe=tf, days=days, rr_ratio=3.0, min_win_prob=40)
+                result = run_backtest(symbol=symbol, timeframe=timeframe, days=days, rr_ratio=3.0, min_win_prob=40)
                 if result.get("total_signals", 0) > 0:
                     for t in result.get("all_trades", []):
                         t["symbol"] = symbol
-                        t["timeframe"] = tf
+                        t["timeframe"] = timeframe
                         all_trades.append(t)
                     summary["wins"]   += result.get("wins", 0)
                     summary["losses"] += result.get("losses", 0)
                 summary["pairs_scanned"] += 1
             except Exception as e:
-                summary["errors"].append(f"{symbol} {tf}: {str(e)}")
+                summary["errors"].append(f"{symbol} {timeframe}: {str(e)}")
 
     summary["total"] = summary["wins"] + summary["losses"]
     summary["win_rate"] = round(summary["wins"] / summary["total"] * 100, 1) if summary["total"] > 0 else 0.0
@@ -141,6 +143,7 @@ def backtest_quick(days: int = 2, db: Session = Depends(get_db), user=Depends(ge
 
     return {
         "days": days,
+        "timeframe": tf.upper(),
         "summary": summary,
         "trades": all_trades,
     }

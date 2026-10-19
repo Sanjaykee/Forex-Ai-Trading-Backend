@@ -30,9 +30,9 @@ KILLZONES = {
 
 def _pip_cfg(symbol: str):
     s = symbol.upper()
-    if "JPY" in s: return 0.01,   100.0, 4,  25
-    if "XAU" in s: return 0.1,     10.0, 5,  40
-    return 0.0001, 10000.0, 3, 20
+    if "JPY" in s: return 0.01,   100.0, 5,  25
+    if "XAU" in s: return 0.1,     10.0, 8,  40
+    return 0.0001, 10000.0, 5, 20
 
 
 def _in_killzone(hour: int):
@@ -254,8 +254,14 @@ def scan_pair(symbol: str, tf: str = "M15") -> Optional[dict]:
           else float(np.mean((sl20["high"] - sl20["low"]).values))
 
     zh, zl = float(ob["zone_high"]), float(ob["zone_low"])
-    entry  = round((zh + zl) / 2, 5)
     trade_dir = "BUY" if direction == "BULLISH" else "SELL"
+
+    # Entry at OB edge — BUY enters at OB low, SELL enters at OB high
+    # This matches the actual retest level, not the midpoint
+    if trade_dir == "BUY":
+        entry = round(zl, 5)
+    else:
+        entry = round(zh, 5)
 
     if trade_dir == "BUY":
         sl_dist  = abs(entry - zl) + pip_unit * 2

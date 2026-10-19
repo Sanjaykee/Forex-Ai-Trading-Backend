@@ -62,10 +62,10 @@ HTF_MAP = {"M3": "M15", "M15": "H4"}
 def _pip_cfg(symbol: str):
     """Returns (pip_unit, pip_multiplier, min_sl_pips, max_sl_pips)."""
     s = symbol.upper()
-    if "JPY" in s:          return 0.01,   100.0, 4,  25
-    if "XAU" in s:          return 0.1,     10.0, 5,  40
+    if "JPY" in s:          return 0.01,   100.0, 5,  25
+    if "XAU" in s:          return 0.1,     10.0, 8,  40
     if "BTC" in s:          return 1.0,      1.0, 50, 300
-    return 0.0001, 10000.0, 3, 20
+    return 0.0001, 10000.0, 5, 20
 
 
 def _session(hour: int) -> str:
@@ -291,22 +291,25 @@ def run_backtest(
               else float(np.mean((sl20["high"] - sl20["low"]).values))
 
         zh, zl = float(ob["zone_high"]), float(ob["zone_low"])
-        entry  = round((zh + zl) / 2, 5)
 
+        # Entry at OB edge — BUY at OB low, SELL at OB high (actual retest level)
         if direction == "BULLISH":
-            sl_dist = abs(entry - zl) + pip_unit * 2
-            sl_dist = min(max_sl * pip_unit, max(min_sl * pip_unit, sl_dist))
-            sl_price = round(entry - sl_dist, 5)
-            tp_price = round(entry + sl_dist * rr_ratio, 5)
+            entry     = round(zl, 5)
             trade_dir = "BUY"
         else:
-            sl_dist = abs(zh - entry) + pip_unit * 2
-            sl_dist = min(max_sl * pip_unit, max(min_sl * pip_unit, sl_dist))
-            sl_price = round(entry + sl_dist, 5)
-            tp_price = round(entry - sl_dist * rr_ratio, 5)
+            entry     = round(zh, 5)
             trade_dir = "SELL"
 
-        # ── Forward simulation (next 65 candles) ─────────────────────────────
+        if trade_dir == "BUY":
+            sl_dist  = (zh - zl) + pip_unit * 2   # full OB width + 2 pip buffer below OB low
+            sl_dist  = min(max_sl * pip_unit, max(min_sl * pip_unit, sl_dist))
+            sl_price = round(entry - sl_dist, 5)
+            tp_price = round(entry + sl_dist * rr_ratio, 5)
+        else:
+            sl_dist  = (zh - zl) + pip_unit * 2   # full OB width + 2 pip buffer above OB high
+            sl_dist  = min(max_sl * pip_unit, max(min_sl * pip_unit, sl_dist))
+            sl_price = round(entry + sl_dist, 5)
+            tp_price = round(entry - sl_dist * rr_ratio, 5)
         future  = df.iloc[i + 1: i + 66]
         outcome = "OPEN"
         pips    = 0.0
