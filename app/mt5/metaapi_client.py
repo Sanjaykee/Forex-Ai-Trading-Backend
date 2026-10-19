@@ -256,9 +256,9 @@ class MetaApiClient:
             return {"success": False, "error": "MetaApi credentials not configured in backend"}
 
         digits = 3 if "JPY" in symbol else 5
-        # Use limit order to match backtest entry — waits for OB retest
+        # Order type determined after live price check below
         if entry:
-            action = "ORDER_TYPE_BUY_LIMIT" if direction.upper() == "BUY" else "ORDER_TYPE_SELL_LIMIT"
+            action = None  # set dynamically after price check
         else:
             action = "ORDER_TYPE_BUY" if direction.upper() == "BUY" else "ORDER_TYPE_SELL"
 
@@ -278,17 +278,31 @@ class MetaApiClient:
                 min_sl_dist  = broker_min if broker_min > 0 else (0.05 if "JPY" in symbol else 0.00050)
 
                 if direction.upper() == "BUY":
-                    if ask <= entry_r:
-                        return {"success": False, "error": f"BUY LIMIT invalid: current ask {ask} is at or below entry {entry_r}. Price already passed the OB zone."}
-                    gap = ask - entry_r
-                    if gap < min_distance:
-                        return {"success": False, "error": f"BUY LIMIT too close: only {round(gap * pip_mult, 1)} pips gap (ask={ask}, entry={entry_r}). Broker {symbol} requires minimum {round(min_distance * pip_mult, 1)} pips."}
+                    if sl and ask <= round(float(sl), digits):
+                        return {"success": False, "error": f"BUY rejected: current ask {ask} is at or below SL {round(float(sl), digits)}. OB structure broken."}
+                    elif ask <= entry_r:
+                        # Price inside OB zone (between entry and SL) — market order immediately
+                        action = "ORDER_TYPE_BUY"
+                        logger.info(f"BUY: price {ask} inside OB zone (entry={entry_r}, SL={sl}) — placing MARKET order")
+                    else:
+                        # Price above entry — limit order, wait for pullback
+                        action = "ORDER_TYPE_BUY_LIMIT"
+                        gap = ask - entry_r
+                        if gap < min_distance:
+                            return {"success": False, "error": f"BUY LIMIT too close: only {round(gap * pip_mult, 1)} pips gap (ask={ask}, entry={entry_r}). Broker {symbol} requires minimum {round(min_distance * pip_mult, 1)} pips."}
                 else:
-                    if bid >= entry_r:
-                        return {"success": False, "error": f"SELL LIMIT invalid: current bid {bid} is at or above entry {entry_r}. Price already passed the OB zone."}
-                    gap = entry_r - bid
-                    if gap < min_distance:
-                        return {"success": False, "error": f"SELL LIMIT too close: only {round(gap * pip_mult, 1)} pips gap (bid={bid}, entry={entry_r}). Broker {symbol} requires minimum {round(min_distance * pip_mult, 1)} pips."}
+                    if sl and bid >= round(float(sl), digits):
+                        return {"success": False, "error": f"SELL rejected: current bid {bid} is at or above SL {round(float(sl), digits)}. OB structure broken."}
+                    elif bid >= entry_r:
+                        # Price inside OB zone (between entry and SL) — market order immediately
+                        action = "ORDER_TYPE_SELL"
+                        logger.info(f"SELL: price {bid} inside OB zone (entry={entry_r}, SL={sl}) — placing MARKET order")
+                    else:
+                        # Price below entry — limit order, wait for rally
+                        action = "ORDER_TYPE_SELL_LIMIT"
+                        gap = entry_r - bid
+                        if gap < min_distance:
+                            return {"success": False, "error": f"SELL LIMIT too close: only {round(gap * pip_mult, 1)} pips gap (bid={bid}, entry={entry_r}). Broker {symbol} requires minimum {round(min_distance * pip_mult, 1)} pips."}
 
                 if sl:
                     sl_r = round(float(sl), digits)
@@ -306,7 +320,7 @@ class MetaApiClient:
             "volume": float(lot),
             "comment": comment
         }
-        if entry:
+        if entry and action in ("ORDER_TYPE_BUY_LIMIT", "ORDER_TYPE_SELL_LIMIT"):
             body["openPrice"] = round(float(entry), digits)
             # Auto-expire after 4 hours — cancels stale pending orders automatically
             from datetime import datetime, timedelta
