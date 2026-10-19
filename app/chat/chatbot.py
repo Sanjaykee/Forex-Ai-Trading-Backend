@@ -254,19 +254,33 @@ def _format_backtest_result(data: dict, intent: ParsedIntent) -> Dict[str, Any]:
     all_trades = data.get("all_trades", [])
     if all_trades:
         lines.append("\n**Signal Scores:**")
-        lines.append("| Time | Dir | Pattern | Score | Conf | Result | Pips |")
+        lines.append("| Time (IST) | Dir | Pattern | Score | Conf | Result | Pips |")
         lines.append("| :--- | :---: | :--- | :---: | :---: | :---: | :---: |")
         for t in all_trades:
-            time_short = str(t.get("time", ""))[11:16]
+            try:
+                from datetime import datetime, timedelta
+                utc_time = datetime.strptime(str(t.get("time", ""))[:16], "%Y-%m-%d %H:%M")
+                ist_time = utc_time + timedelta(hours=5, minutes=30)
+                time_short = ist_time.strftime("%H:%M")
+            except Exception:
+                time_short = str(t.get("time", ""))[11:16]
             icon = "✅" if t["outcome"] == "WIN" else "❌"
             pat = {"A_CHOCH": "CHoCH+OB", "B_BOS_SWEEP": "BOS+Sweep", "C_ACCUM": "Accum"}.get(t["pattern"], t["pattern"])
             pips_str = f"+{t['pips']}" if t['pips'] > 0 else str(t['pips'])
             lines.append(f"| {time_short} | {t['direction']} | {pat} | **{t['score']}** | {t['confidence']} | {icon} {t['outcome']} | {pips_str}p |")
 
+    def _to_ist(t):
+        try:
+            from datetime import datetime, timedelta
+            utc = datetime.strptime(str(t.get("time", ""))[:16], "%Y-%m-%d %H:%M")
+            return (utc + timedelta(hours=5, minutes=30)).strftime("%H:%M IST")
+        except Exception:
+            return str(t.get("time", ""))[11:16]
+
     if best:
-        lines.append(f"\n🏆 Best: `+{best['pips']} pips` ({best['direction']} @ {best['entry']}, {best['session']})")
+        lines.append(f"\n🏆 Best: `+{best['pips']} pips` ({best['direction']} @ {best['entry']}, {best['session']}, {_to_ist(best)})")
     if worst:
-        lines.append(f"💔 Worst: `{worst['pips']} pips` ({worst['direction']} @ {worst['entry']}, {worst['session']})")
+        lines.append(f"💔 Worst: `{worst['pips']} pips` ({worst['direction']} @ {worst['entry']}, {worst['session']}, {_to_ist(worst)})")  
 
     if win_rate >= 65:
         lines.append(f"\n✅ **Strong edge** — {symbol} {tf} has {win_rate}% win rate over {days} days.")
