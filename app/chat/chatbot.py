@@ -191,23 +191,19 @@ def _format_backtest_result(data: dict, intent: ParsedIntent) -> Dict[str, Any]:
     total = data.get("total_signals", 0)
     if total == 0:
         fc   = data.get("filter_counts", {})
-        bias = data.get("global_bias", "unknown")
-        cw   = data.get("candles_in_window", 0)
         dominant = max(fc, key=fc.get) if fc else "unknown"
         dominant_map = {
-            "kz":            "most candles were outside London/NY/Asian killzone hours",
-            "bias_ranging":  "market was ranging — no clear directional bias",
-            "trend_conflict":"H1 trend conflicted with H4 bias",
-            "no_structure":  "no CHoCH or BOS structure break found",
-            "no_zone":       "no Order Block or FVG entry zone found",
-            "low_prob":      "setups found but win probability score was below threshold",
+            "kz":         "most candles were outside London/NY/Asian killzone hours",
+            "no_pattern": "no CHoCH or BOS structure break found",
+            "no_ob":      "pattern found but no unmitigated Order Block nearby",
+            "low_score":  "setups found but score below threshold",
         }
         reason = dominant_map.get(dominant, "filters were too strict for this period")
         return {
             "reply": (
                 f"📊 **{symbol} {tf} — Last {days} days | RR 1:{rr}**\n\n"
-                f"No signals found. Bias detected: **{bias}** | Candles analysed: **{cw}**\n\n"
-                f"Main filter blocking signals: **{reason}**\n"
+                f"No signals found.\n\n"
+                f"Main filter: **{reason}**\n"
                 f"Filter breakdown: {fc}\n\n"
                 f"💡 Try: `{symbol} M15 last 14 days` or `{symbol} H1 last 30 days`"
             ),
@@ -218,17 +214,16 @@ def _format_backtest_result(data: dict, intent: ParsedIntent) -> Dict[str, Any]:
     losses    = data["losses"]
     win_rate  = data["win_rate"]
     net_pips  = data["net_pips"]
-    tf_hier   = data.get("timeframe_hierarchy", {})
     sessions  = data.get("sessions", {})
-    top_confs = data.get("top_confirmations", [])
     best      = data.get("best_trade")
     worst     = data.get("worst_trade")
     start     = data.get("start_date", "")
     end       = data.get("end_date", "")
+    htf_tf    = {"M3": "M15", "M15": "H4"}.get(tf, "H4")
 
     lines = [
         f"📊 **{symbol} Backtest — {tf} | {start} → {end} | RR 1:{rr}**",
-        f"🔭 Hierarchy: {tf_hier.get('macro_bias_tf', 'H4')} bias → {tf_hier.get('intermediate_trend_tf', 'H1')} trend ({tf_hier.get('style', 'Intraday')})",
+        f"🔭 Hierarchy: {htf_tf} bias → {tf} entry (Intraday)",
         "",
         f"- **Signals:** `{total}`",
         f"- **Wins:** `{wins}` ({win_rate}%) 🟢",
@@ -244,11 +239,6 @@ def _format_backtest_result(data: dict, intent: ParsedIntent) -> Dict[str, Any]:
         for s_name, s_data in sessions.items():
             icon = "🟢" if s_data["win_rate"] >= 60 else ("🟡" if s_data["win_rate"] >= 45 else "🔴")
             lines.append(f"| {s_name} | {s_data['total']} | {s_data['wins']} | {icon} {s_data['win_rate']}% |")
-
-    if top_confs:
-        lines.append("\n**Top Confirmations:**")
-        for c_name, count in top_confs:
-            lines.append(f"- {c_name}: {count} wins")
 
     # Per-trade score table
     all_trades = data.get("all_trades", [])
@@ -285,7 +275,7 @@ def _format_backtest_result(data: dict, intent: ParsedIntent) -> Dict[str, Any]:
     if win_rate >= 65:
         lines.append(f"\n✅ **Strong edge** — {symbol} {tf} has {win_rate}% win rate over {days} days.")
     elif win_rate >= 45:
-        lines.append(f"\n⚠️ **Moderate edge** — Focus on {top_confs[0][0] if top_confs else 'Order Block'} setups only.")
+        lines.append(f"\n⚠️ **Moderate edge** — Focus on Order Block setups only.")
     else:
         lines.append(f"\n🔴 **Weak edge** — Avoid {tf} on {symbol} this period. Try H1 or H4 instead.")
 
