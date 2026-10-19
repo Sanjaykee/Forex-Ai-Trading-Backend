@@ -99,6 +99,27 @@ class MetaApiClient:
             logger.error(f"MetaApi get_account_information failed: {e}")
             return {}
 
+    def get_symbol_specs(self, symbol: str) -> dict:
+        """Fetch broker's actual symbol specs — minStopDistance and point size per pair."""
+        if not self.is_configured:
+            return {}
+        url = f"{self.client_base_url}/symbols/{symbol}"
+        try:
+            res = requests.get(url, headers=self.headers, timeout=10)
+            if res.status_code == 200:
+                data = res.json()
+                point = data.get("point", 0.00001)
+                min_stop_points = data.get("minStopDistance", 0)
+                digits = data.get("digits", 5)
+                min_stop_price = min_stop_points * point
+                logger.info(f"Symbol specs {symbol}: point={point}, minStopDistance={min_stop_points}pts={min_stop_price:.6f}, digits={digits}")
+                return {"point": point, "min_stop_distance": min_stop_price, "digits": digits}
+            logger.warning(f"get_symbol_specs {symbol} returned {res.status_code}")
+            return {}
+        except Exception as e:
+            logger.error(f"get_symbol_specs failed for {symbol}: {e}")
+            return {}
+
     def get_live_price(self, symbol: str) -> dict:
         """Fetch exact real-time bid, ask, and spread from broker's MT5 feed"""
         if not self.is_configured:
@@ -241,33 +262,41 @@ class MetaApiClient:
         else:
             action = "ORDER_TYPE_BUY" if direction.upper() == "BUY" else "ORDER_TYPE_SELL"
 
-        # Pre-validate: fetch live price and check limit order condition + minimum distance
+        # Pre-validate: fetch live price + broker symbol specs for dynamic distance checks
         if entry:
             price_data = self.get_live_price(symbol)
+            specs = self.get_symbol_specs(symbol)
             if price_data:
                 ask = price_data.get("ask", 0)
                 bid = price_data.get("bid", 0)
                 entry_r = round(float(entry), digits)
-                is_jpy = "JPY" in symbol
-                min_distance = 0.03 if is_jpy else 0.00030  # 3 pips minimum
-                pip_mult = 100 if is_jpy else 10000
+                pip_mult = 100 if "JPY" in symbol else 10000
+
+                # Use broker's real minStopDistance; fallback to safe defaults if specs unavailable
+                broker_min = specs.get("min_stop_distance", 0)
+                min_distance = broker_min if broker_min > 0 else (0.03 if "JPY" in symbol else 0.00030)
+                min_sl_dist  = broker_min if broker_min > 0 else (0.05 if "JPY" in symbol else 0.00050)
 
                 if direction.upper() == "BUY":
                     if ask <= entry_r:
                         return {"success": False, "error": f"BUY LIMIT invalid: current ask {ask} is at or below entry {entry_r}. Price already passed the OB zone."}
                     gap = ask - entry_r
                     if gap < min_distance:
-                        return {"success": False, "error": f"BUY LIMIT too close: only {round(gap * pip_mult, 1)} pips from entry {entry_r} (ask={ask}). Broker requires minimum 3 pips distance."}
+                        return {"success": False, "error": f"BUY LIMIT too close: only {round(gap * pip_mult, 1)} pips gap (ask={ask}, entry={entry_r}). Broker {symbol} requires minimum {round(min_distance * pip_mult, 1)} pips."}
                 else:
                     if bid >= entry_r:
                         return {"success": False, "error": f"SELL LIMIT invalid: current bid {bid} is at or above entry {entry_r}. Price already passed the OB zone."}
                     gap = entry_r - bid
                     if gap < min_distance:
-                        return {"success": False, "error": f"SELL LIMIT too close: only {round(gap * pip_mult, 1)} pips from entry {entry_r} (bid={bid}). Broker requires minimum 3 pips distance."}
+                        return {"success": False, "error": f"SELL LIMIT too close: only {round(gap * pip_mult, 1)} pips gap (bid={bid}, entry={entry_r}). Broker {symbol} requires minimum {round(min_distance * pip_mult, 1)} pips."}
 
-                logger.info(f"Price validation passed: {direction} LIMIT at {entry_r}, ask={ask}, bid={bid}, gap={round(gap * pip_mult, 1)} pips")
-            else:
-                logger.warning(f"Could not fetch live price for {symbol} — skipping pre-validation")
+                if sl:
+                    sl_r = round(float(sl), digits)
+                    sl_distance = abs(entry_r - sl_r)
+                    if sl_distance < min_sl_dist:
+                        return {"success": False, "error": f"Stop Loss too tight for {symbol}: only {round(sl_distance * pip_mult, 1)} pips (entry={entry_r}, SL={sl_r}). Broker requires minimum {round(min_sl_dist * pip_mult, 1)} pips SL distance."}
+
+                logger.info(f"Validation passed: {symbol} {direction} entry={entry_r}, gap={round(gap * pip_mult, 1)} pips, SL OK")
 
         url = f"{self.client_base_url}/trade"
 
