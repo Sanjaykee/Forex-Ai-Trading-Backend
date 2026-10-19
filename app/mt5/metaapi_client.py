@@ -251,6 +251,11 @@ class MetaApiClient:
         }
         if entry:
             body["openPrice"] = round(float(entry), digits)
+            # Auto-expire after 4 hours — cancels stale pending orders automatically
+            from datetime import datetime, timedelta
+            expiry = (datetime.utcnow() + timedelta(hours=4)).strftime("%Y-%m-%dT%H:%M:%S.000Z")
+            body["expirationType"] = "ORDER_TIME_SPECIFIED"
+            body["expirationTime"] = expiry
         if sl:
             body["stopLoss"] = round(float(sl), digits)
         if tp:
