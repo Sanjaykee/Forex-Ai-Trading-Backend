@@ -322,6 +322,9 @@ class MetaApiClient:
         else:
             action = "ORDER_TYPE_BUY" if direction.upper() == "BUY" else "ORDER_TYPE_SELL"
 
+        sl_r = round(float(sl), digits) if sl else None
+        tp_r = round(float(tp), digits) if tp else None
+
         # Pre-validate: fetch live price + broker symbol specs for dynamic distance checks
         if entry:
             price_data = self.get_live_price(symbol)
@@ -338,35 +341,63 @@ class MetaApiClient:
                 min_sl_dist  = broker_min if broker_min > 0 else (0.05 if "JPY" in symbol else 0.00050)
 
                 if direction.upper() == "BUY":
-                    sl_r = round(float(sl), digits) if sl else None
                     if sl_r and ask <= sl_r:
                         return {"success": False, "error": f"BUY rejected: current ask {ask} is at or below SL {sl_r}. OB structure broken."}
                     elif ask <= entry_r:
-                        # Price inside OB zone (between entry and SL) — market order immediately
+                        # Price inside OB zone (between entry and SL) — market order immediately at discount
                         action = "ORDER_TYPE_BUY"
-                        logger.info(f"BUY MARKET: price {ask} inside OB zone (entry={entry_r}, SL={sl_r})")
+                        logger.info(f"BUY MARKET (Discount in OB): price {ask} inside OB zone (entry={entry_r}, SL={sl_r})")
                     else:
-                        # Price above entry — limit order, wait for pullback
-                        action = "ORDER_TYPE_BUY_LIMIT"
                         gap = ask - entry_r
                         if gap < min_distance:
-                            return {"success": False, "error": f"BUY LIMIT too close: only {round(gap * pip_mult, 1)} pips gap (ask={ask}, entry={entry_r}). Broker {symbol} requires minimum {round(min_distance * pip_mult, 1)} pips."}
+                            # Solution 1: Price is inside broker's Stops Level dead-zone.
+                            # Instead of rejecting, execute instant MARKET order directly!
+                            action = "ORDER_TYPE_BUY"
+                            logger.info(f"BUY MARKET (Smart Hybrid): price {ask} is within {round(gap * pip_mult, 1)} pips of entry {entry_r} (dead-zone < {round(min_distance * pip_mult, 1)} pips) — placing MARKET order directly")
+                        else:
+                            # Price above entry with ample distance — place pending LIMIT order for pullback
+                            action = "ORDER_TYPE_BUY_LIMIT"
+
+                    # Solution 2: Spread and minimum stop distance protection
+                    ref_price = ask if action == "ORDER_TYPE_BUY" else entry_r
+                    if sl_r and (ref_price - sl_r) < min_sl_dist:
+                        adjusted_sl = round(ref_price - min_sl_dist, digits)
+                        logger.info(f"Adjusting BUY SL from {sl_r} to {adjusted_sl} to meet broker min stop distance ({min_sl_dist})")
+                        sl_r = adjusted_sl
+                    if tp_r and (tp_r - ref_price) < min_sl_dist:
+                        adjusted_tp = round(ref_price + min_sl_dist * 2.0, digits)
+                        logger.info(f"Adjusting BUY TP from {tp_r} to {adjusted_tp} to meet broker min stop distance")
+                        tp_r = adjusted_tp
+
                 else:
-                    sl_r = round(float(sl), digits) if sl else None
                     if sl_r and bid >= sl_r:
                         return {"success": False, "error": f"SELL rejected: current bid {bid} is at or above SL {sl_r}. OB structure broken."}
                     elif bid >= entry_r:
-                        # Price inside OB zone (between entry and SL) — market order immediately
+                        # Price inside OB zone (between entry and SL) — market order immediately at premium
                         action = "ORDER_TYPE_SELL"
-                        logger.info(f"SELL MARKET: price {bid} inside OB zone (entry={entry_r}, SL={sl_r})")
+                        logger.info(f"SELL MARKET (Premium in OB): price {bid} inside OB zone (entry={entry_r}, SL={sl_r})")
                     else:
-                        # Price below entry — limit order, wait for rally
-                        action = "ORDER_TYPE_SELL_LIMIT"
                         gap = entry_r - bid
                         if gap < min_distance:
-                            return {"success": False, "error": f"SELL LIMIT too close: only {round(gap * pip_mult, 1)} pips gap (bid={bid}, entry={entry_r}). Broker {symbol} requires minimum {round(min_distance * pip_mult, 1)} pips."}
+                            # Solution 1: Price is inside broker's Stops Level dead-zone.
+                            # Auto-switch to instant MARKET order directly!
+                            action = "ORDER_TYPE_SELL"
+                            logger.info(f"SELL MARKET (Smart Hybrid): price {bid} is within {round(gap * pip_mult, 1)} pips of entry {entry_r} (dead-zone < {round(min_distance * pip_mult, 1)} pips) — placing MARKET order directly")
+                        else:
+                            action = "ORDER_TYPE_SELL_LIMIT"
 
-                logger.info(f"Validation passed: {symbol} {direction} {action} entry={entry_r}")
+                    # Solution 2: Spread and minimum stop distance protection
+                    ref_price = bid if action == "ORDER_TYPE_SELL" else entry_r
+                    if sl_r and (sl_r - ref_price) < min_sl_dist:
+                        adjusted_sl = round(ref_price + min_sl_dist, digits)
+                        logger.info(f"Adjusting SELL SL from {sl_r} to {adjusted_sl} to meet broker min stop distance ({min_sl_dist})")
+                        sl_r = adjusted_sl
+                    if tp_r and (ref_price - tp_r) < min_sl_dist:
+                        adjusted_tp = round(ref_price - min_sl_dist * 2.0, digits)
+                        logger.info(f"Adjusting SELL TP from {tp_r} to {adjusted_tp} to meet broker min stop distance")
+                        tp_r = adjusted_tp
+
+                logger.info(f"Validation passed: {symbol} {direction} {action} entry={entry_r}, SL={sl_r}, TP={tp_r}")
 
         url = f"{self.client_base_url}/trade"
 
@@ -384,9 +415,13 @@ class MetaApiClient:
             body["expirationType"] = "ORDER_TIME_SPECIFIED"
             body["expirationTime"] = expiry
             logger.info(f"Limit order {action} at {body['openPrice']} expires at {expiry}")
-        if sl:
+        if sl_r:
+            body["stopLoss"] = sl_r
+        elif sl:
             body["stopLoss"] = round(float(sl), digits)
-        if tp:
+        if tp_r:
+            body["takeProfit"] = tp_r
+        elif tp:
             body["takeProfit"] = round(float(tp), digits)
 
         try:
