@@ -106,16 +106,17 @@ def close_trade(db: Session, trade_id: int, close_price: float, profit_usd: floa
 # --- Performance ---
 def get_performance_by_user(db: Session, user_id: int):
     trades = db.query(models.Trade).filter(models.Trade.user_id == user_id).all()
-    if not trades:
+    closed_trades = [t for t in trades if t.result in ("WIN", "LOSS")]
+    if not closed_trades:
         return {"total_trades": 0, "wins": 0, "losses": 0, "win_rate": 0, "net_pnl_usd": 0}
-    wins   = [t for t in trades if t.result == "WIN"]
-    losses = [t for t in trades if t.result == "LOSS"]
-    net    = sum(t.profit_usd for t in trades if t.profit_usd)
+    wins   = [t for t in closed_trades if t.result == "WIN"]
+    losses = [t for t in closed_trades if t.result == "LOSS"]
+    net    = sum(t.profit_usd for t in closed_trades if t.profit_usd)
     return {
-        "total_trades":     len(trades),
+        "total_trades":     len(closed_trades),
         "wins":             len(wins),
         "losses":           len(losses),
-        "win_rate":         round(len(wins) / len(trades) * 100, 1),
+        "win_rate":         round(len(wins) / len(closed_trades) * 100, 1),
         "net_pnl_usd":      round(net, 2),
         "total_profit_usd": round(sum(t.profit_usd for t in wins if t.profit_usd), 2),
         "total_loss_usd":   round(sum(t.profit_usd for t in losses if t.profit_usd), 2),

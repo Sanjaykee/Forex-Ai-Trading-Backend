@@ -248,26 +248,31 @@ def _handle_auto_execute(db, user, r, entry, sl, tp, lot, risk_usd, rr_ratio):
     if result.get("success"):
         trade.mt5_ticket = str(result.get("ticket", ""))
         db.commit()
-        status_line = "\u2705 Order placed on MT5 (ticket: " + trade.mt5_ticket + ")"
+        status_line = "✅ Order placed on MT5 (ticket: " + trade.mt5_ticket + ")"
+        monitor_line = "📊 _Price monitor active — closes at full TP or SL._"
         logger.info(f"[AutoScanner] AUTO-EXECUTED {r['symbol']} {r['direction']} ticket={trade.mt5_ticket}")
     else:
-        status_line = "\u26a0\ufe0f MT5 order failed: " + str(result.get("error", "unknown"))
+        trade.result = "REJECTED"
+        saved.status = "rejected"
+        db.commit()
+        status_line = "⚠️ MT5 order failed: " + str(result.get("error", "unknown"))
+        monitor_line = "❌ _Trade was NOT placed on MT5 broker. No position opened._"
         logger.error(f"[AutoScanner] AUTO-EXECUTE FAILED {r['symbol']}: {result.get('error')}")
 
     token = _get_token()
     if token and user.telegram_chat_id:
-        direction_emoji = "\U0001f4c8" if r["direction"] == "BUY" else "\U0001f4c9"
+        direction_emoji = "📈" if r["direction"] == "BUY" else "📉"
         reward_usd      = round(risk_usd * rr_val, 2)
         msg = (
-            "\u26a1 *AUTO-EXECUTED*\n\n"
+            "⚡ *AUTO-EXECUTED*\n\n"
             f"*Pair:* {r['symbol']}\n"
             f"*Direction:* {direction_emoji} *{r['direction']}*\n"
             f"*Entry:* `{entry}` | *SL:* `{sl}` | *TP:* `{tp}`\n"
-            f"*Risk:* ${risk_usd:.2f} \u2192 *Reward:* ${reward_usd:.2f} (1:{int(rr_ratio)} RR)\n"
+            f"*Risk:* ${risk_usd:.2f} → *Reward:* ${reward_usd:.2f} (1:{int(rr_ratio)} RR)\n"
             f"*Lot:* `{lot}` | *Score:* {r.get('score', 0)}%\n"
             f"*Pattern:* {r.get('pattern_name', 'SMC')}\n\n"
             f"{status_line}\n"
-            "\U0001f4ca _Price monitor active \u2014 closes at full TP or SL._"
+            f"{monitor_line}"
         )
         try:
             requests.post(
