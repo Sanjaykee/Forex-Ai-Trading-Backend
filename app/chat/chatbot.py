@@ -100,6 +100,8 @@ def _parse_days(msg: str) -> int:
         return 7
     if re.search(r"\b(3|THREE)\s*DAY", msg):
         return 3
+    if "YESTERDAY" in msg or re.search(r"\b(2|TWO)\s*DAY", msg):
+        return 2
     if "TODAY" in msg or re.search(r"\b1\s*DAY\b", msg):
         return 1
     m = re.search(r"\b(?:LAST|PAST)?\s*(\d+)\s*DAYS?\b", msg)

@@ -53,11 +53,10 @@ app.include_router(telegram_router)
 async def startup_event():
     import asyncio
     from app.signals.trade_monitor import monitor_open_trades_loop
-    # To re-enable auto-scanner, uncomment the 2 lines below:
-    # from app.signals.auto_scanner import auto_scan_loop
+    from app.signals.auto_scanner import auto_scan_loop
     asyncio.create_task(monitor_open_trades_loop())
-    # asyncio.create_task(auto_scan_loop())
-    logger.info("[Startup] Trade monitor background task started.")
+    asyncio.create_task(auto_scan_loop())
+    logger.info("[Startup] Trade monitor & Auto-Scanner background tasks started.")
 
 @app.get("/")
 def root():

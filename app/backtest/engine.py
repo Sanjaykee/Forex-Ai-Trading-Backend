@@ -224,9 +224,14 @@ def run_backtest(
         sess    = _session(hour)
         in_kz, kz_name = _in_killzone(hour)
 
-        # Session filter — only hard-block if user explicitly set a session
+        # Session filter — skip Off-Session by default (matching live scanner)
         if session_filter:
-            if session_filter.upper() not in sess.upper():
+            if session_filter.upper() == "ALL":
+                pass  # user explicitly requested all sessions including off-session
+            elif session_filter.upper() not in sess.upper():
+                fc["kz"] += 1; continue
+        else:
+            if sess == "Off-Session":
                 fc["kz"] += 1; continue
 
         # Candle slices
