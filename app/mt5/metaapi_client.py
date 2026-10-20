@@ -409,12 +409,7 @@ class MetaApiClient:
         }
         if entry and action in ("ORDER_TYPE_BUY_LIMIT", "ORDER_TYPE_SELL_LIMIT"):
             body["openPrice"] = round(float(entry), digits)
-            # Auto-expire after 4 hours — cancels stale pending orders automatically
-            from datetime import datetime, timedelta
-            expiry = (datetime.utcnow() + timedelta(hours=4)).strftime("%Y-%m-%dT%H:%M:%S.000Z")
-            body["expirationType"] = "ORDER_TIME_SPECIFIED"
-            body["expirationTime"] = expiry
-            logger.info(f"Limit order {action} at {body['openPrice']} expires at {expiry}")
+            logger.info(f"Limit order {action} at openPrice={body['openPrice']}")
         if sl_r:
             body["stopLoss"] = sl_r
         elif sl:
@@ -434,7 +429,9 @@ class MetaApiClient:
                 logger.info(f"MetaApi order executed successfully: Ticket {ticket} for {symbol} {direction} {lot} lots")
                 return {"success": True, "ticket": ticket, "data": data}
             else:
-                err_msg = data.get("message") or data.get("stringCode") or str(data)
+                details = data.get("details")
+                detail_str = f" ({details})" if details else ""
+                err_msg = f"{data.get('message', '')}{detail_str}" or data.get("stringCode") or str(data)
                 logger.error(f"MetaApi trade execution rejected: {err_msg}")
                 return {"success": False, "error": err_msg}
         except Exception as e:
