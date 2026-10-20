@@ -30,9 +30,9 @@ KILLZONES = {
 
 def _pip_cfg(symbol: str):
     s = symbol.upper()
-    if "JPY" in s: return 0.01,   100.0, 5,  25
-    if "XAU" in s: return 0.1,     10.0, 8,  40
-    return 0.0001, 10000.0, 5, 20
+    if "JPY" in s: return 0.01,   100.0, 4,  25
+    if "XAU" in s: return 0.1,     10.0, 5,  40
+    return 0.0001, 10000.0, 3, 20
 
 
 def _in_killzone(hour: int):
@@ -60,8 +60,10 @@ def _get_client():
     user = None
     region = "backup-new-york"
     try:
-        db   = SessionLocal()
-        user = db.query(User).first()
+        user = db.query(User).filter(
+            User.metaapi_account_id.isnot(None),
+            User.metaapi_account_id != ""
+        ).order_by(User.id.desc()).first() or db.query(User).first()
         if user:
             region = crud.get_setting(db, user.id, "metaapi_region") or \
                      _cfg.METAAPI_REGION or "backup-new-york"
@@ -254,25 +256,18 @@ def scan_pair(symbol: str, tf: str = "M15") -> Optional[dict]:
           else float(np.mean((sl20["high"] - sl20["low"]).values))
 
     zh, zl = float(ob["zone_high"]), float(ob["zone_low"])
+    entry  = round((zh + zl) / 2, 5)
     trade_dir = "BUY" if direction == "BULLISH" else "SELL"
 
-    # Entry at OB edge — BUY enters at OB low, SELL enters at OB high
-    # This matches the actual retest level, not the midpoint
     if trade_dir == "BUY":
-        entry = round(zl, 5)
-    else:
-        entry = round(zh, 5)
-
-    ob_width = zh - zl  # full OB zone width
-    if trade_dir == "BUY":
-        sl_dist  = ob_width + pip_unit * 2   # full OB width below entry + 2 pip buffer
+        sl_dist  = abs(entry - zl) + pip_unit * 2
         sl_dist  = min(max_sl * pip_unit, max(min_sl * pip_unit, sl_dist))
         sl_price = round(entry - sl_dist, 5)
         tp2      = round(entry + sl_dist * 2.0, 5)
         tp3      = round(entry + sl_dist * 3.0, 5)
         tp5      = round(entry + sl_dist * 5.0, 5)
     else:
-        sl_dist  = ob_width + pip_unit * 2   # full OB width above entry + 2 pip buffer
+        sl_dist  = abs(zh - entry) + pip_unit * 2
         sl_dist  = min(max_sl * pip_unit, max(min_sl * pip_unit, sl_dist))
         sl_price = round(entry + sl_dist, 5)
         tp2      = round(entry - sl_dist * 2.0, 5)

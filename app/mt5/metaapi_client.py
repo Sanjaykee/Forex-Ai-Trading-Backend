@@ -6,11 +6,31 @@ without needing a local Windows PC running.
 """
 
 import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
+import time
 import pandas as pd
 from datetime import datetime
 import logging
 
 logger = logging.getLogger(__name__)
+
+_metaapi_session = None
+
+def get_session() -> requests.Session:
+    global _metaapi_session
+    if _metaapi_session is None:
+        _metaapi_session = requests.Session()
+        retries = Retry(
+            total=3,
+            backoff_factor=0.3,
+            status_forcelist=[500, 502, 503, 504],
+            raise_on_status=False
+        )
+        adapter = HTTPAdapter(max_retries=retries, pool_connections=20, pool_maxsize=50)
+        _metaapi_session.mount("https://", adapter)
+        _metaapi_session.mount("http://", adapter)
+    return _metaapi_session
 
 class MetaApiClient:
     def __init__(self, token: str = None, account_id: str = None, region: str = None):
@@ -24,18 +44,36 @@ class MetaApiClient:
                 from app.db.database import SessionLocal
                 from app.db.models import User
                 from app.db import crud
+                from app.config import settings
                 db = SessionLocal()
-                u = db.query(User).first()
+                # Prioritize user who actually has metaapi credentials configured
+                u = db.query(User).filter(
+                    User.metaapi_account_id.isnot(None),
+                    User.metaapi_account_id != ""
+                ).order_by(User.id.desc()).first()
+                if not u:
+                    u = db.query(User).first()
                 if u:
                     if not self._token and u.metaapi_token:
                         self._token = u.metaapi_token
                     if not self._account_id and u.metaapi_account_id:
                         self._account_id = u.metaapi_account_id
                     if not self._region:
-                        self._region = crud.get_setting(db, u.id, "metaapi_region") or "new-york"
+                        self._region = crud.get_setting(db, u.id, "metaapi_region") or settings.METAAPI_REGION or "backup-new-york"
                 db.close()
             except Exception:
                 pass
+        # Fall back to settings (.env.local / .env.prod) if not found in DB
+        try:
+            from app.config import settings
+            if not self._token:
+                self._token = settings.METAAPI_TOKEN
+            if not self._account_id:
+                self._account_id = settings.METAAPI_ACCOUNT_ID
+            if not self._region:
+                self._region = settings.METAAPI_REGION or "backup-new-york"
+        except Exception:
+            pass
         if not self._region:
             self._region = "backup-new-york"
 
@@ -79,33 +117,43 @@ class MetaApiClient:
         if not self.is_configured:
             return {}
         url = f"{self.client_base_url}/accountInformation"
-        try:
-            res = requests.get(url, headers=self.headers, timeout=10)
-            if res.status_code == 200:
-                data = res.json()
-                return {
-                    "balance": data.get("balance", 0.0),
-                    "equity": data.get("equity", 0.0),
-                    "margin": data.get("margin", 0.0),
-                    "freeMargin": data.get("freeMargin", 0.0),
-                    "currency": data.get("currency", "USD"),
-                    "server": data.get("server", ""),
-                    "login": data.get("login", ""),
-                    "connected": True
-                }
-            logger.warning(f"MetaApi accountInformation returned {res.status_code}: {res.text}")
-            return {"connected": False, "error": f"{res.status_code}: {res.json().get('message','')[:120]}"}
-        except Exception as e:
-            logger.error(f"MetaApi get_account_information failed: {e}")
-            return {}
+        session = get_session()
+        for attempt in range(2):
+            try:
+                res = session.get(url, headers=self.headers, timeout=12)
+                if res.status_code == 200:
+                    data = res.json()
+                    return {
+                        "balance": data.get("balance", 0.0),
+                        "equity": data.get("equity", 0.0),
+                        "margin": data.get("margin", 0.0),
+                        "freeMargin": data.get("freeMargin", 0.0),
+                        "currency": data.get("currency", "USD"),
+                        "server": data.get("server", ""),
+                        "login": data.get("login", ""),
+                        "connected": True
+                    }
+                logger.warning(f"MetaApi accountInformation returned {res.status_code}: {res.text}")
+                return {"connected": False, "error": f"{res.status_code}: {res.json().get('message','')[:120]}"}
+            except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as e:
+                if attempt == 0:
+                    time.sleep(0.5)
+                    continue
+                logger.error(f"MetaApi get_account_information network error: {e}")
+                return {}
+            except Exception as e:
+                logger.error(f"MetaApi get_account_information failed: {e}")
+                return {}
+        return {}
 
     def get_symbol_specs(self, symbol: str) -> dict:
         """Fetch broker's actual symbol specs — minStopDistance and point size per pair."""
         if not self.is_configured:
             return {}
         url = f"{self.client_base_url}/symbols/{symbol}"
+        session = get_session()
         try:
-            res = requests.get(url, headers=self.headers, timeout=10)
+            res = session.get(url, headers=self.headers, timeout=10)
             if res.status_code == 200:
                 data = res.json()
                 point = data.get("point", 0.00001)
@@ -125,34 +173,40 @@ class MetaApiClient:
         if not self.is_configured:
             return {}
         url = f"{self.client_base_url}/symbols/{symbol}/current-price"
-        try:
-            res = requests.get(url, headers=self.headers, timeout=15)
-            if res.status_code == 200:
-                data = res.json()
-                bid = data.get("bid", 0.0)
-                ask = data.get("ask", 0.0)
-                spread = round((ask - bid) * (100 if "JPY" in symbol else 10000), 1)
-                return {"bid": bid, "ask": ask, "spread": spread}
-            return {}
-        except requests.exceptions.Timeout:
-            # Primary region timed out — try alternate region once
-            alt_region = "new-york" if "backup" in self.region else "backup-new-york"
-            alt_url = f"https://mt-client-api-v1.{alt_region}.agiliumtrade.ai/users/current/accounts/{self.account_id.strip()}/symbols/{symbol}/current-price"
+        session = get_session()
+        for attempt in range(2):
             try:
-                res = requests.get(alt_url, headers=self.headers, timeout=15)
+                res = session.get(url, headers=self.headers, timeout=15)
                 if res.status_code == 200:
                     data = res.json()
                     bid = data.get("bid", 0.0)
                     ask = data.get("ask", 0.0)
                     spread = round((ask - bid) * (100 if "JPY" in symbol else 10000), 1)
-                    logger.info(f"MetaApi get_live_price succeeded via fallback region {alt_region}")
                     return {"bid": bid, "ask": ask, "spread": spread}
-            except Exception as e2:
-                logger.error(f"MetaApi get_live_price fallback also failed: {e2}")
-            return {}
-        except Exception as e:
-            logger.error(f"MetaApi get_live_price failed: {e}")
-            return {}
+                return {}
+            except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
+                if attempt == 0:
+                    time.sleep(0.5)
+                    continue
+                # Primary region timed out / connection error — try alternate region once
+                alt_region = "new-york" if "backup" in self.region else "backup-new-york"
+                alt_url = f"https://mt-client-api-v1.{alt_region}.agiliumtrade.ai/users/current/accounts/{self.account_id.strip()}/symbols/{symbol}/current-price"
+                try:
+                    res = session.get(alt_url, headers=self.headers, timeout=15)
+                    if res.status_code == 200:
+                        data = res.json()
+                        bid = data.get("bid", 0.0)
+                        ask = data.get("ask", 0.0)
+                        spread = round((ask - bid) * (100 if "JPY" in symbol else 10000), 1)
+                        logger.info(f"MetaApi get_live_price succeeded via fallback region {alt_region}")
+                        return {"bid": bid, "ask": ask, "spread": spread}
+                except Exception as e2:
+                    logger.error(f"MetaApi get_live_price fallback also failed: {e2}")
+                return {}
+            except Exception as e:
+                logger.error(f"MetaApi get_live_price failed: {e}")
+                return {}
+        return {}
 
     def get_candles(self, symbol: str, timeframe: str, count: int = 500) -> pd.DataFrame:
         """Fetch historical OHLC candles directly from broker.
@@ -184,32 +238,38 @@ class MetaApiClient:
             return df[["time", "open", "high", "low", "close", "volume"]]
 
         def _fetch_batch(params: dict) -> pd.DataFrame:
-            """Single request with region fallback on timeout."""
-            try:
-                res = requests.get(url, headers=self.headers, params=params, timeout=20)
-                if res.status_code == 200:
-                    return _parse_batch(res.json())
-                logger.error("MetaApi get_candles HTTP %d for %s %s: %s",
-                             res.status_code, symbol, timeframe, res.text[:200])
-                return pd.DataFrame()
-            except requests.exceptions.Timeout:
-                alt_region = "backup-new-york" if self.region == "new-york" else "new-york"
-                alt_url = (
-                    f"https://mt-market-data-client-api-v1.{alt_region}.agiliumtrade.ai"
-                    f"/users/current/accounts/{self.account_id.strip()}"
-                    f"/historical-market-data/symbols/{symbol}/timeframes/{meta_tf}/candles"
-                )
+            """Single request with retry and region fallback on timeout/connection error."""
+            session = get_session()
+            for attempt in range(3):
                 try:
-                    res = requests.get(alt_url, headers=self.headers, params=params, timeout=20)
+                    res = session.get(url, headers=self.headers, params=params, timeout=20)
                     if res.status_code == 200:
-                        logger.info("MetaApi get_candles fallback region %s OK for %s %s", alt_region, symbol, timeframe)
                         return _parse_batch(res.json())
-                except Exception as e2:
-                    logger.error("MetaApi get_candles fallback failed for %s %s: %s", symbol, timeframe, e2)
-                return pd.DataFrame()
-            except Exception as e:
-                logger.error("MetaApi get_candles failed for %s %s: %s", symbol, timeframe, e)
-                return pd.DataFrame()
+                    logger.error("MetaApi get_candles HTTP %d for %s %s: %s",
+                                 res.status_code, symbol, timeframe, res.text[:200])
+                    return pd.DataFrame()
+                except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
+                    if attempt < 2:
+                        time.sleep(0.8)
+                        continue
+                    alt_region = "new-york" if "backup" in self.region else "backup-new-york"
+                    alt_url = (
+                        f"https://mt-market-data-client-api-v1.{alt_region}.agiliumtrade.ai"
+                        f"/users/current/accounts/{self.account_id.strip()}"
+                        f"/historical-market-data/symbols/{symbol}/timeframes/{meta_tf}/candles"
+                    )
+                    try:
+                        res = session.get(alt_url, headers=self.headers, params=params, timeout=20)
+                        if res.status_code == 200:
+                            logger.info("MetaApi get_candles fallback region %s OK for %s %s", alt_region, symbol, timeframe)
+                            return _parse_batch(res.json())
+                    except Exception as e2:
+                        logger.error("MetaApi get_candles fallback failed for %s %s: %s", symbol, timeframe, e2)
+                    return pd.DataFrame()
+                except Exception as e:
+                    logger.error("MetaApi get_candles failed for %s %s: %s", symbol, timeframe, e)
+                    return pd.DataFrame()
+            return pd.DataFrame()
 
         # Paginate: fetch up to `count` candles in batches of 1000
         BATCH = 1000
@@ -331,7 +391,8 @@ class MetaApiClient:
 
         try:
             logger.info(f"MetaApi placing order: {body}")
-            res = requests.post(url, headers=self.headers, json=body, timeout=15)
+            session = get_session()
+            res = session.post(url, headers=self.headers, json=body, timeout=15)
             data = res.json()
             if res.status_code in (200, 201) and data.get("numericCode") in (10008, 10009, None):
                 ticket = data.get("orderId") or data.get("positionId") or "METAAPI_LIVE"
@@ -356,7 +417,8 @@ class MetaApiClient:
             "positionId": str(position_id)
         }
         try:
-            res = requests.post(url, headers=self.headers, json=body, timeout=15)
+            session = get_session()
+            res = session.post(url, headers=self.headers, json=body, timeout=15)
             if res.status_code in (200, 201):
                 return {"success": True, "ticket": position_id}
             return {"success": False, "error": res.text}
