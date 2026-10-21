@@ -99,7 +99,17 @@ def _normalize(df: pd.DataFrame) -> pd.DataFrame:
     return df.dropna(subset=["time"]).sort_values("time").reset_index(drop=True)
 
 
+_backtest_candle_cache: dict = {}
+
 def _load(symbol: str, tf: str, days: int) -> pd.DataFrame:
+    import time
+    cache_key = f"{symbol}_{tf}_{days}"
+    now = time.time()
+    if cache_key in _backtest_candle_cache:
+        c_time, c_df = _backtest_candle_cache[cache_key]
+        if now - c_time < 900 and not c_df.empty:
+            return c_df.copy()
+
     from app.db.database import SessionLocal
     from app.db.models   import User
     from app.db          import crud
@@ -131,7 +141,9 @@ def _load(symbol: str, tf: str, days: int) -> pd.DataFrame:
             df = client.get_candles(symbol, tf, count=needed)
             if not df.empty and len(df) >= 30:
                 logger.info("Loaded %d candles %s %s", len(df), symbol, tf)
-                return _normalize(df)
+                norm_df = _normalize(df)
+                _backtest_candle_cache[cache_key] = (now, norm_df)
+                return norm_df.copy()
         except Exception as e:
             logger.error("MetaApi %s %s: %s", symbol, tf, e)
 

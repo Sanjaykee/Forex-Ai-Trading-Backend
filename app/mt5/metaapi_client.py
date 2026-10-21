@@ -427,7 +427,7 @@ class MetaApiClient:
             if res.status_code in (200, 201) and data.get("numericCode") in (10008, 10009, None):
                 ticket = data.get("orderId") or data.get("positionId") or "METAAPI_LIVE"
                 logger.info(f"MetaApi order executed successfully: Ticket {ticket} for {symbol} {direction} {lot} lots")
-                return {"success": True, "ticket": ticket, "data": data}
+                return {"success": True, "ticket": ticket, "data": data, "order_type": action}
             else:
                 details = data.get("details")
                 detail_str = f" ({details})" if details else ""
@@ -453,6 +453,26 @@ class MetaApiClient:
             res = session.post(url, headers=self.headers, json=body, timeout=15)
             if res.status_code in (200, 201):
                 return {"success": True, "ticket": position_id}
+            return {"success": False, "error": res.text}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    def cancel_order(self, order_id: str) -> dict:
+        """Cancel a pending limit or stop order on MT5"""
+        if not self.is_configured:
+            return {"success": False, "error": "MetaApi not configured"}
+
+        url = f"{self.client_base_url}/trade"
+        body = {
+            "actionType": "ORDER_CANCEL",
+            "orderId": str(order_id)
+        }
+        try:
+            session = get_session()
+            res = session.post(url, headers=self.headers, json=body, timeout=15)
+            if res.status_code in (200, 201):
+                logger.info(f"MetaApi pending order {order_id} cancelled successfully")
+                return {"success": True, "ticket": order_id}
             return {"success": False, "error": res.text}
         except Exception as e:
             return {"success": False, "error": str(e)}

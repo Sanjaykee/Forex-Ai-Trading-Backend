@@ -302,22 +302,18 @@ def _handle_price(intent: ParsedIntent) -> Dict[str, Any]:
     return {"reply": f"⚠️ Could not fetch live price for {s}. Check MetaApi / cTrader connection in Settings."}
 
 
-def _handle_portfolio(intent: ParsedIntent) -> Dict[str, Any]:
-    """
-    Portfolio backtest — all 9 pairs on the user's exact TF and RR.
-    Simple table: one column per pair, user's TF and RR only.
-    """
-    tf   = intent.tf
-    rr   = intent.rr
-    days = intent.days
+_portfolio_cache: dict = {}
 
-    day_label = "Today" if days == 1 else f"Last {days} days"
-    lines = [
-        f"📊 **Portfolio Backtest — All Pairs | {day_label} | {tf} | RR 1:{rr}**\n",
-        "| Pair | Signals | Wins | Losses | WR% | Avg Score | Net Pips |",
-        "| :--- | :---: | :---: | :---: | :---: | :---: | :---: |",
-    ]
+def _get_portfolio_data(intent: ParsedIntent) -> dict:
+    import time
+    key = (intent.tf, intent.days, intent.rr, intent.session)
+    now = time.time()
+    if key in _portfolio_cache:
+        c_time, c_data = _portfolio_cache[key]
+        if now - c_time < 900:  # 15 min cache
+            return c_data
 
+    pairs_data = {}
     total_sig = total_w = total_l = 0
     total_pips = 0.0
     session_agg = {"London": {"w": 0, "t": 0}, "New York": {"w": 0, "t": 0}, "Asian": {"w": 0, "t": 0}, "Off-Session": {"w": 0, "t": 0}}
@@ -326,7 +322,7 @@ def _handle_portfolio(intent: ParsedIntent) -> Dict[str, Any]:
         try:
             r = _run_live_backtest(intent._replace(symbol=pair))
             if "error" in r or r.get("total_signals", 0) == 0:
-                lines.append(f"| **{pair}** | 0 | — | — | — | — | — |")
+                pairs_data[pair] = {"total_signals": 0, "wins": 0, "losses": 0, "win_rate": 0.0, "net_pips": 0.0, "avg_score": 0}
             else:
                 sig  = r["total_signals"]
                 w    = r["wins"]
@@ -335,8 +331,14 @@ def _handle_portfolio(intent: ParsedIntent) -> Dict[str, Any]:
                 net  = r["net_pips"]
                 trades = r.get("all_trades", [])
                 avg_score = round(sum(t.get("score", 0) for t in trades) / len(trades), 0) if trades else 0
-                icon = "🟢" if wr >= 60 else ("🟡" if wr >= 45 else "🔴")
-                lines.append(f"| **{pair}** | {sig} | {w} | {l} | {icon} {wr}% | {int(avg_score)} | {net:+.1f}p |")
+                pairs_data[pair] = {
+                    "total_signals": sig,
+                    "wins": w,
+                    "losses": l,
+                    "win_rate": wr,
+                    "net_pips": net,
+                    "avg_score": int(avg_score),
+                }
                 total_sig  += sig
                 total_w    += w
                 total_l    += l
@@ -348,33 +350,175 @@ def _handle_portfolio(intent: ParsedIntent) -> Dict[str, Any]:
                         session_agg[sn]["t"] += sd["total"]
         except Exception as e:
             logger.warning("Portfolio backtest error %s: %s", pair, e)
-            lines.append(f"| **{pair}** | ⚠️ error | — | — | — | — | — |")
+            pairs_data[pair] = {"total_signals": 0, "wins": 0, "losses": 0, "win_rate": 0.0, "net_pips": 0.0, "avg_score": 0}
 
-    overall_wr = round(total_w / total_sig * 100, 1) if total_sig else 0
-    icon_total = "🟢" if overall_wr >= 60 else ("🟡" if overall_wr >= 45 else "🔴")
-    lines.append(f"| **TOTAL** | **{total_sig}** | **{total_w}** | **{total_l}** | {icon_total} **{overall_wr}%** | — | **{total_pips:+.1f}p** |")
+    overall_wr = round(total_w / total_sig * 100, 1) if total_sig else 0.0
+    res = {
+        "tf": intent.tf,
+        "days": intent.days,
+        "rr": intent.rr,
+        "total_sig": total_sig,
+        "total_w": total_w,
+        "total_l": total_l,
+        "overall_wr": overall_wr,
+        "total_pips": round(total_pips, 1),
+        "pairs": pairs_data,
+        "session_agg": session_agg,
+    }
+    _portfolio_cache[key] = (now, res)
+    return res
+
+
+def _handle_portfolio(intent: ParsedIntent) -> Dict[str, Any]:
+    """
+    Portfolio backtest — all 9 pairs on the user's exact TF and RR.
+    Returns markdown table with color codes, pips, and session breakdown.
+    """
+    data = _get_portfolio_data(intent)
+    tf   = data["tf"]
+    rr   = data["rr"]
+    days = data["days"]
+
+    day_label = "Today" if days == 1 else f"Last {days} days"
+    lines = [
+        f"📊 **Portfolio Backtest — All Pairs | {day_label} | {tf} | RR 1:{rr}**\n",
+        "| Pair | Signals | Wins | Losses | WR% | Avg Score | Net Pips |",
+        "| :--- | :---: | :---: | :---: | :---: | :---: | :---: |",
+    ]
+
+    for pair, d in data["pairs"].items():
+        if d["total_signals"] == 0:
+            lines.append(f"| **{pair}** | 0 | — | — | — | — | — |")
+        else:
+            icon = "🟢" if d["win_rate"] >= 60 else ("🟡" if d["win_rate"] >= 45 else "🔴")
+            lines.append(f"| **{pair}** | {d['total_signals']} | {d['wins']} | {d['losses']} | {icon} {d['win_rate']}% | {d['avg_score']} | {d['net_pips']:+.1f}p |")
+
+    tot_sig = data["total_sig"]
+    tot_w   = data["total_w"]
+    tot_l   = data["total_l"]
+    wr      = data["overall_wr"]
+    pips    = data["total_pips"]
+    icon_total = "🟢" if wr >= 60 else ("🟡" if wr >= 45 else "🔴")
+    lines.append(f"| **TOTAL** | **{tot_sig}** | **{tot_w}** | **{tot_l}** | {icon_total} **{wr}%** | — | **{pips:+.1f}p** |")
 
     # Session breakdown
     lines.append("\n**Session Breakdown (All Pairs Combined):**")
     lines.append("| Session | Signals | Wins | WR% |")
     lines.append("| :--- | :---: | :---: | :---: |")
     for sn in ("London", "New York", "Asian", "Off-Session"):
-        t = session_agg[sn]["t"]
-        w = session_agg[sn]["w"]
+        sd = data["session_agg"].get(sn, {})
+        t  = sd.get("t", 0)
+        w  = sd.get("w", 0)
         if t > 0:
-            wr  = round(w / t * 100, 1)
-            icon = "🟢" if wr >= 60 else ("🟡" if wr >= 45 else "🔴")
-            lines.append(f"| {sn} | {t} | {w} | {icon} {wr}% |")
+            swr = round(w / t * 100, 1)
+            icon = "🟢" if swr >= 60 else ("🟡" if swr >= 45 else "🔴")
+            lines.append(f"| {sn} | {t} | {w} | {icon} {swr}% |")
         else:
             lines.append(f"| {sn} | 0 | — | — |")
 
     lines.append("")
-    if total_sig == 0:
-        lines.append(f"⚠️ No signals found on {tf} today. Market may be outside killzone hours or no clean pattern formed.")
-    elif overall_wr >= 60:
-        lines.append(f"✅ **Strong day** — {overall_wr}% win rate across {total_sig} signals on {tf} RR 1:{rr}")
+    if tot_sig == 0:
+        lines.append(f"⚠️ No signals found on {tf} this period.")
+    elif wr >= 55:
+        lines.append(f"✅ **High edge detected** — {wr}% win rate across {tot_sig} trades on {tf} RR 1:{rr} (+{pips:.1f} net pips).")
     else:
-        lines.append(f"⚠️ **Moderate day** — {overall_wr}% win rate. Focus on high-score setups only.")
+        lines.append(f"⚠️ **Moderate edge** — {wr}% win rate. Focus on top pairs only.")
+
+    return {"reply": "\n".join(lines), "data": data}
+
+
+def _handle_comparison(intent: ParsedIntent) -> Dict[str, Any]:
+    """
+    Side-by-side comparative backtest between M3 (Sniper) and M15 (Intraday).
+    """
+    days = intent.days or 15
+    rr   = intent.rr or 3.0
+    day_label = "Today" if days == 1 else f"Last {days} days"
+
+    m3_data  = _get_portfolio_data(intent._replace(tf="M3",  days=days, rr=rr, symbol="ALL"))
+    m15_data = _get_portfolio_data(intent._replace(tf="M15", days=days, rr=rr, symbol="ALL"))
+
+    lines = [
+        f"⚖️ **M3 vs M15 Performance Comparison — {day_label} | RR 1:{rr}**\n",
+        "| Currency Pair | M3 Win Rate | M3 Net Pips | M15 Win Rate | M15 Net Pips | Best Timeframe |",
+        "| :--- | :---: | :---: | :---: | :---: | :--- |",
+    ]
+
+    for p in PAIRS:
+        d3   = m3_data["pairs"].get(p, {})
+        d15  = m15_data["pairs"].get(p, {})
+        wr3  = d3.get("win_rate", 0.0)
+        p3   = d3.get("net_pips", 0.0)
+        wr15 = d15.get("win_rate", 0.0)
+        p15  = d15.get("net_pips", 0.0)
+
+        i3  = "🟢" if wr3 >= 60 else ("🟡" if wr3 >= 45 else "🔴")
+        i15 = "🟢" if wr15 >= 60 else ("🟡" if wr15 >= 45 else "🔴")
+
+        if p3 > p15:
+            best = "**M3** 🔥"
+        elif p15 > p3:
+            best = "**M15** 🚀"
+        else:
+            best = "Tie ⚖️"
+
+        lines.append(f"| **{p}** | {i3} {wr3}% | {p3:+.1f}p | {i15} {wr15}% | {p15:+.1f}p | {best} |")
+
+    tot_p3   = m3_data["total_pips"]
+    tot_p15  = m15_data["total_pips"]
+    comb_pips = tot_p3 + tot_p15
+    comb_sig  = m3_data["total_sig"] + m15_data["total_sig"]
+    comb_w    = m3_data["total_w"] + m15_data["total_w"]
+    comb_wr   = round(comb_w / comb_sig * 100, 1) if comb_sig else 0.0
+
+    lines.append(f"| **TOTAL M3** | 🟢 **{m3_data['overall_wr']}%** | **{tot_p3:+.1f}p** | — | — | ({m3_data['total_sig']} trades) |")
+    lines.append(f"| **TOTAL M15** | — | — | 🟢 **{m15_data['overall_wr']}%** | **{tot_p15:+.1f}p** | ({m15_data['total_sig']} trades) |")
+    lines.append(f"| **COMBINED** | 🏆 **{comb_wr}%** | **{comb_pips:+.1f}p** | 🏆 **{comb_wr}%** | **{comb_pips:+.1f}p** | **Dual Scalp + Swing** |")
+
+    lines.append("\n💡 **Key Takeaways & AI Strategy Recommendation:**")
+    lines.append(f"- **M3 (Sniper Scalp):** High frequency ({m3_data['total_sig']} trades), tight stops (3-7 pips), rapid 1:3 TP hits (+{tot_p3:.1f} pips).")
+    lines.append(f"- **M15 (Intraday Swing):** High accuracy ({m15_data['overall_wr']}% WR), wider targets (+{tot_p15:.1f} pips).")
+    lines.append(f"- **Live Scanner Synergy:** Running both gives **{comb_sig} high-quality trades** and **+{comb_pips:.1f} total pips**.")
+
+    return {"reply": "\n".join(lines)}
+
+
+def _handle_best_pairs(intent: ParsedIntent) -> Dict[str, Any]:
+    """
+    Ranks currency pairs by profitability and win rate on the requested timeframe.
+    """
+    tf   = intent.tf or "M3"
+    days = intent.days or 15
+    rr   = intent.rr or 3.0
+    data = _get_portfolio_data(intent._replace(tf=tf, days=days, rr=rr, symbol="ALL"))
+
+    pairs_list = []
+    for p, d in data["pairs"].items():
+        if d["total_signals"] > 0:
+            pairs_list.append((p, d["win_rate"], d["net_pips"], d["wins"], d["losses"], d["total_signals"]))
+
+    # Sort by net pips descending, then win rate
+    pairs_list.sort(key=lambda x: (x[2], x[1]), reverse=True)
+
+    medals = ["🥇", "🥈", "🥉", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️⃣"]
+    lines = [
+        f"🏆 **Top Winning Currency Pairs on {tf} — Last {days} Days (RR 1:{rr})**\n",
+        "| Rank | Pair | Win Rate | Net Pips | Wins / Total | Recommendation |",
+        "| :---: | :--- | :---: | :---: | :---: | :--- |",
+    ]
+
+    for idx, (p, wr, pips, w, l, tot) in enumerate(pairs_list):
+        m = medals[idx] if idx < len(medals) else f"{idx+1}."
+        badge = "🟢" if wr >= 60 else ("🟡" if wr >= 45 else "🔴")
+        rec = "🔥 Prime Asset" if idx < 2 else ("✅ Solid Performer" if pips > 30 else "⚠️ Selective Only")
+        lines.append(f"| {m} | **{p}** | {badge} {wr}% | **{pips:+.1f}p** | {w}/{tot} | {rec} |")
+
+    lines.append("\n💡 **Tactical Execution Tips:**")
+    if pairs_list:
+        top_pair  = pairs_list[0][0]
+        runner_up = pairs_list[1][0] if len(pairs_list) > 1 else ""
+        lines.append(f"- Focus primary risk allocations on **{top_pair}** and **{runner_up}**.")
+        lines.append(f"- Best trading window: **London (07:00–11:00 UTC)** and **New York (12:00–17:00 UTC)** for institutional liquidity.")
 
     return {"reply": "\n".join(lines)}
 
@@ -495,6 +639,20 @@ def _handle_live_scan() -> Dict[str, Any]:
     return {"reply": "\n".join(lines), "data": signals}
 
 
+def _is_comparison_intent(message: str) -> bool:
+    lower = message.lower()
+    return any(k in lower for k in [
+        "compare", "comparison", " vs ", "versus", "m3 vs m15", "m15 vs m3"
+    ])
+
+
+def _is_best_pairs_intent(message: str) -> bool:
+    lower = message.lower()
+    return any(k in lower for k in [
+        "best pair", "top pair", "best win rate", "highest win rate", "best winning", "ranking", "top winning"
+    ])
+
+
 def process_chat_message(message: str) -> Dict[str, Any]:
     cleaned = message.strip()
     if not cleaned:
@@ -509,6 +667,12 @@ def process_chat_message(message: str) -> Dict[str, Any]:
 
     if _is_live_signal_intent(cleaned):
         return _handle_live_scan()
+
+    if _is_comparison_intent(cleaned):
+        return _handle_comparison(intent)
+
+    if _is_best_pairs_intent(cleaned):
+        return _handle_best_pairs(intent)
 
     if intent.symbol == "ALL":
         return _handle_portfolio(intent)

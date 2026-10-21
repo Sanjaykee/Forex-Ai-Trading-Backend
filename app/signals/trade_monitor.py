@@ -28,7 +28,7 @@ async def check_open_trades():
     db = SessionLocal()
     try:
         active_trades = db.query(models.Trade).filter(
-            models.Trade.result == "OPEN"
+            models.Trade.result.in_(["OPEN", "PENDING"])
         ).all()
 
         if not active_trades:
@@ -68,6 +68,27 @@ async def check_open_trades():
                     pip_size = 0.01
                 else:
                     pip_size = 0.0001
+
+                # If this is a pending limit order waiting to fill:
+                if trade.result == "PENDING":
+                    # Order only fills when price touches or crosses entry (pullback to zone)
+                    filled = (ask <= entry) if direction == "BUY" else (bid >= entry)
+                    if filled:
+                        trade.result = "OPEN"
+                        db.commit()
+                        logger.info(f"[TradeMonitor] Pending limit order #{trade.id} ({symbol}) filled at entry {entry} -> Trade is now OPEN")
+                    else:
+                        # If price ran straight to TP without pulling back to entry:
+                        ran_away = (bid >= tp) if direction == "BUY" else (ask <= tp)
+                        if ran_away and tp > 0:
+                            trade.result = "MISSED"
+                            trade.close_time = datetime.utcnow()
+                            db.commit()
+                            logger.info(f"[TradeMonitor] Pending limit order #{trade.id} ({symbol}) MISSED: Price reached TP without pulling back to entry.")
+                            if trade.mt5_ticket:
+                                from app.mt5.metaapi_client import metaapi_client
+                                metaapi_client.cancel_order(trade.mt5_ticket)
+                    continue
 
                 # Fetch user for Telegram alerts
                 user = db.query(models.User).filter(models.User.id == trade.user_id).first()
@@ -202,8 +223,13 @@ def activate_trade_from_signal(db, user_id: int, signal_id: int) -> dict:
 
     if result.get("success"):
         trade.mt5_ticket = str(result.get("ticket", ""))
+        order_type = str(result.get("order_type", ""))
+        if "LIMIT" in order_type:
+            trade.result = "PENDING"
+        else:
+            trade.result = "OPEN"
         db.commit()
-        logger.info(f"[TradeMonitor] MT5 order placed: ticket={trade.mt5_ticket} for {trade.symbol} {trade.direction}")
+        logger.info(f"[TradeMonitor] MT5 order placed: ticket={trade.mt5_ticket} for {trade.symbol} {trade.direction} (result={trade.result})")
 
         if user and user.telegram_chat_id:
             direction_emoji = "📈" if trade.direction == "BUY" else "📉"

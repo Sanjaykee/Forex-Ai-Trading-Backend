@@ -42,16 +42,31 @@ def _get_session_and_interval() -> tuple:
 
 
 def _is_duplicate(db, user_id: int, symbol: str, direction: str) -> bool:
-    """Return True if same symbol+direction signal already pending/approved within cooldown window."""
+    """Return True if same symbol already has an active OPEN trade or a signal within cooldown window."""
+    # 1. Never open a second trade if there is ALREADY an active/pending trade for this symbol
+    active_trade = db.query(models.Trade).filter(
+        models.Trade.user_id == user_id,
+        models.Trade.symbol  == symbol,
+        models.Trade.result.in_(["OPEN", "PENDING"]),
+    ).first()
+    if active_trade:
+        logger.info(f"[AutoScanner] Duplicate blocked: Trade #{active_trade.id} for {symbol} is already {active_trade.result}")
+        return True
+
+    # 2. Check signal cooldown window (including auto_approved)
     cutoff = datetime.utcnow() - timedelta(minutes=SIGNAL_COOLDOWN_MINUTES)
     existing = db.query(models.Signal).filter(
-        models.Signal.user_id  == user_id,
-        models.Signal.symbol   == symbol,
+        models.Signal.user_id   == user_id,
+        models.Signal.symbol    == symbol,
         models.Signal.direction == direction,
-        models.Signal.status.in_(["pending", "approved"]),
+        models.Signal.status.in_(["pending", "approved", "auto_approved"]),
         models.Signal.created_at >= cutoff,
     ).first()
-    return existing is not None
+    if existing:
+        logger.info(f"[AutoScanner] Duplicate blocked: Signal #{existing.id} for {symbol} {direction} created within cooldown")
+        return True
+
+    return False
 
 
 async def auto_scan_loop():
@@ -247,10 +262,18 @@ def _handle_auto_execute(db, user, r, entry, sl, tp, lot, risk_usd, rr_ratio):
 
     if result.get("success"):
         trade.mt5_ticket = str(result.get("ticket", ""))
+        order_type = str(result.get("order_type", ""))
+        if "LIMIT" in order_type:
+            trade.result = "PENDING"
+            status_line = f"⏳ Pending limit order placed on MT5 (ticket: {trade.mt5_ticket})"
+            monitor_line = "📊 _Waiting for price pullback to entry zone._"
+            logger.info(f"[AutoScanner] AUTO-EXECUTED PENDING LIMIT {r['symbol']} {r['direction']} ticket={trade.mt5_ticket}")
+        else:
+            trade.result = "OPEN"
+            status_line = f"✅ Market order executed on MT5 (ticket: {trade.mt5_ticket})"
+            monitor_line = "📊 _Price monitor active — closes at full TP or SL._"
+            logger.info(f"[AutoScanner] AUTO-EXECUTED MARKET {r['symbol']} {r['direction']} ticket={trade.mt5_ticket}")
         db.commit()
-        status_line = "✅ Order placed on MT5 (ticket: " + trade.mt5_ticket + ")"
-        monitor_line = "📊 _Price monitor active — closes at full TP or SL._"
-        logger.info(f"[AutoScanner] AUTO-EXECUTED {r['symbol']} {r['direction']} ticket={trade.mt5_ticket}")
     else:
         trade.result = "REJECTED"
         saved.status = "rejected"
