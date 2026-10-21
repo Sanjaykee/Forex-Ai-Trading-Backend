@@ -98,9 +98,9 @@ async def auto_scan_loop():
                 await asyncio.sleep(interval)
                 continue
 
-            # Run scanner once (shared across all users)
+            # Run scanner once on M15 ONLY (removes noisy 3-pip M3 scalps)
             try:
-                results = scan_all_pairs(timeframes=("M15", "M3"), min_confidence="LOW")
+                results = scan_all_pairs(timeframes=("M15",), min_confidence="LOW")
             except Exception as e:
                 logger.error(f"[AutoScanner] scan_all_pairs failed: {e}")
                 await asyncio.sleep(interval)
@@ -146,8 +146,9 @@ async def auto_scan_loop():
                     direction = r["direction"]
                     score     = r.get("score", 0)
 
-                    # Auto-execute fires on MEDIUM+ confidence (score >= 55)
+                    # Auto-execute fires on score >= 55 (MEDIUM+ confidence)
                     if exec_mode == "auto" and score < 55:
+                        logger.info(f"[AutoScanner] Skipping {symbol} (score={score}) — auto-execute requires score >= 55")
                         continue
 
                     # Skip if duplicate within cooldown window

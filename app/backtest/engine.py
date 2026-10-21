@@ -223,7 +223,7 @@ def run_backtest(
 
     step = 1
 
-    for i in range(40, total_len - 65, step):
+    for i in range(40, total_len - 1, step):
         if i <= last_exit:
             continue
 
