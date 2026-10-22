@@ -246,7 +246,7 @@ def _get_candles_from_storage(symbol: str, timeframe: str, n: int = 50000) -> pd
 
 def train(source: str = "mt5"):
     sample_dir = Path(__file__).resolve().parents[2] / "sample_data"
-    has_local_data = any(sample_dir.glob("*.csv"))
+    has_local_data = any(sample_dir.glob("*.csv")) if sample_dir.exists() else False
 
     use_mt5 = source == "mt5"
     candle_fn = _get_candles_from_storage
