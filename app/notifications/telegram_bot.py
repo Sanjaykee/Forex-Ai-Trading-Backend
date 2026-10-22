@@ -61,7 +61,7 @@ def send_signal_alert(chat_id: str, signal: dict) -> bool:
     message = f"""
 🚨 *FOREX AI SIGNAL*
 
-*Pair:* {signal.get('symbol')}
+*Pair:* {signal.get('symbol')} ({signal.get('timeframe', 'M15')})
 *Direction:* {direction_emoji} *{signal.get('direction')}*
 *Strategy:* {signal.get('strategy', 'SMC Precision Sniper')}
 

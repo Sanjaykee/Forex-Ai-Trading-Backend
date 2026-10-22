@@ -1,7 +1,7 @@
 """
 Auto-Scanner Background Task
-Scans all pairs every 3-5 minutes automatically.
-Sends Telegram alerts for new signals without any user interaction.
+Scans all pairs every 15 minutes synchronized with M15 candle closes (:00, :15, :30, :45).
+Sends Telegram alerts for new signals and executes trades when criteria are met.
 """
 
 import asyncio
@@ -16,29 +16,36 @@ from app.notifications.telegram_bot import send_signal_alert, _get_token
 
 logger = logging.getLogger(__name__)
 
-# Scan interval per session (seconds)
-SCAN_INTERVAL_ACTIVE  = 180   # 3 min during London / NY
-SCAN_INTERVAL_ASIAN   = 300   # 5 min during Asian
-SCAN_INTERVAL_OFFSESSION = 600  # 10 min off-session (skip scan but stay alive)
+# Scan interval per session (seconds) — aligned with M5/M15 candle closes (every 5 min)
+SCAN_INTERVAL_ACTIVE     = 300   # 5 min during London / NY
+SCAN_INTERVAL_ASIAN      = 300   # 5 min during Asian
+SCAN_INTERVAL_OFFSESSION = 300   # 5 min off-session
 
 # Signal dedup window — don't re-alert same symbol+direction within this period
 SIGNAL_COOLDOWN_MINUTES = 120
 
 
-def _get_session_and_interval() -> tuple:
-    """Return (session_name, scan_interval_seconds)."""
+def _get_wait_seconds() -> int:
+    """Calculate seconds until the next M5 candle close (:00, :05, :10, ... :55) + 5s buffer."""
+    now = datetime.now(timezone.utc)
+    seconds_past_hour = now.minute * 60 + now.second
+    wait = 300 - (seconds_past_hour % 300) + 5
+    return max(15, min(wait, 305))
+
+
+def _get_session() -> str:
+    """Return active session name."""
     hour = datetime.now(timezone.utc).hour
     if 7 <= hour < 21:   # London 07-16, NY 12-21, overlap 12-16
         if 7 <= hour < 16 and 12 <= hour < 21:
-            session = "London/NY"
+            return "London/NY"
         elif 7 <= hour < 16:
-            session = "London"
+            return "London"
         else:
-            session = "NewYork"
-        return session, SCAN_INTERVAL_ACTIVE
+            return "NewYork"
     if 0 <= hour < 7:    # Asian session
-        return "Asian", SCAN_INTERVAL_ASIAN
-    return "Off-Session", SCAN_INTERVAL_OFFSESSION
+        return "Asian"
+    return "Off-Session"
 
 
 def _is_duplicate(db, user_id: int, symbol: str, direction: str) -> bool:
@@ -77,11 +84,12 @@ async def auto_scan_loop():
     await asyncio.sleep(30)
 
     while True:
-        session, interval = _get_session_and_interval()
+        session = _get_session()
+        wait_s = _get_wait_seconds()
 
         if session == "Off-Session":
-            logger.debug(f"[AutoScanner] Off-session — skipping scan, sleeping {interval}s.")
-            await asyncio.sleep(interval)
+            logger.debug(f"[AutoScanner] Off-session — skipping scan, sleeping {wait_s}s.")
+            await asyncio.sleep(wait_s)
             continue
 
         logger.info(f"[AutoScanner] Scanning — session={session}")
@@ -94,21 +102,18 @@ async def auto_scan_loop():
             ).all()
 
             if not users:
-                logger.debug("[AutoScanner] No users with Telegram configured — skipping.")
-                await asyncio.sleep(interval)
+                logger.debug("[AutoScanner] No users with Telegram configured — skipping scan.")
                 continue
 
-            # Run scanner once on M15 ONLY (removes noisy 3-pip M3 scalps)
+            # Dual Mode: scan both M15 and M5 for high-probability setups
             try:
-                results = scan_all_pairs(timeframes=("M15",), min_confidence="LOW")
+                results = scan_all_pairs(timeframes=("M15", "M5"), min_confidence="LOW")
             except Exception as e:
                 logger.error(f"[AutoScanner] scan_all_pairs failed: {e}")
-                await asyncio.sleep(interval)
                 continue
 
             if not results:
                 logger.info("[AutoScanner] No signals found this cycle.")
-                await asyncio.sleep(interval)
                 continue
 
             logger.info(f"[AutoScanner] {len(results)} signal(s) found — processing for {len(users)} user(s).")
@@ -146,9 +151,9 @@ async def auto_scan_loop():
                     direction = r["direction"]
                     score     = r.get("score", 0)
 
-                    # Auto-execute fires on score >= 55 (MEDIUM+ confidence)
-                    if exec_mode == "auto" and score < 55:
-                        logger.info(f"[AutoScanner] Skipping {symbol} (score={score}) — auto-execute requires score >= 55")
+                    # Auto-execute fires on score >= 50
+                    if exec_mode == "auto" and score < 50:
+                        logger.info(f"[AutoScanner] Skipping {symbol} (score={score}) — auto-execute requires score >= 50")
                         continue
 
                     # Skip if duplicate within cooldown window
@@ -183,16 +188,18 @@ async def auto_scan_loop():
             logger.error(f"[AutoScanner] Unexpected error in scan loop: {e}", exc_info=True)
         finally:
             db.close()
-
-        await asyncio.sleep(interval)
+            next_wait = _get_wait_seconds()
+            logger.info(f"[AutoScanner] Scan complete. Next Dual M5/M15 scan in {round(next_wait / 60, 1)} min (at candle close).")
+            await asyncio.sleep(next_wait)
 
 
 def _build_signal_data(user, r, entry, sl, tp, lot, risk_usd, rr_ratio, status):
+    tf_tag = f" [{r.get('timeframe', 'M15')}]"
     return {
         "user_id":          user.id,
         "symbol":           r["symbol"],
         "direction":        r["direction"],
-        "strategy":         r.get("pattern_name"),
+        "strategy":         f"{r.get('pattern_name', 'SMC')}{tf_tag}",
         "entry_price":      entry,
         "stop_loss":        sl,
         "take_profit":      tp,
@@ -219,7 +226,7 @@ def _handle_manual(db, user, r, entry, sl, tp, lot, risk_usd, rr_ratio):
     alert_payload["lot_size"]    = lot
     alert_payload["take_profit"] = tp
     send_signal_alert(user.telegram_chat_id, alert_payload)
-    logger.info(f"[AutoScanner] MANUAL signal sent -> {r['symbol']} {r['direction']} | user={user.id} | lot={lot}")
+    logger.info(f"[AutoScanner] MANUAL signal sent -> {r['symbol']} ({r.get('timeframe', 'M15')}) {r['direction']} | user={user.id} | lot={lot}")
 
 
 def _handle_auto_execute(db, user, r, entry, sl, tp, lot, risk_usd, rr_ratio):
@@ -256,7 +263,7 @@ def _handle_auto_execute(db, user, r, entry, sl, tp, lot, risk_usd, rr_ratio):
         entry              = trade.entry_price,
         sl                 = trade.stop_loss,
         tp                 = trade.take_profit,
-        comment            = "ForexAI-Auto",
+        comment            = f"ForexAI-{r.get('timeframe', 'M15')}",
         metaapi_token      = user.metaapi_token,
         metaapi_account_id = user.metaapi_account_id,
     )
@@ -287,9 +294,10 @@ def _handle_auto_execute(db, user, r, entry, sl, tp, lot, risk_usd, rr_ratio):
     if token and user.telegram_chat_id:
         direction_emoji = "📈" if r["direction"] == "BUY" else "📉"
         reward_usd      = round(risk_usd * rr_val, 2)
+        tf_label        = r.get("timeframe", "M15")
         msg = (
             "⚡ *AUTO-EXECUTED*\n\n"
-            f"*Pair:* {r['symbol']}\n"
+            f"*Pair:* {r['symbol']} *({tf_label})*\n"
             f"*Direction:* {direction_emoji} *{r['direction']}*\n"
             f"*Entry:* `{entry}` | *SL:* `{sl}` | *TP:* `{tp}`\n"
             f"*Risk:* ${risk_usd:.2f} → *Reward:* ${reward_usd:.2f} (1:{int(rr_ratio)} RR)\n"

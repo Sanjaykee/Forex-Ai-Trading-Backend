@@ -27,7 +27,7 @@ HTF Bias — SCORE ONLY (never blocks a signal):
   Opposing → -10 score
   Ranging  → 0
 
-Score threshold: ≥ 40 fires signal (shown with confidence label)
+Score threshold: ≥ 50 fires signal (shown with confidence label)
 """
 from typing import Optional
 import logging
@@ -54,7 +54,7 @@ PAIRS = ["EURUSD", "GBPUSD", "USDJPY", "USDCHF", "AUDUSD",
          "NZDUSD", "USDCAD", "EURJPY", "GBPJPY"]
 
 # HTF for each entry TF
-HTF_MAP = {"M3": "M15", "M15": "H4"}
+HTF_MAP = {"M3": "M15", "M5": "H1", "M15": "H4"}
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -164,7 +164,7 @@ def _score_signal(pattern: str, htf_aligned: bool, htf_opposing: bool,
 
 def _confidence(score: int) -> str:
     if score >= 75: return "HIGH"
-    if score >= 55: return "MEDIUM"
+    if score >= 50: return "MEDIUM"
     return "LOW"
 
 
@@ -176,12 +176,12 @@ def run_backtest(
     days:           int   = 15,
     session_filter: Optional[str] = None,
     rr_ratio:       float = 3.0,
-    min_win_prob:   int   = 40,
+    min_win_prob:   int   = 50,
     ladder_mode:    bool  = False,
 ) -> dict:
 
     tf = timeframe.upper()
-    if tf not in ("M3", "M15"):
+    if tf not in ("M3", "M5", "M15"):
         tf = "M15"
 
     # ── Load candles ──────────────────────────────────────────────────────────
@@ -354,8 +354,10 @@ def run_backtest(
             continue  # skip unresolved trades
 
         last_exit = exit_i + 2
+        exit_time = str(df.iloc[exit_i]["time"]) if exit_i < len(df) else ""
         trades.append({
             "time":        str(c_time),
+            "exit_time":   exit_time,
             "direction":   trade_dir,
             "pattern":     pattern,
             "confidence":  conf,

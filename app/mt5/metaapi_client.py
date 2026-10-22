@@ -14,6 +14,7 @@ from datetime import datetime
 import logging
 
 logger = logging.getLogger(__name__)
+logging.getLogger("urllib3.connectionpool").setLevel(logging.ERROR)
 
 _metaapi_session = None
 

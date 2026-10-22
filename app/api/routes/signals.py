@@ -12,11 +12,11 @@ router = APIRouter(prefix="/signals", tags=["signals"])
 @router.get("/scan")
 def scan(db: Session = Depends(get_db), user=Depends(get_current_user)):
     """
-    Scan all 9 pairs on M15 + M3 for live SMC signals.
+    Scan all 9 pairs on M15 + M5 for live SMC signals.
     Returns signals sorted by confidence score descending.
     """
     try:
-        results = scan_all_pairs(timeframes=("M15", "M3"), min_confidence="LOW")
+        results = scan_all_pairs(timeframes=("M15", "M5"), min_confidence="LOW")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Scan failed: {str(e)}")
 
@@ -108,15 +108,15 @@ def scan_single(symbol: str, tf: str = "M15",
 @router.get("/backtest-quick")
 def backtest_quick(days: int = 15, tf: str = "M3", db: Session = Depends(get_db), user=Depends(get_current_user)):
     """
-    Run backtest across all 9 pairs. Default: 15 days on M3.
-    Params: days (default 15), tf (default M3, options: M3/M15/both)
+    Run backtest across all 9 pairs. Default: 15 days on M15.
+    Params: days (default 15), tf (default M15, options: M5/M15/both)
     """
     from app.backtest.engine import run_backtest
 
     PAIRS = ["EURUSD", "GBPUSD", "USDJPY", "USDCHF", "AUDUSD",
              "NZDUSD", "USDCAD", "EURJPY", "GBPJPY"]
 
-    timeframes = ("M15", "M3") if tf.upper() == "BOTH" else (tf.upper(),)
+    timeframes = ("M15", "M5") if tf.upper() == "BOTH" else (tf.upper(),)
 
     all_trades = []
     summary = {"total": 0, "wins": 0, "losses": 0, "pairs_scanned": 0, "errors": []}
@@ -124,7 +124,7 @@ def backtest_quick(days: int = 15, tf: str = "M3", db: Session = Depends(get_db)
     for symbol in PAIRS:
         for timeframe in timeframes:
             try:
-                result = run_backtest(symbol=symbol, timeframe=timeframe, days=days, rr_ratio=3.0, min_win_prob=40)
+                result = run_backtest(symbol=symbol, timeframe=timeframe, days=days, rr_ratio=3.0, min_win_prob=50)
                 if result.get("total_signals", 0) > 0:
                     for t in result.get("all_trades", []):
                         t["symbol"] = symbol

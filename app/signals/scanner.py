@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 PAIRS = ["EURUSD", "GBPUSD", "USDJPY", "USDCHF", "AUDUSD",
          "NZDUSD", "USDCAD", "EURJPY", "GBPJPY"]
 
-HTF_MAP = {"M3": "M15", "M15": "H4"}
+HTF_MAP = {"M3": "M15", "M5": "H1", "M15": "H4"}
 
 KILLZONES = {
     "London Open":   (7,  11),
@@ -157,7 +157,7 @@ def _score(pattern: str, htf_aligned: bool, htf_opposing: bool,
 
 def _confidence(score: int) -> str:
     if score >= 75: return "HIGH"
-    if score >= 55: return "MEDIUM"
+    if score >= 50: return "MEDIUM"
     return "LOW"
 
 
@@ -245,7 +245,7 @@ def scan_pair(symbol: str, tf: str = "M15") -> Optional[dict]:
     fvg_ok = fvg["detected"] and fvg["direction"] == direction
 
     score = _score(pattern, htf_aligned, htf_opposing, in_kz, ind["detected"], fvg_ok)
-    if score < 40:
+    if score < 50:
         return None
 
     conf = _confidence(score)
@@ -337,9 +337,9 @@ def scan_pair(symbol: str, tf: str = "M15") -> Optional[dict]:
     }
 
 
-def scan_all_pairs(timeframes=("M15", "M3"), min_confidence="LOW") -> list:
+def scan_all_pairs(timeframes=("M15", "M5"), min_confidence="LOW") -> list:
     """
-    Scan all 9 pairs on M15 and M3.
+    Scan all 9 pairs on M15 and M5.
     Returns list of active signals sorted by score descending.
     """
     conf_rank = {"HIGH": 3, "MEDIUM": 2, "LOW": 1}
