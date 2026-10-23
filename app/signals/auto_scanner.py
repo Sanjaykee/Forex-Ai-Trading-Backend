@@ -54,7 +54,11 @@ def _get_session() -> str:
 
 
 def _is_duplicate(db, user_id: int, symbol: str, direction: str) -> bool:
-    """Return True if same symbol already has an active OPEN trade or a signal within cooldown window."""
+    """
+    Return True if symbol already has an active OPEN or PENDING trade,
+    or has an unacted pending manual signal awaiting user approval.
+    Matches backtest logic: as soon as a trade exits/cancels, the pair is immediately unlocked!
+    """
     # 1. Never open a second trade if there is ALREADY an active/pending trade for this symbol
     active_trade = db.query(models.Trade).filter(
         models.Trade.user_id == user_id,
@@ -65,17 +69,30 @@ def _is_duplicate(db, user_id: int, symbol: str, direction: str) -> bool:
         logger.info(f"[AutoScanner] Duplicate blocked: Trade #{active_trade.id} for {symbol} is already {active_trade.result}")
         return True
 
-    # 2. Check signal cooldown window (including auto_approved)
-    cutoff = datetime.utcnow() - timedelta(minutes=SIGNAL_COOLDOWN_MINUTES)
-    existing = db.query(models.Signal).filter(
+    # 2. For manual approval mode: don't spam if there is already a recent pending signal awaiting user decision
+    now_tz = datetime.now().astimezone()
+    cutoff_pending = now_tz - timedelta(minutes=15)
+    pending_signal = db.query(models.Signal).filter(
         models.Signal.user_id   == user_id,
         models.Signal.symbol    == symbol,
         models.Signal.direction == direction,
-        models.Signal.status.in_(["pending", "approved", "auto_approved"]),
-        models.Signal.created_at >= cutoff,
+        models.Signal.status    == "pending",
+        models.Signal.created_at >= cutoff_pending,
     ).first()
-    if existing:
-        logger.info(f"[AutoScanner] Duplicate blocked: Signal #{existing.id} for {symbol} {direction} created within cooldown")
+    if pending_signal:
+        logger.info(f"[AutoScanner] Duplicate blocked: Pending Signal #{pending_signal.id} for {symbol} {direction} awaiting user approval")
+        return True
+
+    # 3. Prevent rapid duplicate firing in the exact same candle (< 4 minutes)
+    candle_cutoff = now_tz - timedelta(minutes=4)
+    same_candle = db.query(models.Signal).filter(
+        models.Signal.user_id   == user_id,
+        models.Signal.symbol    == symbol,
+        models.Signal.direction == direction,
+        models.Signal.created_at >= candle_cutoff,
+    ).first()
+    if same_candle:
+        logger.info(f"[AutoScanner] Duplicate blocked: Signal #{same_candle.id} for {symbol} {direction} fired in the same candle (<4m ago)")
         return True
 
     return False
