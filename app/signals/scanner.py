@@ -7,7 +7,7 @@ import logging
 import pandas as pd
 import numpy as np
 from typing import Optional
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 # ── In-memory candle cache ────────────────────────────────────────────────────
 # Structure: { "EURUSD_M15": {"df": DataFrame, "fetched_at": datetime} }
@@ -23,8 +23,9 @@ PAIRS = ["EURUSD", "GBPUSD", "USDJPY", "USDCHF", "AUDUSD",
 HTF_MAP = {"M3": "M15", "M5": "H1", "M15": "H4"}
 
 KILLZONES = {
-    "London Open":   (7,  11),
-    "New York Open": (12, 17),
+    "Asian Open":    (0,  5),   # 00:00 - 05:00 UTC (05:30 - 10:30 IST) Tokyo Open Killzone
+    "London Open":   (7,  11),  # 07:00 - 11:00 UTC (12:30 - 16:30 IST) London Open Killzone
+    "New York Open": (12, 17),  # 12:00 - 17:00 UTC (17:30 - 22:30 IST) NY Open & Overlap Killzone
 }
 
 
@@ -43,9 +44,10 @@ def _in_killzone(hour: int):
 
 
 def _session(hour: int) -> str:
-    if 7  <= hour <= 11: return "London"
-    if 12 <= hour <= 17: return "New York"
-    if 0  <= hour <= 4:  return "Asian"
+    if 7  <= hour < 12:  return "London"
+    if 12 <= hour < 16:  return "London/NY"
+    if 16 <= hour < 21:  return "New York"
+    if 0  <= hour < 7 or hour >= 21: return "Asian"
     return "Off-Session"
 
 
@@ -125,7 +127,7 @@ def _load_live(symbol: str, tf: str, count: int) -> pd.DataFrame:
             else:
                 new_df   = _normalise(raw_new)
                 combined = pd.concat([cached, new_df], ignore_index=True)
-                combined = combined.drop_duplicates(subset=["time"]) \
+                combined = combined.drop_duplicates(subset=["time"], keep="last") \
                                    .sort_values("time") \
                                    .tail(count) \
                                    .reset_index(drop=True)
@@ -178,7 +180,21 @@ def scan_pair(symbol: str, tf: str = "M15") -> Optional[dict]:
     if df.empty or len(df) < 60:
         return None
 
-    # Use last candle as "now"
+    # Ensure we evaluate the last COMPLETED (closed) candle to match backtest engine
+    now_utc = datetime.now(timezone.utc)
+    tf_minutes = {"M1": 1, "M3": 3, "M5": 5, "M15": 15, "M30": 30, "H1": 60, "H4": 240, "D1": 1440}.get(tf, 15)
+
+    last_time = df.iloc[-1]["time"]
+    if getattr(last_time, "tzinfo", None) is None:
+        last_time_utc = last_time.replace(tzinfo=timezone.utc)
+    else:
+        last_time_utc = last_time.tz_convert(timezone.utc)
+
+    # If the last candle in df is still forming (its close time is in the future), drop it
+    if now_utc < last_time_utc + timedelta(minutes=tf_minutes) and len(df) > 1:
+        df = df.iloc[:-1].copy().reset_index(drop=True)
+
+    # Use last completed candle as "now"
     candle = df.iloc[-1]
     c_time = candle["time"]
     if getattr(c_time, "tzinfo", None) is not None:
@@ -234,6 +250,16 @@ def scan_pair(symbol: str, tf: str = "M15") -> Optional[dict]:
     htf_tf  = HTF_MAP.get(tf, "H4")
     htf_count = 150 if htf_tf == "H4" else 200
     df_htf  = _load_live(symbol, htf_tf, htf_count)
+    if not df_htf.empty and len(df_htf) > 1:
+        htf_minutes = {"M15": 15, "H1": 60, "H4": 240, "D1": 1440}.get(htf_tf, 60)
+        htf_last_time = df_htf.iloc[-1]["time"]
+        if getattr(htf_last_time, "tzinfo", None) is None:
+            htf_last_time_utc = htf_last_time.replace(tzinfo=timezone.utc)
+        else:
+            htf_last_time_utc = htf_last_time.tz_convert(timezone.utc)
+        if now_utc < htf_last_time_utc + timedelta(minutes=htf_minutes):
+            df_htf = df_htf.iloc[:-1].copy().reset_index(drop=True)
+
     htf_bias = detect_structure(df_htf.tail(80)) if not df_htf.empty and len(df_htf) >= 20 else "RANGING"
 
     htf_aligned  = htf_bias == direction

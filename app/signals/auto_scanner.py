@@ -34,18 +34,23 @@ def _get_wait_seconds() -> int:
 
 
 def _get_session() -> str:
-    """Return active session name."""
-    hour = datetime.now(timezone.utc).hour
-    if 7 <= hour < 21:   # London 07-16, NY 12-21, overlap 12-16
-        if 7 <= hour < 16 and 12 <= hour < 21:
-            return "London/NY"
-        elif 7 <= hour < 16:
-            return "London"
-        else:
-            return "NewYork"
-    if 0 <= hour < 7:    # Asian session
+    """Return active session name (Asian, London, London/NY, New York, or Off-Session on weekends)."""
+    now = datetime.now(timezone.utc)
+    weekday = now.weekday()  # 0=Mon ... 4=Fri, 5=Sat, 6=Sun
+    hour = now.hour
+
+    # Weekend market close: Friday 22:00 UTC to Sunday 21:00 UTC
+    if (weekday == 4 and hour >= 22) or (weekday == 5) or (weekday == 6 and hour < 21):
+        return "Off-Session"
+
+    if 7 <= hour < 12:
+        return "London"
+    elif 12 <= hour < 16:
+        return "London/NY"
+    elif 16 <= hour < 21:
+        return "New York"
+    else:
         return "Asian"
-    return "Off-Session"
 
 
 def _is_duplicate(db, user_id: int, symbol: str, direction: str) -> bool:

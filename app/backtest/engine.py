@@ -46,8 +46,9 @@ from app.analysis.smc.fvg               import detect_fvg
 # ── Constants ────────────────────────────────────────────────────────────────
 
 KILLZONES = {
-    "London Open":   (7,  11),
-    "New York Open": (12, 17),
+    "Asian Open":    (0,  5),   # 00:00 - 05:00 UTC (05:30 - 10:30 IST) Tokyo Open Killzone
+    "London Open":   (7,  11),  # 07:00 - 11:00 UTC (12:30 - 16:30 IST) London Open Killzone
+    "New York Open": (12, 17),  # 12:00 - 17:00 UTC (17:30 - 22:30 IST) NY Open & Overlap Killzone
 }
 
 PAIRS = ["EURUSD", "GBPUSD", "USDJPY", "USDCHF", "AUDUSD",
@@ -69,9 +70,10 @@ def _pip_cfg(symbol: str):
 
 
 def _session(hour: int) -> str:
-    if 7  <= hour <= 11: return "London"
-    if 12 <= hour <= 17: return "New York"
-    if 0  <= hour <= 4:  return "Asian"
+    if 7  <= hour < 12:  return "London"
+    if 12 <= hour < 16:  return "London/NY"
+    if 16 <= hour < 21:  return "New York"
+    if 0  <= hour < 7 or hour >= 21: return "Asian"
     return "Off-Session"
 
 
@@ -238,9 +240,16 @@ def run_backtest(
 
         # Session filter — skip Off-Session by default (matching live scanner)
         if session_filter:
-            if session_filter.upper() == "ALL":
+            sf = session_filter.upper()
+            if sf == "ALL":
                 pass  # user explicitly requested all sessions including off-session
-            elif session_filter.upper() not in sess.upper():
+            elif sf == "ASIAN" and "ASIAN" not in sess.upper():
+                fc["kz"] += 1; continue
+            elif sf == "LONDON" and ("LONDON" not in sess.upper() and sess != "London/NY"):
+                fc["kz"] += 1; continue
+            elif sf in ("NEW YORK", "NEWYORK", "NY") and ("NEW YORK" not in sess.upper() and sess != "London/NY"):
+                fc["kz"] += 1; continue
+            elif sf not in sess.upper():
                 fc["kz"] += 1; continue
         else:
             if sess == "Off-Session":
