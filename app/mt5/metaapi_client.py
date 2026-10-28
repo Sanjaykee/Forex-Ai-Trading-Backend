@@ -308,6 +308,130 @@ class MetaApiClient:
         logger.info("MetaApi total candles fetched for %s %s: %d", symbol, timeframe, len(combined))
         return combined
 
+    def get_candles_range(
+        self,
+        symbol: str,
+        timeframe: str,
+        start_dt: "datetime",
+        end_dt: "datetime",
+        warmup_candles: int = 100,
+    ) -> "pd.DataFrame":
+        """
+        Fetch historical candles for a specific UTC date range from MetaApi.
+        Paginates backwards from end_dt until start_dt is covered.
+        warmup_candles: extra candles fetched before start_dt for indicator warm-up.
+        Returns a DataFrame sorted ascending by time, with tz-naive UTC timestamps.
+        """
+        if not self.is_configured:
+            raise RuntimeError("MetaApi credentials not configured")
+
+        tf_map = {
+            "M1": "1m", "M3": "3m", "M5": "5m", "M15": "15m", "M30": "30m",
+            "H1": "1h", "H4": "4h", "D1": "1d"
+        }
+        meta_tf = tf_map.get(timeframe.upper())
+        if not meta_tf:
+            raise ValueError(f"Unsupported timeframe: {timeframe}")
+
+        url = (
+            f"{self.market_base_url}/historical-market-data"
+            f"/symbols/{symbol}/timeframes/{meta_tf}/candles"
+        )
+        session = get_session()
+        BATCH = 1000
+        all_frames = []
+        cursor = end_dt
+
+        while True:
+            params = {
+                "limit": BATCH,
+                "startTime": cursor.strftime("%Y-%m-%dT%H:%M:%S.000Z"),
+            }
+            batch_df = pd.DataFrame()
+            for attempt in range(3):
+                try:
+                    res = session.get(url, headers=self.headers, params=params, timeout=30)
+                    if res.status_code == 200:
+                        raw = res.json()
+                        if not raw:
+                            break
+                        batch_df = self._parse_candles(raw)
+                        break
+                    logger.error(
+                        "get_candles_range HTTP %d %s %s: %s",
+                        res.status_code, symbol, timeframe, res.text[:200]
+                    )
+                    if res.status_code in (401, 403):
+                        raise RuntimeError(
+                            f"MetaApi auth error {res.status_code} for {symbol} {timeframe}"
+                        )
+                    break
+                except RuntimeError:
+                    raise
+                except Exception as e:
+                    if attempt < 2:
+                        time.sleep(1.5 * (attempt + 1))
+                        continue
+                    raise RuntimeError(
+                        f"MetaApi network error for {symbol} {timeframe}: {e}"
+                    ) from e
+
+            if batch_df.empty:
+                break
+
+            all_frames.append(batch_df)
+            oldest = batch_df["time"].min()
+
+            warmup_start = pd.Timestamp(start_dt) - pd.Timedelta(
+                minutes=self._tf_minutes(timeframe) * warmup_candles
+            )
+            if oldest <= warmup_start:
+                break
+            if len(batch_df) < BATCH:
+                break
+
+            cursor = oldest.to_pydatetime()
+
+        if not all_frames:
+            return pd.DataFrame()
+
+        combined = pd.concat(all_frames, ignore_index=True)
+        combined = (
+            combined.drop_duplicates(subset=["time"])
+            .sort_values("time")
+            .reset_index(drop=True)
+        )
+        if getattr(combined["time"].dt, "tz", None) is not None:
+            combined["time"] = combined["time"].dt.tz_convert("UTC").dt.tz_localize(None)
+        logger.info(
+            "get_candles_range %s %s: %d candles %s -> %s",
+            symbol, timeframe, len(combined),
+            combined["time"].min(), combined["time"].max()
+        )
+        return combined
+
+    @staticmethod
+    def _tf_minutes(tf: str) -> int:
+        return {"M1": 1, "M3": 3, "M5": 5, "M15": 15, "M30": 30,
+                "H1": 60, "H4": 240, "D1": 1440}.get(tf.upper(), 15)
+
+    @staticmethod
+    def _parse_candles(raw: list) -> "pd.DataFrame":
+        if not raw:
+            return pd.DataFrame()
+        df = pd.DataFrame(raw)
+        if "time" not in df.columns:
+            return pd.DataFrame()
+        df["time"] = pd.to_datetime(df["time"], utc=True).dt.tz_localize(None)
+        if "tickVolume" in df.columns:
+            df.rename(columns={"tickVolume": "volume"}, inplace=True)
+        if "volume" not in df.columns:
+            df["volume"] = 100
+        needed = ["time", "open", "high", "low", "close", "volume"]
+        if not all(c in df.columns for c in needed):
+            return pd.DataFrame()
+        return df[needed].copy()
+
     def place_order(self, symbol: str, direction: str, lot: float, entry: float = None, sl: float = None, tp: float = None, comment: str = "ForexAI") -> dict:
         """
         Places a LIMIT order at the OB entry price — matches backtest scenario exactly.

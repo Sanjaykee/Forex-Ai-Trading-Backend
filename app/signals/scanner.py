@@ -8,6 +8,7 @@ import pandas as pd
 import numpy as np
 from typing import Optional
 from datetime import datetime, timezone, timedelta
+from app.analysis.smc.mtf_strategy import evaluate_mtf_smc_setup
 
 # ── In-memory candle cache ────────────────────────────────────────────────────
 # Structure: { "EURUSD_M15": {"df": DataFrame, "fetched_at": datetime} }
@@ -62,6 +63,7 @@ def _get_client():
     user = None
     region = "backup-new-york"
     try:
+        db = SessionLocal()
         user = db.query(User).filter(
             User.metaapi_account_id.isnot(None),
             User.metaapi_account_id != ""
@@ -363,7 +365,110 @@ def scan_pair(symbol: str, tf: str = "M15") -> Optional[dict]:
     }
 
 
-def scan_all_pairs(timeframes=("M15", "M5"), min_confidence="LOW") -> list:
+def scan_mtf_smc_pair(symbol: str, disp_threshold: float = 0.8, min_score: int = 11, min_rr: float = 3.0) -> Optional[dict]:
+    """
+    Variant C live scan — identical signal-generation logic as the backtest engine.
+    M15 bias -> M5 confirmation -> M3 trigger (market entry on closed M3 candle).
+
+    M3 data is MANDATORY. If unavailable after one retry, the pair is skipped.
+    No silent fallback to M5 candles.
+    """
+    df15 = _load_live(symbol, "M15", count=100)
+    df5  = _load_live(symbol, "M5",  count=200)
+
+    if df15.empty or df5.empty:
+        logger.debug("[VariantC] %s skipped: M15/M5 data unavailable", symbol)
+        return None
+
+    # M3 is mandatory — attempt once, retry once, then skip
+    df3 = _load_live(symbol, "M3", count=200)
+    if df3.empty:
+        logger.warning("[VariantC] %s M3 fetch attempt 1 empty — retrying", symbol)
+        df3 = _load_live(symbol, "M3", count=200)
+    if df3.empty:
+        logger.warning("[VariantC] %s skipped: M3 data unavailable after retry", symbol)
+        return None
+
+    setup = evaluate_mtf_smc_setup(
+        df15=df15, df5=df5, df3=df3,
+        symbol=symbol, disp_threshold=disp_threshold,
+        min_score=min_score, min_rr=min_rr,
+    )
+
+    if not setup or not setup.get("valid"):
+        reason = (setup or {}).get("reason", "unknown")
+        raw    = (setup or {}).get("score", 0)
+        norm   = round(raw / 14.0 * 100, 2)
+        logger.debug(
+            "[VariantC] %s no setup: reason=%s raw_score=%d/14 normalized=%.2f",
+            symbol, reason, raw, norm,
+        )
+        return None
+
+    raw_score        = setup["score"]
+    normalized_score = round(raw_score / 14.0 * 100, 2)
+    pip_mult         = 100.0 if "JPY" in symbol.upper() else 10000.0
+    sl_dist          = abs(setup["entry_price"] - setup["stop_loss"])
+    tp_dist          = abs(setup["take_profit"] - setup["entry_price"])
+
+    # m3_trigger_ts is the closed M3 candle timestamp that generated the signal.
+    # It is used as the primary duplicate-prevention identity key.
+    m3_trigger_ts = setup.get("entry_time")
+
+    return {
+        # ── Core trade parameters ──
+        "symbol":          symbol,
+        "direction":       setup["direction"],
+        "entry_price":     setup["entry_price"],   # M3 close — signal reference only
+        "entry_type":      "market",               # Variant C always executes at market
+        "stop_loss":       setup["stop_loss"],
+        "take_profit":     setup["take_profit"],
+        "rr_ratio":        f"1:{setup['rr_val']:.2f}",
+        "rr_val":          setup["rr_val"],
+        "sl_pips":         round(sl_dist * pip_mult, 1),
+        "tp_pips":         round(tp_dist * pip_mult, 1),
+        # ── Score (raw 0-14 and normalized 0-100) ──
+        "score":           raw_score,              # raw 0-14 from calculate_a_plus_score()
+        "normalized_score": normalized_score,      # (raw/14)*100 — display only
+        # ── Context ──
+        "session":         setup["session"],
+        "h4_trend":        setup["m15_bias"],
+        "h1_trend":        setup["m15_location"],
+        "strategy":        "MTF SMC A+ Strategy",
+        "pattern_name":    "A+ MTF SMC Setup",
+        "timeframe":       "M15->M5->M3",
+        "pattern":         "A_PLUS_SMC",
+        "confidence":      "HIGH" if raw_score >= 12 else "MEDIUM",
+        "htf_bias":        setup["m15_bias"],
+        "htf_aligned":     True,
+        "killzone":        setup["session"],
+        "fvg":             setup["fvg_overlap"],
+        # ── Duplicate-prevention identity ──
+        "m3_trigger_ts":   m3_trigger_ts,          # closed M3 candle timestamp
+        "signal_time":     str(m3_trigger_ts),
+        # ── UI-compatible aliases ──
+        "current_price":   setup["entry_price"],
+        "entry":           setup["entry_price"],
+        "sl":              setup["stop_loss"],
+        "tp_1_3":          setup["take_profit"],
+        "ob_high":         setup["ob_zone"],
+        "entry_valid":     True,
+        "entry_status":    f"Variant C market signal — {setup['setup_class']} raw={raw_score}/14 norm={normalized_score:.2f}",
+        "lot_size":        None,
+        "risk_usd":        1.0,
+        "spread":          None,
+        "confirmations": [
+            f"M15 Bias: {setup['m15_bias']}",
+            f"Location: {setup['m15_location']}",
+            f"Sweep: {setup['liquidity_type']}",
+            f"Break: {setup['choch_type']}",
+            f"Trigger: {setup['m3_trigger']}",
+            f"Score: {raw_score}/14 ({normalized_score:.2f}/100)",
+        ],
+    }
+
+
+def scan_all_pairs(timeframes=("M15", "M5"), min_confidence="LOW", strategy: str = "smc_mtf") -> list:
     """
     Scan all 9 pairs on M15 and M5.
     Returns list of active signals sorted by score descending.
@@ -371,6 +476,18 @@ def scan_all_pairs(timeframes=("M15", "M5"), min_confidence="LOW") -> list:
     conf_rank = {"HIGH": 3, "MEDIUM": 2, "LOW": 1}
     min_rank  = conf_rank.get(min_confidence, 1)
     signals   = []
+
+    if strategy in ("smc_mtf", "mtf", "new", "a_plus"):
+        for pair in PAIRS:
+            try:
+                sig = scan_mtf_smc_pair(pair)
+                if sig:
+                    signals.append(sig)
+                    logger.info("MTF A+ SIGNAL %s %s score=%d", pair, sig["direction"], sig["score"])
+            except Exception as e:
+                logger.error("scan_mtf_smc_pair %s: %s", pair, e)
+        signals.sort(key=lambda x: x["score"], reverse=True)
+        return signals
 
     for tf in timeframes:
         for pair in PAIRS:
@@ -388,6 +505,7 @@ def scan_all_pairs(timeframes=("M15", "M5"), min_confidence="LOW") -> list:
 
 
 def get_active_signals(risk_usd: float = 1.0, rr_ratio: float = 3.0,
-                       data_source: str = "auto") -> list:
+                       data_source: str = "auto", strategy: str = "smc_mtf") -> list:
     """Legacy-compatible wrapper used by signals route."""
-    return scan_all_pairs()
+    return scan_all_pairs(strategy=strategy)
+
