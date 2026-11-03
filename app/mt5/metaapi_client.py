@@ -382,10 +382,12 @@ class MetaApiClient:
             all_frames.append(batch_df)
             oldest = batch_df["time"].min()
 
-            warmup_start = pd.Timestamp(start_dt) - pd.Timedelta(
+            warmup_start = pd.Timestamp(start_dt).tz_localize(None) if pd.Timestamp(start_dt).tzinfo is None else pd.Timestamp(start_dt).tz_convert("UTC").tz_localize(None)
+            warmup_start = warmup_start - pd.Timedelta(
                 minutes=self._tf_minutes(timeframe) * warmup_candles
             )
-            if oldest <= warmup_start:
+            oldest_naive = oldest.tz_localize(None) if oldest.tzinfo is None else oldest.tz_convert("UTC").tz_localize(None)
+            if oldest_naive <= warmup_start:
                 break
             if len(batch_df) < BATCH:
                 break
