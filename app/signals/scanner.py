@@ -13,8 +13,23 @@ from app.analysis.smc.mtf_strategy import evaluate_mtf_smc_setup
 # ── In-memory candle cache ────────────────────────────────────────────────────
 # Structure: { "EURUSD_M15": {"df": DataFrame, "fetched_at": datetime} }
 _candle_cache: dict = {}
-CACHE_TTL_HOURS  = 4   # full refresh every 4 hours
-CACHE_TAIL_FETCH = 5   # candles fetched on incremental update
+
+# Fix 1: Per-timeframe TTL — faster TFs expire sooner to keep swing data fresh
+CACHE_TTL_SECONDS: dict = {
+    "M3":  5  * 60,    # 5 min  — M3 changes every 3 min, must stay current
+    "M5":  10 * 60,    # 10 min — M5 changes every 5 min
+    "M15": 30 * 60,    # 30 min — M15 swing detection needs recent closed candles
+    "H1":  60 * 60,    # 1 hour
+    "H4":  4  * 3600,  # 4 hours — HTF bias only, slow-moving
+    "D1":  8  * 3600,  # 8 hours
+}
+CACHE_TTL_SECONDS_DEFAULT = 10 * 60   # 10 min fallback for unknown TFs
+
+# Fix 3: Fetch enough tail candles to cover the full TTL gap safely
+# M3 TTL=5min -> 5/3 = ~2 candles needed, fetch 6 for safety
+# M5 TTL=10min -> 10/5 = 2 candles, fetch 6
+# M15 TTL=30min -> 30/15 = 2 candles, fetch 6
+CACHE_TAIL_FETCH = 6
 
 logger = logging.getLogger(__name__)
 
@@ -104,9 +119,10 @@ def _load_live(symbol: str, tf: str, count: int) -> pd.DataFrame:
     now   = datetime.now(timezone.utc)
     entry = _candle_cache.get(key)
 
+    ttl = CACHE_TTL_SECONDS.get(tf, CACHE_TTL_SECONDS_DEFAULT)
     need_full = (
         entry is None or
-        (now - entry["fetched_at"]).total_seconds() > CACHE_TTL_HOURS * 3600
+        (now - entry["fetched_at"]).total_seconds() > ttl
     )
 
     client = _get_client()
@@ -365,6 +381,32 @@ def scan_pair(symbol: str, tf: str = "M15") -> Optional[dict]:
     }
 
 
+# ── Fix 2: Strip forming (incomplete) candle before analysis ─────────────────
+_TF_MINUTES: dict = {
+    "M1": 1, "M3": 3, "M5": 5, "M15": 15,
+    "M30": 30, "H1": 60, "H4": 240, "D1": 1440,
+}
+
+def _strip_forming(df: pd.DataFrame, tf: str) -> pd.DataFrame:
+    """
+    Drop the last candle if it is still forming (its close time is in the future).
+    This ensures swing detection, OB detection, and RR calculation only use
+    fully closed candles — matching backtest behaviour exactly.
+    """
+    if df.empty or len(df) < 2:
+        return df
+    tf_minutes = _TF_MINUTES.get(tf, 5)
+    now_utc    = datetime.now(timezone.utc)
+    last_time  = df.iloc[-1]["time"]
+    if getattr(last_time, "tzinfo", None) is None:
+        last_time = last_time.replace(tzinfo=timezone.utc)
+    candle_close = last_time + timedelta(minutes=tf_minutes)
+    if now_utc < candle_close:
+        logger.debug("[StripForming] %s forming candle dropped (closes at %s)", tf, candle_close)
+        return df.iloc[:-1].copy().reset_index(drop=True)
+    return df
+
+
 def scan_mtf_smc_pair(symbol: str, disp_threshold: float = 0.8, min_score: int = 11, min_rr: float = 3.0) -> Optional[dict]:
     """
     Variant C live scan — identical signal-generation logic as the backtest engine.
@@ -373,18 +415,19 @@ def scan_mtf_smc_pair(symbol: str, disp_threshold: float = 0.8, min_score: int =
     M3 data is MANDATORY. If unavailable after one retry, the pair is skipped.
     No silent fallback to M5 candles.
     """
-    df15 = _load_live(symbol, "M15", count=100)
-    df5  = _load_live(symbol, "M5",  count=200)
+    # Fix 2 applied: strip forming candle from every timeframe before analysis
+    df15 = _strip_forming(_load_live(symbol, "M15", count=100), "M15")
+    df5  = _strip_forming(_load_live(symbol, "M5",  count=200), "M5")
 
     if df15.empty or df5.empty:
         logger.debug("[VariantC] %s skipped: M15/M5 data unavailable", symbol)
         return None
 
     # M3 is mandatory — attempt once, retry once, then skip
-    df3 = _load_live(symbol, "M3", count=200)
+    df3 = _strip_forming(_load_live(symbol, "M3", count=200), "M3")
     if df3.empty:
         logger.warning("[VariantC] %s M3 fetch attempt 1 empty — retrying", symbol)
-        df3 = _load_live(symbol, "M3", count=200)
+        df3 = _strip_forming(_load_live(symbol, "M3", count=200), "M3")
     if df3.empty:
         logger.warning("[VariantC] %s skipped: M3 data unavailable after retry", symbol)
         return None
