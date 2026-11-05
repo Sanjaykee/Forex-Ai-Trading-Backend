@@ -1,4 +1,36 @@
 import math
+import os
+
+# ── Per-trade risk amount ─────────────────────────────────────────────────────
+# Override via environment: RISK_PER_TRADE_USD=1.00
+# Default is $0.10 (scaling phase). auto_scanner.py enforces the scaling cap.
+_RISK_PER_TRADE_USD_DEFAULT = 0.10
+
+# ── Over-risk tolerance ───────────────────────────────────────────────────────
+# When the requested risk cannot be expressed with the broker's minimum lot, the
+# sizer must choose between over-risking and refusing the trade. Silently
+# over-risking is what made a $0.10 target execute at ~$1.00 of real risk (10x).
+# Default: refuse when the minimum achievable risk exceeds the target by more
+# than this multiple. Set ALLOW_MIN_LOT_OVER_RISK=true to trade anyway.
+MAX_RISK_MULTIPLE       = float(os.environ.get("MAX_RISK_MULTIPLE", "1.5"))
+ALLOW_MIN_LOT_OVER_RISK = os.environ.get("ALLOW_MIN_LOT_OVER_RISK", "false").strip().lower() == "true"
+
+# ── USDJPY rate for valuing JPY-cross pip risk ────────────────────────────────
+# Pip value on a JPY pair is 1000 JPY per lot. Converting that to USD needs the
+# USDJPY rate. For USDJPY itself the pair's own price IS that rate (exact). For
+# EURJPY / GBPJPY the cross price is NOT a valid substitute — the previous code
+# used it anyway, understating GBPJPY risk by ~20%. Used only as a fallback when
+# the caller does not supply a live rate.
+USDJPY_RATE_ESTIMATE    = float(os.environ.get("USDJPY_RATE_ESTIMATE", "150.0"))
+
+
+def get_risk_per_trade() -> float:
+    """Return RISK_PER_TRADE_USD env var as float, defaulting to 0.10."""
+    try:
+        return float(os.environ.get("RISK_PER_TRADE_USD", str(_RISK_PER_TRADE_USD_DEFAULT)))
+    except (TypeError, ValueError):
+        return _RISK_PER_TRADE_USD_DEFAULT
+
 
 # ── MT5 minimum stop distance in pips per instrument ─────────────────────────
 MT5_MIN_SL_PIPS = {
@@ -10,7 +42,7 @@ MT5_MIN_SL_PIPS = {
 MT5_MIN_SL_PIPS_DEFAULT = 3
 
 
-def _get_instrument_params(symbol: str, entry: float) -> tuple:
+def _get_instrument_params(symbol: str, entry: float, usd_jpy: float | None = None) -> tuple:
     """
     Return (pip_size, pip_val_usd_per_standard_lot).
 
@@ -19,8 +51,14 @@ def _get_instrument_params(symbol: str, entry: float) -> tuple:
     Correct formulas:
       xxxUSD  (EURUSD, GBPUSD, AUDUSD, NZDUSD) : pip_val = 10.0  (fixed, quote=USD)
       USDxxx  (USDCHF, USDCAD)                 : pip_val = 10.0 / entry
-      JPY cross (USDJPY, EURJPY, GBPJPY)        : pip_val = (0.01 * 100000) / entry
+      JPY pair                                 : pip_val = 1000 JPY / USDJPY rate
+                                                 - USDJPY: rate == entry (exact)
+                                                 - crosses: rate must be supplied
+                                                   via `usd_jpy`, else fallback
       Gold XAUUSD                               : pip_val = 1.0
+
+    `usd_jpy` lets the caller pass a live USDJPY rate so JPY-cross risk is
+    valued correctly instead of being derived from the cross's own price.
     """
     s = symbol.upper()
 
@@ -35,7 +73,14 @@ def _get_instrument_params(symbol: str, entry: float) -> tuple:
 
     if "JPY" in s:
         pip_size = 0.01
-        pip_val  = (pip_size * 100000) / entry if entry > 0 else 10.0
+        # 1 pip on 100,000 units of a JPY pair = 1000 JPY, valued in USD.
+        if s.startswith("USD"):
+            rate = entry if entry > 0 else USDJPY_RATE_ESTIMATE
+        elif usd_jpy and usd_jpy > 0:
+            rate = usd_jpy
+        else:
+            rate = USDJPY_RATE_ESTIMATE
+        pip_val = (1000.0 / rate) if rate > 0 else 10.0
         return pip_size, pip_val
 
     pip_size = 0.0001
@@ -77,23 +122,29 @@ def calculate_lot_size(
     stop_loss: float,
     symbol_info: dict,
     symbol: str = "",
+    usd_jpy: float | None = None,
 ) -> float:
     """
     Calculate lot size so that hitting SL costs approximately risk_usd.
 
+    Returns 0.0 when the requested risk cannot be honoured — meaning "skip this
+    trade". Callers MUST treat 0.0 as a refusal, not as a size.
+
     Strategy:
     - Compute exact (raw) lot from risk formula.
-    - Round to nearest volume_step (not floor) — this keeps actual risk
-      within ±1 step of target, which for 0.01 step is ±$0.10-$0.15 max.
+    - Round to nearest volume_step.
     - Clamp to [volume_min, volume_max].
-    - If raw_lot < volume_min (SL too wide for $1 risk), return volume_min
-      and accept the under-risk rather than over-risking.
+    - If the clamped lot risks more than `risk_usd * MAX_RISK_MULTIPLE`, the
+      broker cannot express this risk and the trade is refused (0.0) unless
+      ALLOW_MIN_LOT_OVER_RISK=true.
 
-    Actual risk range with $1 target and 0.01 step:
-      Best case: raw_lot rounds up  -> actual risk up to ~$1.50 (acceptable)
-      Worst case: raw_lot rounds down -> actual risk down to ~$0.75 (acceptable)
-      The $0.75-$1.50 band is inherent to 0.01 lot granularity at small risk.
-      To tighten this band, broker must support 0.001 micro-lots.
+    Why the refusal exists:
+    The previous implementation clamped raw_lot up to volume_min unconditionally.
+    With a $0.10 target, a 10-pip EURUSD stop and a 0.01 minimum lot, raw_lot is
+    0.001 -> rounds to 0 -> clamps to 0.01 -> real risk $1.00, i.e. 10x the
+    target. That silently broke the scaling phase and made the 3% daily / 6%
+    weekly circuit breakers trip ~10x sooner than the per-trade arithmetic
+    predicted.
     """
     volume_min  = float(symbol_info.get("volume_min",  0.01))
     volume_step = float(symbol_info.get("volume_step", 0.01))
@@ -101,9 +152,9 @@ def calculate_lot_size(
 
     sl_distance = abs(entry - stop_loss)
     if sl_distance == 0:
-        return volume_min
+        return 0.0
 
-    pip_size, pip_val_usd = _get_instrument_params(symbol, entry)
+    pip_size, pip_val_usd = _get_instrument_params(symbol, entry, usd_jpy)
 
     # Enforce MT5 minimum SL distance before sizing
     min_dist = get_min_sl_pips(symbol) * pip_size
@@ -114,7 +165,7 @@ def calculate_lot_size(
     sl_dollar_per_lot = sl_pips * pip_val_usd
 
     if sl_dollar_per_lot <= 0:
-        return volume_min
+        return 0.0
 
     raw_lot = risk_usd / sl_dollar_per_lot
 
@@ -125,12 +176,18 @@ def calculate_lot_size(
     # Clamp to broker limits
     lot = max(volume_min, min(volume_max, lot))
 
-    return round(lot, 2)
+    # Refuse if the smallest tradeable size still exceeds the risk tolerance
+    actual_risk = lot * sl_dollar_per_lot
+    if actual_risk > risk_usd * MAX_RISK_MULTIPLE and not ALLOW_MIN_LOT_OVER_RISK:
+        return 0.0
+
+    return round(lot, 8)
 
 
-def actual_risk_usd(lot: float, entry: float, stop_loss: float, symbol: str) -> float:
+def actual_risk_usd(lot: float, entry: float, stop_loss: float, symbol: str,
+                    usd_jpy: float | None = None) -> float:
     """Return the actual USD risk for a given lot size and SL distance."""
-    pip_size, pip_val_usd = _get_instrument_params(symbol, entry)
+    pip_size, pip_val_usd = _get_instrument_params(symbol, entry, usd_jpy)
     sl_pips = abs(entry - stop_loss) / pip_size
     return round(lot * sl_pips * pip_val_usd, 4)
 

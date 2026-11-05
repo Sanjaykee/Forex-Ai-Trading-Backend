@@ -626,48 +626,17 @@ def calculate_rr(
     min_rr: float = 3.0,
 ) -> Tuple[Optional[float], float]:
     """
-    Select logical liquidity/structure TP from M15 swing points in the trade direction.
-    Ensure potential_reward / risk >= min_rr (3.0).
-    Falls back to the extreme of the M15 range if no swing qualifies, rather than
-    rejecting outright — the RR check still gates the trade.
+    Fixed 1:3 RR — TP is always exactly 3x the SL distance from entry.
+    No dynamic swing scanning. Consistent with live scanner execution.
     """
-    highs = df_m15_slice["high"].values.astype(float)
-    lows  = df_m15_slice["low"].values.astype(float)
-    sh, sl_list = find_swings(highs, lows, n=2)
-
     risk = abs(entry - sl)
     if risk <= 0:
         return None, 0.0
-
     if direction == "SELL":
-        valid_tps = sorted([p for _, p in sl_list if p < entry], reverse=True)
-        # Fallback: use the absolute range low if no swing qualifies
-        if not valid_tps:
-            valid_tps = [float(lows.min())]
-        else:
-            # Also append the range low as a final fallback candidate
-            valid_tps.append(float(lows.min()))
-
-        for cand_tp in valid_tps:
-            reward = entry - cand_tp
-            rr = reward / risk
-            if rr >= min_rr:
-                return round(cand_tp, 5), round(rr, 2)
-
-    else:  # BUY
-        valid_tps = sorted([p for _, p in sh if p > entry])
-        if not valid_tps:
-            valid_tps = [float(highs.max())]
-        else:
-            valid_tps.append(float(highs.max()))
-
-        for cand_tp in valid_tps:
-            reward = cand_tp - entry
-            rr = reward / risk
-            if rr >= min_rr:
-                return round(cand_tp, 5), round(rr, 2)
-
-    return None, 0.0
+        tp = round(entry - risk * min_rr, 5)
+    else:
+        tp = round(entry + risk * min_rr, 5)
+    return tp, min_rr
 
 
 # ── Step 9: A+ Setup Score (14-Point Scale) ───────────────────────────────────
@@ -948,8 +917,19 @@ def run_mtf_smc_backtest(
     """
     Run complete Multi-Timeframe SMC A+ Strategy Backtest.
     Deterministic, zero lookahead bias, fully reproducible.
+    Spread cost is applied at entry: effective_entry is shifted against the
+    trader so TP/SL hit checks reflect the real cost of crossing the spread.
     """
+    # Spread cost per pair in pips (one-way entry cost)
+    SPREAD_PIPS = {
+        "EURUSD": 1.2, "GBPUSD": 1.5, "USDJPY": 1.3, "USDCHF": 1.6,
+        "AUDUSD": 1.4, "NZDUSD": 2.0, "USDCAD": 1.8,
+        "EURJPY": 1.8, "GBPJPY": 2.5,
+    }
+    pip_size = 0.01 if "JPY" in symbol.upper() else 0.0001
     pip_mult = 100.0 if "JPY" in symbol.upper() else 10000.0
+    spread_pips = SPREAD_PIPS.get(symbol.upper(), 1.5)
+    spread_price = spread_pips * pip_size   # spread in price units
 
     df15 = df15.sort_values("time").reset_index(drop=True)
     df5  = df5.sort_values("time").reset_index(drop=True)
@@ -1028,23 +1008,33 @@ def run_mtf_smc_backtest(
             continue
 
         # Trade forward simulation
-        entry_time = setup["entry_time"]
+        entry_time  = setup["entry_time"]
         entry_price = setup["entry_price"]
-        sl_price = setup["stop_loss"]
-        tp_price = setup["take_profit"]
-        trade_dir = setup["direction"]
-        final_rr = setup["rr_val"]
-        risk_dist = abs(entry_price - sl_price)
-        reward_dist = abs(tp_price - entry_price)
+        sl_price    = setup["stop_loss"]
+        tp_price    = setup["take_profit"]
+        trade_dir   = setup["direction"]
+        final_rr    = setup["rr_val"]
+
+        # Spread-adjusted effective entry: shift against the trader at fill
+        # BUY  fills at ask = mid + spread  → effective_entry is higher → SL closer, TP further
+        # SELL fills at bid = mid - spread  → effective_entry is lower  → SL closer, TP further
+        if trade_dir == "BUY":
+            effective_entry = entry_price + spread_price
+        else:
+            effective_entry = entry_price - spread_price
+
+        # Risk/reward distances measured from the spread-adjusted entry
+        risk_dist   = abs(effective_entry - sl_price)
+        reward_dist = abs(tp_price - effective_entry)
 
         subsequent = df3[df3['time'] > entry_time].head(400)
         if subsequent.empty:
             subsequent = df5[df5['time'] > entry_time].head(150)
 
-        outcome = "OPEN"
-        pips = 0.0
+        outcome    = "OPEN"
+        pips       = 0.0
         r_multiple = 0.0
-        exit_time = None
+        exit_time  = None
 
         for _, sub_row in subsequent.iterrows():
             sub_h = float(sub_row["high"])
@@ -1052,30 +1042,31 @@ def run_mtf_smc_backtest(
             sub_t = sub_row["time"]
 
             if trade_dir == "SELL":
+                # SL/TP checked against effective (spread-adjusted) entry
                 if sub_h >= sl_price:
-                    outcome = "LOSS"
-                    pips = -round(risk_dist * pip_mult, 1)
+                    outcome    = "LOSS"
+                    pips       = -round(risk_dist * pip_mult, 1)
                     r_multiple = -1.0
-                    exit_time = sub_t
+                    exit_time  = sub_t
                     break
                 elif sub_l <= tp_price:
-                    outcome = "WIN"
-                    pips = round(reward_dist * pip_mult, 1)
+                    outcome    = "WIN"
+                    pips       = round(reward_dist * pip_mult, 1)
                     r_multiple = round(final_rr, 2)
-                    exit_time = sub_t
+                    exit_time  = sub_t
                     break
-            else: # BUY
+            else:  # BUY
                 if sub_l <= sl_price:
-                    outcome = "LOSS"
-                    pips = -round(risk_dist * pip_mult, 1)
+                    outcome    = "LOSS"
+                    pips       = -round(risk_dist * pip_mult, 1)
                     r_multiple = -1.0
-                    exit_time = sub_t
+                    exit_time  = sub_t
                     break
                 elif sub_h >= tp_price:
-                    outcome = "WIN"
-                    pips = round(reward_dist * pip_mult, 1)
+                    outcome    = "WIN"
+                    pips       = round(reward_dist * pip_mult, 1)
                     r_multiple = round(final_rr, 2)
-                    exit_time = sub_t
+                    exit_time  = sub_t
                     break
 
         if outcome == "OPEN":
@@ -1086,33 +1077,35 @@ def run_mtf_smc_backtest(
             protector.record_trade(outcome, r_multiple)
 
         trades.append({
-            "timestamp": str(entry_time),
-            "timestamp_ist": to_ist_str(entry_time),
-            "pair": symbol,
-            "direction": trade_dir,
-            "entry": entry_price,
-            "stop_loss": sl_price,
-            "take_profit": tp_price,
-            "risk_pips": round(risk_dist * pip_mult, 1),
-            "reward_pips": round(reward_dist * pip_mult, 1),
-            "rr": f"1:{final_rr:.2f}",
-            "rr_val": final_rr,
-            "score": setup["score"],
-            "setup_class": setup["setup_class"],
-            "session": setup["session"],
-            "m15_bias": setup["m15_bias"],
-            "m15_location": setup["m15_location"],
+            "timestamp":      str(entry_time),
+            "timestamp_ist":  to_ist_str(entry_time),
+            "pair":           symbol,
+            "direction":      trade_dir,
+            "entry":          entry_price,
+            "effective_entry": round(effective_entry, 5),
+            "stop_loss":      sl_price,
+            "take_profit":    tp_price,
+            "spread_pips":    spread_pips,
+            "risk_pips":      round(risk_dist * pip_mult, 1),
+            "reward_pips":    round(reward_dist * pip_mult, 1),
+            "rr":             f"1:{final_rr:.2f}",
+            "rr_val":         final_rr,
+            "score":          setup["score"],
+            "setup_class":    setup["setup_class"],
+            "session":        setup["session"],
+            "m15_bias":       setup["m15_bias"],
+            "m15_location":   setup["m15_location"],
             "liquidity_type": setup["liquidity_type"],
-            "sweep_price": setup["sweep_price"],
-            "choch_type": setup["choch_type"],
-            "ob_zone": setup["ob_zone"],
-            "fvg_overlap": setup["fvg_overlap"],
-            "m3_trigger": setup["m3_trigger"],
-            "result": outcome,
-            "pips": pips,
-            "r_multiple": r_multiple,
-            "exit_time": str(exit_time),
-            "exit_time_ist": to_ist_str(exit_time),
+            "sweep_price":    setup["sweep_price"],
+            "choch_type":     setup["choch_type"],
+            "ob_zone":        setup["ob_zone"],
+            "fvg_overlap":    setup["fvg_overlap"],
+            "m3_trigger":     setup["m3_trigger"],
+            "result":         outcome,
+            "pips":           pips,
+            "r_multiple":     r_multiple,
+            "exit_time":      str(exit_time),
+            "exit_time_ist":  to_ist_str(exit_time),
         })
 
     # Metrics computation
@@ -1165,6 +1158,17 @@ def run_mtf_smc_backtest(
         sess_stats[s]["net_pips"] += t["pips"]
         sess_stats[s]["net_r"] += t["r_multiple"]
 
+    # Spread-adjusted net R: deduct spread_pips/risk_pips fraction per trade.
+    # This is the R-equivalent cost of crossing the spread on entry.
+    spread_cost_r = round(
+        sum(
+            t["spread_pips"] / t["risk_pips"]
+            for t in trades
+            if t["risk_pips"] > 0
+        ), 2
+    )
+    spread_adj_net_r = round(net_r - spread_cost_r, 2)
+
     return {
         "symbol": symbol,
         "total_signals": total_signals,
@@ -1173,6 +1177,8 @@ def run_mtf_smc_backtest(
         "win_rate": win_rate,
         "net_pips": net_pips,
         "net_r": net_r,
+        "spread_cost_r": spread_cost_r,
+        "spread_adj_net_r": spread_adj_net_r,
         "avg_rr": avg_rr,
         "profit_factor": profit_factor,
         "max_drawdown": max_dd,

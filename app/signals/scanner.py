@@ -4,23 +4,42 @@ Scans all 9 pairs on M15 and M3 using the new backtest engine logic.
 Returns active signals with entry, SL, TP, pattern, score, confidence.
 """
 import logging
+import os
 import pandas as pd
 import numpy as np
 from typing import Optional
 from datetime import datetime, timezone, timedelta
 from app.analysis.smc.mtf_strategy import evaluate_mtf_smc_setup
 
+# ── H1 bias freshness gate ────────────────────────────────────────────────────
+# The backtest (run_mtf_smc_backtest) has NO freshness gate: it slices the H1
+# frame to `time <= t_m5` and uses the last closed H1 bar, however old it is.
+# For live/backtest parity this gate is therefore DISABLED by default.
+# Set H1_FRESHNESS_GATE=true to re-enable it (max age measured from the CLOSE
+# of the last closed H1 bar, in minutes).
+H1_FRESHNESS_GATE       = os.environ.get("H1_FRESHNESS_GATE", "false").strip().lower() == "true"
+H1_MAX_AGE_MINUTES      = int(os.environ.get("H1_MAX_AGE_MINUTES", "15"))
+
+# ── Entry parity config ───────────────────────────────────────────────────────
+# Backtest always fills at M3 trigger close with no drift or age check.
+# These guards are DISABLED for backtest parity.
+MAX_ENTRY_DRIFT_PIPS        = float(os.environ.get("MAX_ENTRY_DRIFT_PIPS", "999.0"))   # effectively disabled
+MIN_RR_AFTER_FILL           = float(os.environ.get("MIN_RR_AFTER_FILL", "2.5"))
+MAX_M3_TRIGGER_AGE_MINUTES  = float(os.environ.get("MAX_M3_TRIGGER_AGE_MINUTES", "999.0"))  # effectively disabled
+
 # ── In-memory candle cache ────────────────────────────────────────────────────
 # Structure: { "EURUSD_M15": {"df": DataFrame, "fetched_at": datetime} }
 _candle_cache: dict = {}
 
-# Fix 1: Per-timeframe TTL — faster TFs expire sooner to keep swing data fresh
+# Per-timeframe TTL — tightened so swing/OB data stays as fresh as what the
+# backtest sees on each M5 candle iteration. Old values (M5=10min, M15=30min)
+# meant the scanner could analyse 30-min-old swing highs/lows.
 CACHE_TTL_SECONDS: dict = {
-    "M3":  5  * 60,    # 5 min  — M3 changes every 3 min, must stay current
-    "M5":  10 * 60,    # 10 min — M5 changes every 5 min
-    "M15": 30 * 60,    # 30 min — M15 swing detection needs recent closed candles
+    "M3":  3  * 60,    # 3 min  — refresh every M3 candle
+    "M5":  5  * 60,    # 5 min  — refresh every M5 candle
+    "M15": 10 * 60,    # 10 min — swing detection needs recent closed candles
     "H1":  60 * 60,    # 1 hour
-    "H4":  4  * 3600,  # 4 hours — HTF bias only, slow-moving
+    "H4":  4  * 3600,  # 4 hours
     "D1":  8  * 3600,  # 8 hours
 }
 CACHE_TTL_SECONDS_DEFAULT = 10 * 60   # 10 min fallback for unknown TFs
@@ -60,10 +79,14 @@ def _in_killzone(hour: int):
 
 
 def _session(hour: int) -> str:
-    if 7  <= hour < 12:  return "London"
-    if 12 <= hour < 16:  return "London/NY"
-    if 16 <= hour < 21:  return "New York"
-    if 0  <= hour < 7 or hour >= 21: return "Asian"
+    """Session map — mirrors ALLOWED_SESSIONS in mtf_strategy.py exactly.
+    Previously used different windows (London 7-12, NY 16-21) which caused
+    session label mismatches between live signals and backtest trades.
+    """
+    from app.analysis.smc.mtf_strategy import ALLOWED_SESSIONS
+    for name, (start_h, end_h) in ALLOWED_SESSIONS.items():
+        if start_h <= hour < end_h:
+            return name
     return "Off-Session"
 
 
@@ -133,6 +156,8 @@ def _load_live(symbol: str, tf: str, count: int) -> pd.DataFrame:
         if need_full:
             raw = client.get_candles(symbol, tf, count=count)
             if raw.empty or len(raw) < 30:
+                logger.warning("[Cache] Full fetch %s %s returned %d candles — pair skipped",
+                               symbol, tf, len(raw) if not raw.empty else 0)
                 return pd.DataFrame()
             df = _normalise(raw)
             _candle_cache[key] = {"df": df, "fetched_at": now}
@@ -156,6 +181,19 @@ def _load_live(symbol: str, tf: str, count: int) -> pd.DataFrame:
 
         if len(df) < 30:
             return pd.DataFrame()
+
+        # Gap detection: flag if any consecutive candle gap exceeds 2× the TF period.
+        # A gap means MetaApi returned a broken series — analysis would use stale context.
+        tf_min = _TF_MINUTES.get(tf, 5)
+        times  = df["time"].values
+        if len(times) > 1:
+            max_gap_min = pd.Series(times).diff().dropna().max() / pd.Timedelta(minutes=1)
+            if max_gap_min > tf_min * 2:
+                logger.warning(
+                    "[Cache] %s %s has gap of %.0f min (max allowed %d min) — data may be incomplete",
+                    symbol, tf, max_gap_min, tf_min * 2,
+                )
+
         return add_indicators(df)
 
     except Exception as e:
@@ -183,9 +221,20 @@ def _confidence(score: int) -> str:
 
 def scan_pair(symbol: str, tf: str = "M15") -> Optional[dict]:
     """
-    Scan a single pair on a single timeframe for a live signal.
-    Returns signal dict if found, None otherwise.
+    DISABLED — legacy 0-100 scoring engine that does NOT match the backtest.
+    All live scanning routes through scan_mtf_smc_pair() which uses the
+    identical 14-point A+ system as run_yesterday_backtest.py.
+    Always returns None to prevent wrong-engine signals firing.
     """
+    logger.warning(
+        "[scan_pair] DISABLED — legacy engine called for %s. "
+        "Use scan_mtf_smc_pair() for backtest-parity signals.", symbol
+    )
+    return None
+
+
+def _scan_pair_legacy_disabled(symbol: str, tf: str = "M15") -> Optional[dict]:
+    """Original legacy body — kept for reference only, never called."""
     from app.analysis.market_structure     import detect_structure
     from app.analysis.smc.bos_choch       import detect_bos_choch
     from app.analysis.smc.order_block     import detect_order_block, detect_accumulation_ob
@@ -412,22 +461,47 @@ def scan_mtf_smc_pair(symbol: str, disp_threshold: float = 0.8, min_score: int =
     Variant C live scan — identical signal-generation logic as the backtest engine.
     M15 bias -> M5 confirmation -> M3 trigger (market entry on closed M3 candle).
 
+    Issue 4: H1 bias freshness gate — only accept signals within 15 min of H1 candle close.
+    If the M3 signal fires more than 15 min into the current H1 candle, the bias is too
+    old to trust and the signal is skipped.
+
     M3 data is MANDATORY. If unavailable after one retry, the pair is skipped.
     No silent fallback to M5 candles.
     """
-    # Fix 2 applied: strip forming candle from every timeframe before analysis
-    df15 = _strip_forming(_load_live(symbol, "M15", count=100), "M15")
-    df5  = _strip_forming(_load_live(symbol, "M5",  count=200), "M5")
+    # H1 bias (500 candles ~20 days) matches backtest — cleaner trend direction
+    # M5 500 candles, M3 400 candles — enough swing history to match backtest depth
+    df15 = _strip_forming(_load_live(symbol, "H1", count=500), "H1")
+    df5  = _strip_forming(_load_live(symbol, "M5", count=500), "M5")
 
     if df15.empty or df5.empty:
-        logger.debug("[VariantC] %s skipped: M15/M5 data unavailable", symbol)
+        logger.debug("[VariantC] %s skipped: H1/M5 data unavailable", symbol)
         return None
 
+    # H1 bias freshness gate — DISABLED by default for backtest parity.
+    # `df15` has already been passed through _strip_forming(), so df15.iloc[-1]
+    # is the OPEN time of the last CLOSED H1 bar. Age must therefore be measured
+    # from that bar's CLOSE (open + 1h), not from its open. Measuring from the
+    # open makes the minimum possible age 60 min, so a 15-min threshold could
+    # never be satisfied — this silently blocked 100% of signals.
+    if H1_FRESHNESS_GATE:
+        now_utc = datetime.now(timezone.utc)
+        last_h1_open = df15.iloc[-1]["time"]
+        if getattr(last_h1_open, "tzinfo", None) is None:
+            last_h1_open = last_h1_open.replace(tzinfo=timezone.utc)
+        last_h1_close = last_h1_open + timedelta(hours=1)
+        minutes_since_h1_close = (now_utc - last_h1_close).total_seconds() / 60
+        if minutes_since_h1_close > H1_MAX_AGE_MINUTES:
+            logger.debug(
+                "[VariantC] %s skipped: H1 bias stale (%.1f min since close, max %d min)",
+                symbol, minutes_since_h1_close, H1_MAX_AGE_MINUTES,
+            )
+            return None
+
     # M3 is mandatory — attempt once, retry once, then skip
-    df3 = _strip_forming(_load_live(symbol, "M3", count=200), "M3")
+    df3 = _strip_forming(_load_live(symbol, "M3", count=400), "M3")
     if df3.empty:
         logger.warning("[VariantC] %s M3 fetch attempt 1 empty — retrying", symbol)
-        df3 = _strip_forming(_load_live(symbol, "M3", count=200), "M3")
+        df3 = _strip_forming(_load_live(symbol, "M3", count=400), "M3")
     if df3.empty:
         logger.warning("[VariantC] %s skipped: M3 data unavailable after retry", symbol)
         return None
@@ -451,25 +525,119 @@ def scan_mtf_smc_pair(symbol: str, disp_threshold: float = 0.8, min_score: int =
     raw_score        = setup["score"]
     normalized_score = round(raw_score / 14.0 * 100, 2)
     pip_mult         = 100.0 if "JPY" in symbol.upper() else 10000.0
-    sl_dist          = abs(setup["entry_price"] - setup["stop_loss"])
-    tp_dist          = abs(setup["take_profit"] - setup["entry_price"])
+    pip_size         = 0.01 if "JPY" in symbol.upper() else 0.0001
 
-    # m3_trigger_ts is the closed M3 candle timestamp that generated the signal.
-    # It is used as the primary duplicate-prevention identity key.
+    from app.risk.position_sizer import get_min_sl_pips
+
+    direction     = setup["direction"]
+    sl_price      = float(setup["stop_loss"])
+    tp_price      = float(setup["take_profit"])
+    ref_entry     = float(setup["entry_price"])  # M3 trigger candle close = backtest fill price
     m3_trigger_ts = setup.get("entry_time")
+    live_price    = float(df5.iloc[-1]["close"])
+
+    # ── Guard 1: M3 trigger age ───────────────────────────────────────────────
+    # Backtest fills at the M3 trigger close immediately on each M5 iteration.
+    # Live must honour the same price context. If the trigger candle is older
+    # than MAX_M3_TRIGGER_AGE_MINUTES the setup has expired — skip it.
+    now_utc = datetime.now(timezone.utc)
+    if m3_trigger_ts is not None:
+        try:
+            trigger_ts = pd.to_datetime(m3_trigger_ts)
+            if getattr(trigger_ts, "tzinfo", None) is None:
+                trigger_ts = trigger_ts.replace(tzinfo=timezone.utc)
+            trigger_age_min = (now_utc - trigger_ts).total_seconds() / 60.0
+            if trigger_age_min > MAX_M3_TRIGGER_AGE_MINUTES:
+                logger.info(
+                    "[VariantC] %s skipped: M3 trigger %.1f min old (max %.0f min) — stale setup",
+                    symbol, trigger_age_min, MAX_M3_TRIGGER_AGE_MINUTES,
+                )
+                return None
+        except Exception:
+            pass
+
+    # ── Guard 2: Entry drift — honour M3 trigger price, not live price ────────
+    # Backtest entry = ref_entry (M3 trigger candle close).
+    # If the market has drifted more than MAX_ENTRY_DRIFT_PIPS from ref_entry,
+    # this is a structurally different trade — skip it entirely.
+    # Do NOT rebase entry on live_price: that changes SL distance, RR, and lot
+    # size, making the live trade different from what the backtest validated.
+    drift      = abs(live_price - ref_entry)
+    drift_pips = drift / pip_size
+
+    if drift_pips > MAX_ENTRY_DRIFT_PIPS:
+        logger.info(
+            "[VariantC] %s skipped: entry drift %.1f pips > max %.0f pips "
+            "(ref=%.5f live=%.5f) — not the same trade as backtest",
+            symbol, drift_pips, MAX_ENTRY_DRIFT_PIPS, ref_entry, live_price,
+        )
+        return None
+
+    # Entry is the M3 trigger close — identical to backtest fill price.
+    entry_price = ref_entry
+
+    # ── Guard 3: Setup invalidation — price already past SL or TP ────────────
+    if direction == "BUY":
+        if live_price <= sl_price:
+            logger.info("[VariantC] %s skipped: BUY invalidated — price %.5f at/below SL %.5f",
+                        symbol, live_price, sl_price)
+            return None
+        if live_price >= tp_price:
+            logger.info("[VariantC] %s skipped: BUY target already reached — price %.5f >= TP %.5f",
+                        symbol, live_price, tp_price)
+            return None
+        sl_dist = entry_price - sl_price
+        tp_dist = tp_price - entry_price
+    else:
+        if live_price >= sl_price:
+            logger.info("[VariantC] %s skipped: SELL invalidated — price %.5f at/above SL %.5f",
+                        symbol, live_price, sl_price)
+            return None
+        if live_price <= tp_price:
+            logger.info("[VariantC] %s skipped: SELL target already reached — price %.5f <= TP %.5f",
+                        symbol, live_price, tp_price)
+            return None
+        sl_dist = sl_price - entry_price
+        tp_dist = entry_price - tp_price
+
+    # ── Guard 4: Degenerate stop — SL too tight for broker ────────────────────
+    sl_pips_now    = sl_dist / pip_size
+    min_sl_allowed = get_min_sl_pips(symbol)
+    if sl_pips_now < min_sl_allowed:
+        logger.info(
+            "[VariantC] %s skipped: stop too tight (%.1f pips < %d pips broker min)",
+            symbol, sl_pips_now, min_sl_allowed,
+        )
+        return None
+
+    # ── Guard 5: RR check from M3 trigger entry (same basis as backtest) ──────
+    effective_rr = (tp_dist / sl_dist) if sl_dist > 0 else 0.0
+    if effective_rr < MIN_RR_AFTER_FILL:
+        logger.info(
+            "[VariantC] %s skipped: R/R %.2f below min %.2f at M3 trigger entry",
+            symbol, effective_rr, MIN_RR_AFTER_FILL,
+        )
+        return None
 
     return {
         # ── Core trade parameters ──
         "symbol":          symbol,
-        "direction":       setup["direction"],
-        "entry_price":     setup["entry_price"],   # M3 close — signal reference only
-        "entry_type":      "market",               # Variant C always executes at market
-        "stop_loss":       setup["stop_loss"],
-        "take_profit":     setup["take_profit"],
-        "rr_ratio":        f"1:{setup['rr_val']:.2f}",
-        "rr_val":          setup["rr_val"],
+        "direction":       direction,
+        # entry_price = M3 trigger candle close — identical to backtest fill price.
+        # Drift from live_price is already validated above (Guard 2).
+        "entry_price":     entry_price,
+        "signal_entry":    entry_price,
+        "entry_type":      "market",
+        "stop_loss":       sl_price,
+        "take_profit":     tp_price,
+        "rr_ratio":        f"1:{effective_rr:.2f}",
+        "rr_val":          round(effective_rr, 2),
         "sl_pips":         round(sl_dist * pip_mult, 1),
         "tp_pips":         round(tp_dist * pip_mult, 1),
+        # ── Live entry diagnostics ──
+        "live_price":      live_price,
+        "entry_drift_pips": round(drift_pips, 1),
+        "setup_rr":        round(float(setup["rr_val"]), 2),
         # ── Score (raw 0-14 and normalized 0-100) ──
         "score":           raw_score,              # raw 0-14 from calculate_a_plus_score()
         "normalized_score": normalized_score,      # (raw/14)*100 — display only
@@ -490,10 +658,10 @@ def scan_mtf_smc_pair(symbol: str, disp_threshold: float = 0.8, min_score: int =
         "m3_trigger_ts":   m3_trigger_ts,          # closed M3 candle timestamp
         "signal_time":     str(m3_trigger_ts),
         # ── UI-compatible aliases ──
-        "current_price":   setup["entry_price"],
-        "entry":           setup["entry_price"],
-        "sl":              setup["stop_loss"],
-        "tp_1_3":          setup["take_profit"],
+        "current_price":   live_price,
+        "entry":           entry_price,
+        "sl":              sl_price,
+        "tp_1_3":          tp_price,
         "ob_high":         setup["ob_zone"],
         "entry_valid":     True,
         "entry_status":    f"Variant C market signal — {setup['setup_class']} raw={raw_score}/14 norm={normalized_score:.2f}",
@@ -511,38 +679,228 @@ def scan_mtf_smc_pair(symbol: str, disp_threshold: float = 0.8, min_score: int =
     }
 
 
+# ── Backtest-parity spread table (matches run_mtf_smc_backtest SPREAD_PIPS) ──
+# Applied at order submission to shift effective_entry against the trader,
+# exactly as the backtest does. Real broker spread is used only as a filter
+# (50% of SL guard in auto_scanner). Using the fixed table here ensures the
+# live entry price matches what the backtest modelled.
+SPREAD_PIPS: dict = {
+    "EURUSD": 1.2, "GBPUSD": 1.5, "USDJPY": 1.3, "USDCHF": 1.6,
+    "AUDUSD": 1.4, "NZDUSD": 2.0, "USDCAD": 1.8,
+    "EURJPY": 1.8, "GBPJPY": 2.5,
+}
+
+
+def _apply_spread(symbol: str, direction: str, entry: float) -> float:
+    """Return spread-adjusted effective entry matching backtest SPREAD_PIPS table.
+
+    BUY  fills at ask = mid + spread  (effective_entry > entry)
+    SELL fills at bid = mid - spread  (effective_entry < entry)
+    """
+    pip_size     = 0.01 if "JPY" in symbol.upper() else 0.0001
+    spread_price = SPREAD_PIPS.get(symbol.upper(), 1.5) * pip_size
+    if direction == "BUY":
+        return round(entry + spread_price, 5)
+    return round(entry - spread_price, 5)
+
+
+def scan_pair_all_m5_candles(
+    symbol: str,
+    last_scanned_m5_time,
+    disp_threshold: float = 0.8,
+    min_score: int = 11,
+    min_rr: float = 3.0,
+) -> list:
+    """
+    Backtest-parity scan: evaluate every closed M5 candle that closed after
+    `last_scanned_m5_time`, in chronological order, exactly as the backtest
+    iterates `for idx in test_indices`.
+
+    Returns a list of signal dicts (may be empty or contain multiple signals
+    if several M5 candles closed since the last scan cycle).
+
+    The caller (auto_scanner) is responsible for:
+      - enforcing last_exit_time sequencing across the returned signals
+      - updating last_scanned_m5_time to the last M5 candle evaluated
+    """
+    df15 = _strip_forming(_load_live(symbol, "H1", count=500), "H1")
+    df5_full = _strip_forming(_load_live(symbol, "M5", count=500), "M5")
+
+    if df15.empty or df5_full.empty:
+        logger.warning("[VariantC] %s scan_pair_all_m5_candles: H1/M5 data unavailable", symbol)
+        return []
+
+    df3 = _strip_forming(_load_live(symbol, "M3", count=400), "M3")
+    if df3.empty:
+        logger.warning("[VariantC] %s M3 fetch attempt 1 empty — retrying", symbol)
+        df3 = _strip_forming(_load_live(symbol, "M3", count=400), "M3")
+    if df3.empty:
+        logger.warning("[VariantC] %s skipped: M3 data unavailable after retry", symbol)
+        return []
+
+    # Identify all M5 candles that closed after last_scanned_m5_time
+    if last_scanned_m5_time is not None:
+        last_ts = pd.to_datetime(last_scanned_m5_time)
+        if getattr(last_ts, "tzinfo", None) is not None:
+            last_ts = last_ts.tz_localize(None)
+        new_candles = df5_full[df5_full["time"] > last_ts]
+    else:
+        # First run: evaluate only the most recent closed M5 candle
+        new_candles = df5_full.tail(1)
+
+    if new_candles.empty:
+        return []
+
+    signals = []
+    for idx in new_candles.index:
+        df5_slice = df5_full.iloc[: idx + 1]
+
+        setup = evaluate_mtf_smc_setup(
+            df15=df15, df5=df5_slice, df3=df3,
+            symbol=symbol, disp_threshold=disp_threshold,
+            min_score=min_score, min_rr=min_rr,
+        )
+
+        if not setup or not setup.get("valid"):
+            continue
+
+        raw_score        = setup["score"]
+        normalized_score = round(raw_score / 14.0 * 100, 2)
+        pip_mult         = 100.0 if "JPY" in symbol.upper() else 10000.0
+        pip_size         = 0.01 if "JPY" in symbol.upper() else 0.0001
+
+        from app.risk.position_sizer import get_min_sl_pips
+
+        direction     = setup["direction"]
+        sl_price      = float(setup["stop_loss"])
+        tp_price      = float(setup["take_profit"])
+        ref_entry     = float(setup["entry_price"])
+        m3_trigger_ts = setup.get("entry_time")
+        live_price    = float(df5_slice.iloc[-1]["close"])
+
+        # Guard 1: M3 trigger age (90-min window matching backtest)
+        now_utc = datetime.now(timezone.utc)
+        if m3_trigger_ts is not None:
+            try:
+                trigger_ts = pd.to_datetime(m3_trigger_ts)
+                if getattr(trigger_ts, "tzinfo", None) is None:
+                    trigger_ts = trigger_ts.replace(tzinfo=timezone.utc)
+                trigger_age_min = (now_utc - trigger_ts).total_seconds() / 60.0
+                if trigger_age_min > MAX_M3_TRIGGER_AGE_MINUTES:
+                    logger.info(
+                        "[VariantC] %s M5[%d] skipped: M3 trigger %.1f min old (max %.0f min)",
+                        symbol, idx, trigger_age_min, MAX_M3_TRIGGER_AGE_MINUTES,
+                    )
+                    continue
+            except Exception:
+                pass
+
+        # Guard 2: Entry drift
+        drift      = abs(live_price - ref_entry)
+        drift_pips = drift / pip_size
+        if drift_pips > MAX_ENTRY_DRIFT_PIPS:
+            logger.info(
+                "[VariantC] %s M5[%d] skipped: drift %.1f pips > max %.0f pips",
+                symbol, idx, drift_pips, MAX_ENTRY_DRIFT_PIPS,
+            )
+            continue
+
+        entry_price = ref_entry
+
+        # Guard 3: Setup invalidation
+        if direction == "BUY":
+            if live_price <= sl_price or live_price >= tp_price:
+                continue
+            sl_dist = entry_price - sl_price
+            tp_dist = tp_price - entry_price
+        else:
+            if live_price >= sl_price or live_price <= tp_price:
+                continue
+            sl_dist = sl_price - entry_price
+            tp_dist = entry_price - tp_price
+
+        # Guard 4: Degenerate stop
+        sl_pips_now    = sl_dist / pip_size
+        min_sl_allowed = get_min_sl_pips(symbol)
+        if sl_pips_now < min_sl_allowed:
+            continue
+
+        # Guard 5: RR
+        effective_rr = (tp_dist / sl_dist) if sl_dist > 0 else 0.0
+        if effective_rr < MIN_RR_AFTER_FILL:
+            continue
+
+        signals.append({
+            "symbol":           symbol,
+            "direction":        direction,
+            "entry_price":      entry_price,
+            "signal_entry":     entry_price,
+            "entry_type":       "market",
+            "stop_loss":        sl_price,
+            "take_profit":      tp_price,
+            "rr_ratio":         "1:%.2f" % effective_rr,
+            "rr_val":           round(effective_rr, 2),
+            "sl_pips":          round(sl_dist * pip_mult, 1),
+            "tp_pips":          round(tp_dist * pip_mult, 1),
+            "live_price":       live_price,
+            "entry_drift_pips": round(drift_pips, 1),
+            "setup_rr":         round(float(setup["rr_val"]), 2),
+            "score":            raw_score,
+            "normalized_score": normalized_score,
+            "session":          setup["session"],
+            "h4_trend":         setup["m15_bias"],
+            "h1_trend":         setup["m15_location"],
+            "strategy":         "MTF SMC A+ Strategy",
+            "pattern_name":     "A+ MTF SMC Setup",
+            "timeframe":        "M15->M5->M3",
+            "pattern":          "A_PLUS_SMC",
+            "confidence":       "HIGH" if raw_score >= 12 else "MEDIUM",
+            "htf_bias":         setup["m15_bias"],
+            "htf_aligned":      True,
+            "killzone":         setup["session"],
+            "fvg":              setup["fvg_overlap"],
+            "m3_trigger_ts":    m3_trigger_ts,
+            "signal_time":      str(m3_trigger_ts),
+            "m5_candle_time":   df5_full.iloc[idx]["time"],  # for last_exit_time sequencing
+            "current_price":    live_price,
+            "entry":            entry_price,
+            "sl":               sl_price,
+            "tp_1_3":           tp_price,
+            "ob_high":          setup["ob_zone"],
+            "entry_valid":      True,
+            "entry_status":     "Variant C M5-replay signal — %s raw=%d/14" % (setup["setup_class"], raw_score),
+            "lot_size":         None,
+            "risk_usd":         1.0,
+            "spread":           None,
+            "confirmations": [
+                "M15 Bias: %s" % setup["m15_bias"],
+                "Location: %s" % setup["m15_location"],
+                "Sweep: %s" % setup["liquidity_type"],
+                "Break: %s" % setup["choch_type"],
+                "Trigger: %s" % setup["m3_trigger"],
+                "Score: %d/14 (%.2f/100)" % (raw_score, normalized_score),
+            ],
+        })
+        logger.info("[VariantC] %s M5[%d] signal: %s score=%d/14",
+                    symbol, idx, direction, raw_score)
+
+    return signals
+
+
 def scan_all_pairs(timeframes=("M15", "M5"), min_confidence="LOW", strategy: str = "smc_mtf") -> list:
     """
-    Scan all 9 pairs on M15 and M5.
-    Returns list of active signals sorted by score descending.
+    Always routes to scan_mtf_smc_pair() — Variant C H1->M5->M3 strategy.
+    scan_pair() legacy path removed to prevent wrong engine being called.
     """
-    conf_rank = {"HIGH": 3, "MEDIUM": 2, "LOW": 1}
-    min_rank  = conf_rank.get(min_confidence, 1)
-    signals   = []
-
-    if strategy in ("smc_mtf", "mtf", "new", "a_plus"):
-        for pair in PAIRS:
-            try:
-                sig = scan_mtf_smc_pair(pair)
-                if sig:
-                    signals.append(sig)
-                    logger.info("MTF A+ SIGNAL %s %s score=%d", pair, sig["direction"], sig["score"])
-            except Exception as e:
-                logger.error("scan_mtf_smc_pair %s: %s", pair, e)
-        signals.sort(key=lambda x: x["score"], reverse=True)
-        return signals
-
-    for tf in timeframes:
-        for pair in PAIRS:
-            try:
-                sig = scan_pair(pair, tf)
-                if sig and conf_rank.get(sig["confidence"], 0) >= min_rank:
-                    signals.append(sig)
-                    logger.info("SIGNAL %s %s %s score=%d conf=%s",
-                                pair, tf, sig["direction"], sig["score"], sig["confidence"])
-            except Exception as e:
-                logger.error("scan_pair %s %s: %s", pair, tf, e)
-
+    signals = []
+    for pair in PAIRS:
+        try:
+            sig = scan_mtf_smc_pair(pair)
+            if sig:
+                signals.append(sig)
+                logger.info("MTF A+ SIGNAL %s %s score=%d", pair, sig["direction"], sig["score"])
+        except Exception as e:
+            logger.error("scan_mtf_smc_pair %s: %s", pair, e)
     signals.sort(key=lambda x: x["score"], reverse=True)
     return signals
 

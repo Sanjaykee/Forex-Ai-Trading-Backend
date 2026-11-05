@@ -117,6 +117,7 @@ class Trade(Base):
     result           = Column(String)
     actual_rr        = Column(Float)
     strategy         = Column(String)
+    is_live          = Column(Boolean, default=False)  # True = placed via live broker
     user             = relationship("User", back_populates="trades")
     signal           = relationship("Signal", back_populates="trade")
 
@@ -240,3 +241,28 @@ class DryRunTrade(Base):
     updated_at          = Column(DateTime(timezone=True), onupdate=func.now())
 
     signal              = relationship("DryRunSignal", back_populates="paper_trade")
+
+
+class PaperTrade(Base):
+    """
+    One row per signal that passed all filters while PAPER_MODE=true.
+    No broker order is ever placed for these rows.
+    """
+    __tablename__ = "paper_trades"
+
+    id          = Column(Integer, primary_key=True, index=True)
+    signal_id   = Column(String, nullable=False, unique=True, index=True)  # UUID
+    user_id     = Column(Integer, ForeignKey("users.id"), nullable=False)
+    symbol      = Column(String, nullable=False, index=True)
+    direction   = Column(String, nullable=False)
+    entry_price = Column(Float)
+    stop_loss   = Column(Float)
+    take_profit = Column(Float)
+    score       = Column(Integer)
+    lot_size    = Column(Float)
+    risk_usd    = Column(Float)
+    session     = Column(String)
+    spread_pips = Column(Float)
+    signal_ts   = Column(DateTime(timezone=True), nullable=False, index=True)  # UTC
+    signal_ts_ist = Column(String)   # IST string for human readability
+    created_at  = Column(DateTime(timezone=True), server_default=func.now())

@@ -54,9 +54,11 @@ async def startup_event():
     import asyncio
     from app.signals.trade_monitor import monitor_open_trades_loop
     from app.signals.auto_scanner import auto_scan_loop
+    from download_spread_snapshot import spread_snapshot_loop
     asyncio.create_task(monitor_open_trades_loop())
     asyncio.create_task(auto_scan_loop())
-    logger.info("[Startup] Trade monitor & Auto-Scanner background tasks started.")
+    asyncio.create_task(spread_snapshot_loop())
+    logger.info("[Startup] Trade monitor, Auto-Scanner & Spread Snapshot background tasks started.")
 
 @app.get("/")
 def root():

@@ -1,35 +1,55 @@
 """
-Variant C Backtest - 2026-11-02 to 2026-11-03
+Variant C Backtest — MetaApi Live Data
 Full live-scenario display: SL pips, risk $, target $, lot size per trade.
+Usage: python run_yesterday_backtest.py [START_DATE] [END_DATE]
+       Dates in YYYY-MM-DD format. Defaults: today
 """
 import sys
 import os
 sys.path.insert(0, os.path.dirname(__file__))
 
+from datetime import date, datetime, timezone
 import pandas as pd
 from app.analysis.smc.mtf_strategy import run_mtf_smc_backtest
 from app.risk.position_sizer import (
     calculate_lot_size, actual_risk_usd, _get_instrument_params
 )
+from app.mt5.metaapi_client import MetaApiClient
+from app.config import settings
 
 PAIRS = ["EURUSD", "GBPUSD", "USDJPY", "USDCHF", "AUDUSD",
          "NZDUSD", "USDCAD", "EURJPY", "GBPJPY"]
 
-DATA_DIR   = os.path.join(os.path.dirname(__file__), "data", "historical_backup")
-START_DATE = "2026-11-02"
-END_DATE   = "2026-11-03"
+TODAY      = str(date.today())
+START_DATE = sys.argv[1] if len(sys.argv) > 1 else TODAY
+END_DATE   = sys.argv[2] if len(sys.argv) > 2 else TODAY
 MIN_SCORE  = 11
 MIN_RR     = 3.0
-RISK_USD   = 1.0          # $1 risk per trade
+RISK_USD   = 1.0
 SYM_INFO   = {"volume_min": 0.01, "volume_step": 0.01, "volume_max": 100.0}
 
+_client = MetaApiClient(
+    token=settings.METAAPI_TOKEN,
+    account_id=settings.METAAPI_ACCOUNT_ID,
+    region=settings.METAAPI_REGION or "backup-new-york",
+)
 
-def load_csv(symbol, tf):
-    path = os.path.join(DATA_DIR, f"{symbol}_{tf}_2026-09-01_2026-11-04.csv")
-    if not os.path.exists(path):
-        return pd.DataFrame()
-    df = pd.read_csv(path, parse_dates=["time"])
-    return df.sort_values("time").reset_index(drop=True)
+_candle_cache: dict = {}
+
+def load_metaapi(symbol: str, tf: str) -> pd.DataFrame:
+    """Fetch candles from MetaApi with a simple in-process cache."""
+    key = f"{symbol}_{tf}"
+    if key in _candle_cache:
+        return _candle_cache[key]
+    # Fetch enough candles to cover warmup + test window
+    counts = {"H1": 300, "M5": 1500, "M3": 2500}
+    df = _client.get_candles(symbol, tf, count=counts.get(tf, 1000))
+    if not df.empty:
+        if getattr(df["time"].dt, "tz", None) is not None:
+            df["time"] = df["time"].dt.tz_convert("UTC").dt.tz_localize(None)
+        df = df.sort_values("time").reset_index(drop=True)
+    _candle_cache[key] = df
+    return df
 
 
 def trade_financials(t):
@@ -99,12 +119,14 @@ def run():
     print("=" * 65)
 
     for symbol in PAIRS:
-        df15 = load_csv(symbol, "H1")
-        df5  = load_csv(symbol, "M5")
-        df3  = load_csv(symbol, "M3")
+        print("  Fetching %s from MetaApi..." % symbol, end=" ", flush=True)
+        df15 = load_metaapi(symbol, "H1")
+        df5  = load_metaapi(symbol, "M5")
+        df3  = load_metaapi(symbol, "M3")
+        print("H1=%d M5=%d M3=%d" % (len(df15), len(df5), len(df3)))
 
         if df15.empty or df5.empty or df3.empty:
-            print("\n[%s] SKIPPED - missing data" % symbol)
+            print("\n[%s] SKIPPED - MetaApi returned no data" % symbol)
             continue
 
         result = run_mtf_smc_backtest(
@@ -142,6 +164,7 @@ def run():
             "symbol": symbol, "signals": total,
             "wins": wins, "losses": losses,
             "win_rate": wr, "net_pnl": round(pair_pnl, 2),
+            "spread_adj_net_r": result.get("spread_adj_net_r", 0.0),
         })
         all_trades.extend(zip(trades, fin_list))
 
@@ -169,6 +192,9 @@ def run():
     total_risked  = round(sum(fin["risk_amt"]    for _, fin in all_trades), 2)
     total_target  = round(sum(fin["reward_amt"]  for t, fin in all_trades if t["result"] == "WIN"), 2)
     total_lost    = round(sum(fin["risk_amt"]     for t, fin in all_trades if t["result"] == "LOSS"), 2)
+    spread_adj_net_r_total = round(sum(p.get("spread_adj_net_r", 0.0) for p in pair_results), 2)
+    # Convert spread-adj net R to USD at $1 risk/trade
+    spread_adj_pnl = round(spread_adj_net_r_total * RISK_USD, 2)
 
     print("\n" + "=" * 65)
     print("  FINAL SUMMARY  %s to %s" % (START_DATE, END_DATE))
@@ -181,6 +207,7 @@ def run():
     print("  Total Won       : +$%.2f  (from %d winning trades)" % (total_target, total_wins))
     print("  Total Lost      : -$%.2f  (from %d losing trades)"  % (total_lost,   total_losses))
     print("  Net P&L         : %s$%.2f" % ("+" if total_pnl >= 0 else "-", abs(total_pnl)))
+    print("  Spread-adjusted : %s$%.2f  (after entry spread cost)" % ("+" if spread_adj_pnl >= 0 else "-", abs(spread_adj_pnl)))
     print("=" * 65)
 
     active = [p for p in pair_results if p["signals"] > 0]

@@ -434,109 +434,125 @@ class MetaApiClient:
             return pd.DataFrame()
         return df[needed].copy()
 
-    def place_order(self, symbol: str, direction: str, lot: float, entry: float = None, sl: float = None, tp: float = None, comment: str = "ForexAI") -> dict:
+    def _get_position_by_ticket(self, ticket: str) -> dict:
         """
-        Places a LIMIT order at the OB entry price — matches backtest scenario exactly.
-        Order waits at entry price until price returns to the OB zone, then fills.
+        Fetch a single confirmed open position by its ticket/position ID.
+        Retries up to 3 times with 1s back-off to allow broker settlement.
+        Returns the raw position dict, or {} if not found.
+        """
+        url     = f"{self.client_base_url}/positions/{ticket}"
+        session = get_session()
+        for attempt in range(3):
+            try:
+                res = session.get(url, headers=self.headers, timeout=10)
+                if res.status_code == 200:
+                    return res.json()
+                if res.status_code == 404 and attempt < 2:
+                    # Position may not be visible yet — wait and retry
+                    time.sleep(1)
+                    continue
+                logger.warning("_get_position_by_ticket %s HTTP %d", ticket, res.status_code)
+                return {}
+            except Exception as e:
+                logger.warning("_get_position_by_ticket %s attempt %d error: %s", ticket, attempt, e)
+                if attempt < 2:
+                    time.sleep(1)
+        return {}
+
+    def place_order(self, symbol: str, direction: str, lot: float, entry: float = None, sl: float = None, tp: float = None, comment: str = "ForexAI", client_order_id: str | None = None) -> dict:
+        """
+        Issue 3: Place a LIMIT order at signal price with 3-pip tolerance.
+        If price is within 3 pips of entry, execute as MARKET immediately.
+        Issue 5: Log actual fill price vs signal price for slippage tracking.
+        Issue 6: Query broker min stop distance before submission and enforce it.
+        After a successful submission:
+          1. Fetch the confirmed broker position to get actual fill_price and lots.
+          2. Write the trade record to the DB with confirmed data.
+          3. If the DB write fails, immediately close the broker position and raise.
+        Returns: {success, ticket, fill_price, actual_lots, db_write_ok, order_type, data}
         """
         if not self.is_configured:
             return {"success": False, "error": "MetaApi credentials not configured in backend"}
 
-        digits = 3 if "JPY" in symbol else 5
-        # Order type determined after live price check below
-        if entry:
-            action = None  # set dynamically after price check
-        else:
-            action = "ORDER_TYPE_BUY" if direction.upper() == "BUY" else "ORDER_TYPE_SELL"
+        digits   = 3 if "JPY" in symbol else 5
+        pip_mult = 100 if "JPY" in symbol else 10000
+        # Issue 3: 3-pip tolerance window for limit vs market decision
+        LIMIT_TOLERANCE_PIPS = 3
+        tolerance = LIMIT_TOLERANCE_PIPS / pip_mult
 
         sl_r = round(float(sl), digits) if sl else None
         tp_r = round(float(tp), digits) if tp else None
 
-        # Pre-validate: fetch live price + broker symbol specs for dynamic distance checks
+        # Issue 6: Query broker min stop distance before submission
+        specs           = self.get_symbol_specs(symbol)
+        broker_min_dist = specs.get("min_stop_distance", 0)
+        min_sl_dist     = broker_min_dist if broker_min_dist > 0 else (0.05 if "JPY" in symbol else 0.00050)
+
+        price_data = self.get_live_price(symbol) if entry else {}
+        ask = price_data.get("ask", 0)
+        bid = price_data.get("bid", 0)
+
         if entry:
-            price_data = self.get_live_price(symbol)
-            specs = self.get_symbol_specs(symbol)
-            if price_data:
-                ask = price_data.get("ask", 0)
-                bid = price_data.get("bid", 0)
-                entry_r = round(float(entry), digits)
-                pip_mult = 100 if "JPY" in symbol else 10000
+            entry_r = round(float(entry), digits)
 
-                # Use broker's real minStopDistance; fallback to safe defaults if specs unavailable
-                broker_min = specs.get("min_stop_distance", 0)
-                min_distance = broker_min if broker_min > 0 else (0.03 if "JPY" in symbol else 0.00030)
-                min_sl_dist  = broker_min if broker_min > 0 else (0.05 if "JPY" in symbol else 0.00050)
+            if direction.upper() == "BUY":
+                if sl_r and ask <= sl_r:
+                    return {"success": False, "error": f"BUY rejected: ask {ask} <= SL {sl_r}. OB structure broken."}
 
-                if direction.upper() == "BUY":
-                    if sl_r and ask <= sl_r:
-                        return {"success": False, "error": f"BUY rejected: current ask {ask} is at or below SL {sl_r}. OB structure broken."}
-                    elif ask <= entry_r:
-                        # Price inside OB zone (between entry and SL) — market order immediately at discount
-                        action = "ORDER_TYPE_BUY"
-                        logger.info(f"BUY MARKET (Discount in OB): price {ask} inside OB zone (entry={entry_r}, SL={sl_r})")
-                    else:
-                        gap = ask - entry_r
-                        if gap < min_distance:
-                            # Solution 1: Price is inside broker's Stops Level dead-zone.
-                            # Instead of rejecting, execute instant MARKET order directly!
-                            action = "ORDER_TYPE_BUY"
-                            logger.info(f"BUY MARKET (Smart Hybrid): price {ask} is within {round(gap * pip_mult, 1)} pips of entry {entry_r} (dead-zone < {round(min_distance * pip_mult, 1)} pips) — placing MARKET order directly")
-                        else:
-                            # Price above entry with ample distance — place pending LIMIT order for pullback
-                            action = "ORDER_TYPE_BUY_LIMIT"
+                # Issue 6: enforce broker min SL distance
+                if sl_r and (ask - sl_r) < min_sl_dist:
+                    sl_r = round(ask - min_sl_dist, digits)
+                    logger.info("Adjusting BUY SL to %s to meet broker min stop distance", sl_r)
+                if tp_r and (tp_r - ask) < min_sl_dist:
+                    tp_r = round(ask + min_sl_dist * 2.0, digits)
+                    logger.info("Adjusting BUY TP to %s to meet broker min stop distance", tp_r)
 
-                    # Solution 2: Spread and minimum stop distance protection
-                    ref_price = ask if action == "ORDER_TYPE_BUY" else entry_r
-                    if sl_r and (ref_price - sl_r) < min_sl_dist:
-                        adjusted_sl = round(ref_price - min_sl_dist, digits)
-                        logger.info(f"Adjusting BUY SL from {sl_r} to {adjusted_sl} to meet broker min stop distance ({min_sl_dist})")
-                        sl_r = adjusted_sl
-                    if tp_r and (tp_r - ref_price) < min_sl_dist:
-                        adjusted_tp = round(ref_price + min_sl_dist * 2.0, digits)
-                        logger.info(f"Adjusting BUY TP from {tp_r} to {adjusted_tp} to meet broker min stop distance")
-                        tp_r = adjusted_tp
-
+                # Issue 3: within tolerance -> MARKET, else LIMIT
+                gap = ask - entry_r
+                if gap <= tolerance:
+                    action = "ORDER_TYPE_BUY"
+                    logger.info("BUY MARKET: ask %s within %.1f pips of entry %s", ask, LIMIT_TOLERANCE_PIPS, entry_r)
                 else:
-                    if sl_r and bid >= sl_r:
-                        return {"success": False, "error": f"SELL rejected: current bid {bid} is at or above SL {sl_r}. OB structure broken."}
-                    elif bid >= entry_r:
-                        # Price inside OB zone (between entry and SL) — market order immediately at premium
-                        action = "ORDER_TYPE_SELL"
-                        logger.info(f"SELL MARKET (Premium in OB): price {bid} inside OB zone (entry={entry_r}, SL={sl_r})")
-                    else:
-                        gap = entry_r - bid
-                        if gap < min_distance:
-                            # Solution 1: Price is inside broker's Stops Level dead-zone.
-                            # Auto-switch to instant MARKET order directly!
-                            action = "ORDER_TYPE_SELL"
-                            logger.info(f"SELL MARKET (Smart Hybrid): price {bid} is within {round(gap * pip_mult, 1)} pips of entry {entry_r} (dead-zone < {round(min_distance * pip_mult, 1)} pips) — placing MARKET order directly")
-                        else:
-                            action = "ORDER_TYPE_SELL_LIMIT"
+                    action = "ORDER_TYPE_BUY_LIMIT"
+                    logger.info("BUY LIMIT at %s (ask=%s, gap=%.1f pips)", entry_r, ask, gap * pip_mult)
 
-                    # Solution 2: Spread and minimum stop distance protection
-                    ref_price = bid if action == "ORDER_TYPE_SELL" else entry_r
-                    if sl_r and (sl_r - ref_price) < min_sl_dist:
-                        adjusted_sl = round(ref_price + min_sl_dist, digits)
-                        logger.info(f"Adjusting SELL SL from {sl_r} to {adjusted_sl} to meet broker min stop distance ({min_sl_dist})")
-                        sl_r = adjusted_sl
-                    if tp_r and (ref_price - tp_r) < min_sl_dist:
-                        adjusted_tp = round(ref_price - min_sl_dist * 2.0, digits)
-                        logger.info(f"Adjusting SELL TP from {tp_r} to {adjusted_tp} to meet broker min stop distance")
-                        tp_r = adjusted_tp
+            else:  # SELL
+                if sl_r and bid >= sl_r:
+                    return {"success": False, "error": f"SELL rejected: bid {bid} >= SL {sl_r}. OB structure broken."}
 
-                logger.info(f"Validation passed: {symbol} {direction} {action} entry={entry_r}, SL={sl_r}, TP={tp_r}")
+                # Issue 6: enforce broker min SL distance
+                if sl_r and (sl_r - bid) < min_sl_dist:
+                    sl_r = round(bid + min_sl_dist, digits)
+                    logger.info("Adjusting SELL SL to %s to meet broker min stop distance", sl_r)
+                if tp_r and (bid - tp_r) < min_sl_dist:
+                    tp_r = round(bid - min_sl_dist * 2.0, digits)
+                    logger.info("Adjusting SELL TP to %s to meet broker min stop distance", tp_r)
 
-        url = f"{self.client_base_url}/trade"
+                # Issue 3: within tolerance -> MARKET, else LIMIT
+                gap = entry_r - bid
+                if gap <= tolerance:
+                    action = "ORDER_TYPE_SELL"
+                    logger.info("SELL MARKET: bid %s within %.1f pips of entry %s", bid, LIMIT_TOLERANCE_PIPS, entry_r)
+                else:
+                    action = "ORDER_TYPE_SELL_LIMIT"
+                    logger.info("SELL LIMIT at %s (bid=%s, gap=%.1f pips)", entry_r, bid, gap * pip_mult)
+        else:
+            action = "ORDER_TYPE_BUY" if direction.upper() == "BUY" else "ORDER_TYPE_SELL"
 
+        url  = f"{self.client_base_url}/trade"
         body = {
             "actionType": action,
-            "symbol": symbol,
-            "volume": float(lot),
-            "comment": comment
+            "symbol":     symbol,
+            "volume":     float(lot),
+            "comment":    comment,
         }
+        # Idempotency key: lets the broker reject a duplicate submission when a
+        # retry fires after a timeout-but-succeeded request. Without it,
+        # ORDER_MAX_RETRIES=2 could double-fill the same signal.
+        if client_order_id:
+            body["clientId"] = str(client_order_id)
         if entry and action in ("ORDER_TYPE_BUY_LIMIT", "ORDER_TYPE_SELL_LIMIT"):
             body["openPrice"] = round(float(entry), digits)
-            logger.info(f"Limit order {action} at openPrice={body['openPrice']}")
         if sl_r:
             body["stopLoss"] = sl_r
         elif sl:
@@ -547,23 +563,145 @@ class MetaApiClient:
             body["takeProfit"] = round(float(tp), digits)
 
         try:
-            logger.info(f"MetaApi placing order: {body}")
+            logger.info("MetaApi placing order: %s", body)
             session = get_session()
-            res = session.post(url, headers=self.headers, json=body, timeout=15)
+            res  = session.post(url, headers=self.headers, json=body, timeout=15)
             data = res.json()
-            if res.status_code in (200, 201) and data.get("numericCode") in (10008, 10009, None):
-                ticket = data.get("orderId") or data.get("positionId") or "METAAPI_LIVE"
-                logger.info(f"MetaApi order executed successfully: Ticket {ticket} for {symbol} {direction} {lot} lots")
-                return {"success": True, "ticket": ticket, "data": data, "order_type": action}
-            else:
+            if res.status_code not in (200, 201) or data.get("numericCode") not in (10008, 10009, None):
                 details = data.get("details")
-                detail_str = f" ({details})" if details else ""
-                err_msg = f"{data.get('message', '')}{detail_str}" or data.get("stringCode") or str(data)
-                logger.error(f"MetaApi trade execution rejected: {err_msg}")
+                err_msg = f"{data.get('message', '')}{' (' + details + ')' if details else ''}" or str(data)
+                logger.error("MetaApi trade rejected: %s", err_msg)
                 return {"success": False, "error": err_msg}
         except Exception as e:
-            logger.error(f"MetaApi place_order network exception: {e}")
+            logger.error("MetaApi place_order exception: %s", e)
             return {"success": False, "error": str(e)}
+
+        # ── Order accepted by broker ──────────────────────────────────────────
+        # A ticket is mandatory: reconciliation, SL/TP reattach and orphan
+        # detection all key off it. The previous fallback string "METAAPI_LIVE"
+        # was shared by every position that hit this branch, which made ghost and
+        # orphan detection meaningless. Treat a missing ticket as ambiguous —
+        # never fabricate one, and never let the caller blindly retry.
+        ticket_raw = data.get("orderId") or data.get("positionId")
+        if not ticket_raw:
+            logger.critical(
+                "MetaApi accepted the order but returned no orderId/positionId — "
+                "position cannot be reconciled. payload=%s", data,
+            )
+            return {
+                "success":   False,
+                "ambiguous": True,
+                "error":     "Broker accepted order but returned no ticket; "
+                             "manual reconciliation required",
+                "data":      data,
+            }
+        ticket = str(ticket_raw)
+
+        # Step 1: Fetch confirmed position from broker to get actual fill & lots
+        pos          = self._get_position_by_ticket(ticket)
+        fill_price   = float(pos.get("openPrice") or
+                             data.get("openPrice") or data.get("currentPrice") or
+                             data.get("price") or 0)
+        actual_lots  = float(pos.get("volume") or lot)
+
+        # Issue 5: log slippage vs signal entry price
+        if fill_price and entry:
+            slip_pips = round((fill_price - float(entry)) * pip_mult, 1)
+            if abs(slip_pips) > 3:
+                logger.warning(
+                    "[Slippage] %s %s fill=%.5f signal=%.5f slippage=%.1f pips (>3 pip threshold)",
+                    symbol, direction, fill_price, float(entry), slip_pips,
+                )
+            else:
+                logger.info(
+                    "[Slippage] %s %s fill=%.5f signal=%.5f slippage=%.1f pips",
+                    symbol, direction, fill_price, float(entry), slip_pips,
+                )
+
+        logger.info("MetaApi order executed: ticket=%s %s %s fill=%.5f lots=%.4f",
+                    ticket, symbol, direction, fill_price, actual_lots)
+
+        # Step 2: Write trade record to DB with confirmed broker data
+        db_write_ok = False
+        try:
+            from app.db.database import SessionLocal
+            from app.db import models as _models
+            _db = SessionLocal()
+            try:
+                # Locate the PENDING trade row created by the caller (matched by
+                # symbol + direction + result=PENDING, most recently opened)
+                pending = (
+                    _db.query(_models.Trade)
+                    .filter(
+                        _models.Trade.symbol    == symbol,
+                        _models.Trade.direction == direction,
+                        _models.Trade.result    == "PENDING",
+                    )
+                    .order_by(_models.Trade.open_time.desc())
+                    .first()
+                )
+                if pending:
+                    pending.mt5_ticket        = ticket
+                    pending.actual_fill_price = fill_price if fill_price else None
+                    pending.lot_size          = actual_lots
+                    pending.result            = "OPEN"
+                    _db.commit()
+                    db_write_ok = True
+                    logger.info("[place_order] DB trade #%d updated: ticket=%s fill=%.5f lots=%.4f",
+                                pending.id, ticket, fill_price or 0, actual_lots)
+                else:
+                    # No PENDING row found — insert a minimal record so the
+                    # trade is never invisible to the monitor
+                    new_trade = _models.Trade(
+                        symbol            = symbol,
+                        direction         = direction,
+                        entry_price       = fill_price or (float(entry) if entry else 0),
+                        actual_fill_price = fill_price if fill_price else None,
+                        stop_loss         = float(sl) if sl else None,
+                        take_profit       = float(tp) if tp else None,
+                        lot_size          = actual_lots,
+                        mt5_ticket        = ticket,
+                        open_time         = datetime.utcnow(),
+                        result            = "OPEN",
+                        strategy          = comment,
+                    )
+                    _db.add(new_trade)
+                    _db.commit()
+                    db_write_ok = True
+                    logger.warning("[place_order] No PENDING row found — inserted fallback trade #%d ticket=%s",
+                                   new_trade.id, ticket)
+            finally:
+                _db.close()
+        except Exception as db_exc:
+            # Step 3: DB write failed — close the broker position immediately
+            # to prevent a ghost trade (live position with no DB record)
+            logger.critical(
+                "[place_order] GHOST_TRADE_CLOSED ticket=%s symbol=%s — DB write failed: %s",
+                ticket, symbol, db_exc,
+            )
+            try:
+                self.close_order(ticket)
+                logger.critical(
+                    "[place_order] GHOST_TRADE_CLOSED ticket=%s — broker position closed successfully",
+                    ticket,
+                )
+            except Exception as close_exc:
+                logger.critical(
+                    "[place_order] GHOST_TRADE_CLOSED ticket=%s — broker close ALSO failed: %s",
+                    ticket, close_exc,
+                )
+            raise db_exc
+
+        return {
+            "success":     True,
+            "ticket":      ticket,
+            "fill_price":  fill_price,
+            "actual_lots": actual_lots,
+            "db_write_ok": db_write_ok,
+            # Legacy keys kept so any other callers don't break
+            "order_type":  action,
+            "data":        data,
+        }
 
     def close_order(self, position_id: str) -> dict:
         """Close an open position on MT5"""
@@ -582,6 +720,86 @@ class MetaApiClient:
                 return {"success": True, "ticket": position_id}
             return {"success": False, "error": res.text}
         except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    def get_open_positions(self) -> list | None:
+        """
+        Fetch all currently open positions from the broker.
+        Returns a list of dicts with keys: id, symbol, type, volume,
+        openPrice, stopLoss, takeProfit, openTime.
+
+        Returns an EMPTY LIST only when the broker genuinely reports no open
+        positions. Returns None when the state is UNKNOWN (network error, HTTP
+        error, not configured).
+
+        This distinction is critical: TradeMonitor uses this to decide whether a
+        DB trade is a ghost. Returning [] on error made a single failed or
+        rate-limited request look like "all positions are gone", which marked
+        live trades RECONCILED_MISSING and let orphan logic close real trades.
+        Callers must treat None as "skip this cycle", never as "empty".
+        """
+        if not self.is_configured:
+            return None
+        url = f"{self.client_base_url}/positions"
+        session = get_session()
+        for attempt in range(2):
+            try:
+                res = session.get(url, headers=self.headers, timeout=15)
+                if res.status_code == 200:
+                    raw = res.json()
+                    positions = []
+                    for p in (raw if isinstance(raw, list) else []):
+                        positions.append({
+                            "id":         str(p.get("id", "")),
+                            "symbol":     p.get("symbol", ""),
+                            "type":       p.get("type", ""),       # POSITION_TYPE_BUY / SELL
+                            "volume":     float(p.get("volume", 0)),
+                            "openPrice":  float(p.get("openPrice", 0)),
+                            "stopLoss":   float(p.get("stopLoss") or 0),
+                            "takeProfit": float(p.get("takeProfit") or 0),
+                            "openTime":   p.get("time") or p.get("openTime", ""),
+                            "comment":    p.get("comment", ""),
+                        })
+                    return positions
+                logger.warning("get_open_positions HTTP %d: %s", res.status_code, res.text[:120])
+                return None
+            except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
+                if attempt == 0:
+                    time.sleep(0.5)
+                    continue
+                logger.error("get_open_positions network error after retry — state UNKNOWN")
+                return None
+            except Exception as e:
+                logger.error("get_open_positions failed — state UNKNOWN: %s", e)
+                return None
+        return None
+
+    def modify_position(self, position_id: str, sl: float, tp: float) -> dict:
+        """
+        Re-attach SL and TP to an existing open position.
+        Used by TradeMonitor when SL/TP are found missing on the broker.
+        """
+        if not self.is_configured:
+            return {"success": False, "error": "MetaApi not configured"}
+        url  = f"{self.client_base_url}/trade"
+        body = {
+            "actionType": "POSITION_MODIFY",
+            "positionId": str(position_id),
+            "stopLoss":   round(float(sl), 5),
+            "takeProfit": round(float(tp), 5),
+        }
+        try:
+            session = get_session()
+            res  = session.post(url, headers=self.headers, json=body, timeout=15)
+            data = res.json()
+            if res.status_code in (200, 201):
+                logger.info("modify_position %s SL=%s TP=%s OK", position_id, sl, tp)
+                return {"success": True}
+            err = data.get("message", res.text[:120])
+            logger.error("modify_position %s failed: %s", position_id, err)
+            return {"success": False, "error": err}
+        except Exception as e:
+            logger.error("modify_position exception: %s", e)
             return {"success": False, "error": str(e)}
 
     def cancel_order(self, order_id: str) -> dict:
