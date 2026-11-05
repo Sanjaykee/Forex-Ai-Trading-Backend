@@ -152,12 +152,18 @@ def _load_live(symbol: str, tf: str, count: int) -> pd.DataFrame:
     if client is None:
         return pd.DataFrame()
 
+    # Minimum candle requirements per timeframe for reliable indicator calculation
+    MIN_CANDLES: dict = {
+        "M3": 50, "M5": 50, "M15": 50, "H1": 100, "H4": 50, "D1": 30,
+    }
+
     try:
         if need_full:
             raw = client.get_candles(symbol, tf, count=count)
-            if raw.empty or len(raw) < 30:
-                logger.warning("[Cache] Full fetch %s %s returned %d candles — pair skipped",
-                               symbol, tf, len(raw) if not raw.empty else 0)
+            min_required = MIN_CANDLES.get(tf, 30)
+            if raw.empty or len(raw) < min_required:
+                logger.warning("[Cache] Full fetch %s %s returned %d candles (min %d required) — pair skipped",
+                               symbol, tf, len(raw) if not raw.empty else 0, min_required)
                 return pd.DataFrame()
             df = _normalise(raw)
             _candle_cache[key] = {"df": df, "fetched_at": now}
@@ -183,16 +189,34 @@ def _load_live(symbol: str, tf: str, count: int) -> pd.DataFrame:
             return pd.DataFrame()
 
         # Gap detection: flag if any consecutive candle gap exceeds 2× the TF period.
-        # A gap means MetaApi returned a broken series — analysis would use stale context.
+        # Weekend gaps (Fri 22:00 UTC -> Sun 21:00 UTC ≈ 2820 min) are normal for forex
+        # and must not be flagged as data errors.
         tf_min = _TF_MINUTES.get(tf, 5)
         times  = df["time"].values
         if len(times) > 1:
-            max_gap_min = pd.Series(times).diff().dropna().max() / pd.Timedelta(minutes=1)
-            if max_gap_min > tf_min * 2:
-                logger.warning(
-                    "[Cache] %s %s has gap of %.0f min (max allowed %d min) — data may be incomplete",
-                    symbol, tf, max_gap_min, tf_min * 2,
+            diffs = pd.Series(pd.to_datetime(times)).diff().dropna()
+            # Filter out weekend gaps: any gap where the earlier candle falls on Friday
+            # (weekday=4) after 21:00 UTC or Saturday (weekday=5)
+            ts_series = pd.Series(pd.to_datetime(times))
+            non_weekend_gaps = []
+            for i in range(1, len(ts_series)):
+                gap_min = (ts_series.iloc[i] - ts_series.iloc[i - 1]).total_seconds() / 60
+                prev_wd = ts_series.iloc[i - 1].weekday()   # 4=Fri, 5=Sat, 6=Sun
+                prev_hr = ts_series.iloc[i - 1].hour
+                is_weekend_gap = (
+                    (prev_wd == 4 and prev_hr >= 21) or  # Friday after 21:00
+                    prev_wd == 5 or                       # Saturday
+                    (prev_wd == 6 and prev_hr < 21)       # Sunday before 21:00
                 )
+                if not is_weekend_gap:
+                    non_weekend_gaps.append(gap_min)
+            if non_weekend_gaps:
+                max_gap_min = max(non_weekend_gaps)
+                if max_gap_min > tf_min * 2:
+                    logger.warning(
+                        "[Cache] %s %s has gap of %.0f min (max allowed %d min) — data may be incomplete",
+                        symbol, tf, max_gap_min, tf_min * 2,
+                    )
 
         return add_indicators(df)
 

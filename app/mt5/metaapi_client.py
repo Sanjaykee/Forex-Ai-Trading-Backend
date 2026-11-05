@@ -306,6 +306,12 @@ class MetaApiClient:
         combined = pd.concat(all_frames, ignore_index=True)
         combined = combined.drop_duplicates(subset=["time"]).sort_values("time").reset_index(drop=True)
         logger.info("MetaApi total candles fetched for %s %s: %d", symbol, timeframe, len(combined))
+        if len(combined) < 50:
+            logger.warning(
+                "MetaApi returned only %d candles for %s %s (requested %d) — "
+                "broker history may be limited or terminal not fully synced",
+                len(combined), symbol, timeframe, count,
+            )
         return combined
 
     def get_candles_range(

@@ -221,7 +221,7 @@ def run_backtest(
     total_len = len(df)
     trades    = []
     last_exit = -1
-    fc = {"kz": 0, "no_pattern": 0, "no_ob": 0, "low_score": 0}
+    fc = {"kz": 0, "no_pattern": 0, "no_ob": 0, "no_fill": 0, "low_score": 0}
 
     step = 1
 
@@ -331,12 +331,38 @@ def run_backtest(
             sl_price = round(entry + sl_dist, 5)
             tp_price = round(entry - sl_dist * rr_ratio, 5)
             trade_dir = "SELL"
-        future  = df.iloc[i + 1: i + 66]
+        # ── Real limit order simulation ───────────────────────────────────
+        # Phase 1: Wait up to 20 candles for price to TOUCH the OB zone.
+        #   BUY  → limit at OB midpoint, filled when candle low  <= entry
+        #   SELL → limit at OB midpoint, filled when candle high >= entry
+        # If zone is never touched → NO FILL → skip (not counted).
+        # Phase 2: Once filled, scan next 65 candles for SL or TP hit.
+        FILL_TIMEOUT = 20   # candles to wait for zone touch
+        SL_TP_WINDOW = 65   # candles to resolve after fill
+
+        future_all = df.iloc[i + 1: i + 1 + FILL_TIMEOUT + SL_TP_WINDOW]
+        fill_i     = None
+        fill_time  = None
+
+        for fs, (_, fr) in enumerate(future_all.iterrows()):
+            if fs >= FILL_TIMEOUT:
+                break
+            fh = float(fr["high"])
+            fl = float(fr["low"])
+            if trade_dir == "BUY"  and fl <= entry:
+                fill_i = i + 1 + fs; fill_time = fr["time"]; break
+            if trade_dir == "SELL" and fh >= entry:
+                fill_i = i + 1 + fs; fill_time = fr["time"]; break
+
+        if fill_i is None:
+            fc["no_fill"] += 1   # zone never retested — no fill
+            continue
+
         outcome = "OPEN"
         pips    = 0.0
-        exit_i  = i + len(future)
+        exit_i  = fill_i
 
-        for fs, (_, fr) in enumerate(future.iterrows()):
+        for fs2, (_, fr) in enumerate(df.iloc[fill_i + 1: fill_i + 1 + SL_TP_WINDOW].iterrows()):
             fh = float(fr["high"])
             fl = float(fr["low"])
 
@@ -344,28 +370,28 @@ def run_backtest(
                 if fl <= sl_price:
                     outcome = "LOSS"
                     pips    = -round(sl_dist * pip_mult, 1)
-                    exit_i  = i + 1 + fs; break
+                    exit_i  = fill_i + 1 + fs2; break
                 if fh >= tp_price:
                     outcome = "WIN"
                     pips    = round(sl_dist * rr_ratio * pip_mult, 1)
-                    exit_i  = i + 1 + fs; break
+                    exit_i  = fill_i + 1 + fs2; break
             else:
                 if fh >= sl_price:
                     outcome = "LOSS"
                     pips    = -round(sl_dist * pip_mult, 1)
-                    exit_i  = i + 1 + fs; break
+                    exit_i  = fill_i + 1 + fs2; break
                 if fl <= tp_price:
                     outcome = "WIN"
                     pips    = round(sl_dist * rr_ratio * pip_mult, 1)
-                    exit_i  = i + 1 + fs; break
+                    exit_i  = fill_i + 1 + fs2; break
 
         if outcome == "OPEN":
-            continue  # skip unresolved trades
+            continue  # SL/TP not hit within window — skip
 
         last_exit = exit_i + 2
         exit_time = str(df.iloc[exit_i]["time"]) if exit_i < len(df) else ""
         trades.append({
-            "time":        str(c_time),
+            "time":        str(fill_time),   # signal time = actual fill candle
             "exit_time":   exit_time,
             "direction":   trade_dir,
             "pattern":     pattern,
@@ -391,6 +417,7 @@ def run_backtest(
             "kz":         "all candles outside London/NY killzone hours",
             "no_pattern": "no CHoCH, BOS+Sweep, or Accumulation pattern found",
             "no_ob":      "pattern found but no unmitigated Order Block nearby",
+            "no_fill":    "OB zone detected but price never returned for limit fill",
             "low_score":  "setups found but score below threshold",
         }
         return {
