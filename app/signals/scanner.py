@@ -148,9 +148,8 @@ def _load_live(symbol: str, tf: str, count: int) -> pd.DataFrame:
         (now - entry["fetched_at"]).total_seconds() > ttl
     )
 
-    client = _get_client()
-    if client is None:
-        return pd.DataFrame()
+    from app.mt5.source_router import get_candles_fetcher
+    client = get_candles_fetcher()
 
     # Minimum candle requirements per timeframe for reliable indicator calculation
     MIN_CANDLES: dict = {
@@ -159,7 +158,7 @@ def _load_live(symbol: str, tf: str, count: int) -> pd.DataFrame:
 
     try:
         if need_full:
-            raw = client.get_candles(symbol, tf, count=count)
+            raw = client(symbol, tf, count=count)
             min_required = MIN_CANDLES.get(tf, 30)
             if raw.empty or len(raw) < min_required:
                 logger.warning("[Cache] Full fetch %s %s returned %d candles (min %d required) — pair skipped",
@@ -169,7 +168,7 @@ def _load_live(symbol: str, tf: str, count: int) -> pd.DataFrame:
             _candle_cache[key] = {"df": df, "fetched_at": now}
             logger.debug("[Cache] Full fetch %s %s — %d candles", symbol, tf, len(df))
         else:
-            raw_new = client.get_candles(symbol, tf, count=CACHE_TAIL_FETCH)
+            raw_new = client(symbol, tf, count=CACHE_TAIL_FETCH)
             cached  = entry["df"]
             if raw_new.empty:
                 df = cached

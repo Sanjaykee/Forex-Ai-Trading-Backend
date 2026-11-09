@@ -34,7 +34,6 @@ from app.risk.position_sizer import (
     get_risk_per_trade,
 )
 from app.notifications.telegram_bot import send_signal_alert, _get_token
-from app.mt5.metaapi_client import MetaApiClient
 from app.mt5.order_manager import place_order
 from app.filters.news_filter import is_news_safe, get_upcoming_news
 
@@ -434,24 +433,22 @@ BACKTEST_SYM_INFO = {"volume_min": 0.01, "volume_step": 0.01, "volume_max": 100.
 
 
 def _get_symbol_info(symbol: str, user) -> dict | None:
-    """Return fixed backtest-parity symbol info — matches SYM_INFO in run_yesterday_backtest.py."""
+    """Return backtest-parity symbol info with live spread from the active source.
+
+    volume_min/step/max stay fixed for backtest parity; spread_pips is read
+    from the currently selected data source (mt5/ctrader/metaapi) via the router.
+    """
+    sym_info = dict(BACKTEST_SYM_INFO)
     try:
-        client = MetaApiClient(token=user.metaapi_token,
-                               account_id=user.metaapi_account_id)
-        if client.is_configured:
-            specs = client.get_symbol_specs(symbol)
-            if specs:
-                spread = specs.get("spread", specs.get("spreadFloat", None))
-                return {
-                    "volume_min":  0.01,
-                    "volume_max":  100.0,
-                    "volume_step": 0.01,
-                    "spread_pips": float(spread) if spread else None,
-                }
+        from app.mt5.source_router import get_fetcher
+        _, get_live_price_fn, _, _ = get_fetcher()
+        price = get_live_price_fn(symbol)
+        if price and price.get("bid") and price.get("ask"):
+            pip = 0.01 if "JPY" in symbol.upper() else 0.0001
+            sym_info["spread_pips"] = round((float(price["ask"]) - float(price["bid"])) / pip, 2)
     except Exception as e:
         logger.warning("[VariantC] get_symbol_info %s failed: %s", symbol, e)
-    # Fallback to backtest fixed values
-    return dict(BACKTEST_SYM_INFO)
+    return sym_info
 
 
 def _calculate_lot(risk_usd: float, entry_ref: float, sl: float,
@@ -484,17 +481,15 @@ def _calculate_lot(risk_usd: float, entry_ref: float, sl: float,
 
 
 def _get_usdjpy_rate(user) -> float | None:
-    """Fetch a live USDJPY mid rate for valuing JPY-cross pip risk.
+    """Fetch a live USDJPY mid rate from the active data source.
 
     Returns None on any failure; position_sizer then falls back to its
     USDJPY_RATE_ESTIMATE env value. Never raises.
     """
     try:
-        client = MetaApiClient(token=user.metaapi_token,
-                               account_id=user.metaapi_account_id)
-        if not client.is_configured:
-            return None
-        px = client.get_live_price("USDJPY")
+        from app.mt5.source_router import get_fetcher
+        _, get_live_price_fn, _, _ = get_fetcher()
+        px = get_live_price_fn("USDJPY")
         if not px:
             return None
         bid, ask = px.get("bid"), px.get("ask")

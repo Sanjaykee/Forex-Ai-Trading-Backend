@@ -1,3 +1,6 @@
+
+
+
 try:
     import MetaTrader5 as mt5
     HAS_MT5 = True
@@ -34,8 +37,7 @@ TIMEFRAMES = {
 
 def get_candles(symbol: str, timeframe: str, count: int = 500) -> pd.DataFrame:
     if not HAS_MT5 or mt5 is None:
-        from app.mt5.yfinance_fetcher import get_candles as yf_candles
-        return yf_candles(symbol, timeframe, count)
+        return pd.DataFrame()
     tf  = TIMEFRAMES.get(timeframe, getattr(mt5, "TIMEFRAME_M15", 15))
     raw = mt5.copy_rates_from_pos(symbol, tf, 0, count)
     if raw is None or len(raw) == 0:

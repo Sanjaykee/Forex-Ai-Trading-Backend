@@ -32,21 +32,33 @@ from dotenv import load_dotenv
 load_dotenv(dotenv_path=Path(__file__).parent / ".env.local")
 
 import pandas as pd
-from app.mt5.metaapi_client import MetaApiClient
+from app.mt5.source_router import get_candles_fetcher, get_fetcher
 
 logger = logging.getLogger(__name__)
 
 # How often to take a snapshot (seconds). 3600 = every 1 hour.
 SNAPSHOT_INTERVAL_S = 3600
 
+# Retention (days) per timeframe — keep only the last N days of candle data.
+# H1 = 2 months, lower timeframes = 1 month. Older rows are trimmed on every
+# snapshot so storage does not grow forever.
+RETENTION_DAYS = {
+    "H1":  60,   # 2 months
+    "M15": 30,   # 1 month
+    "M5":  15,   # 15 days
+    "M3":  15,   # 15 days
+}
+RETENTION_DAYS_DEFAULT = 15
+
 # ── Config ────────────────────────────────────────────────────────────────────
 SYMBOLS    = ["EURUSD", "GBPUSD", "USDJPY", "USDCHF", "AUDUSD",
               "NZDUSD", "USDCAD", "EURJPY", "GBPJPY"]
-TIMEFRAMES = ["H1", "M5", "M3"]
+TIMEFRAMES = ["H1", "M15", "M5", "M3"]
 CANDLE_COUNT = {
-    "H1": 500,
-    "M5": 500,
-    "M3": 400,
+    "H1":  500,
+    "M15": 500,
+    "M5":  500,
+    "M3":  400,
 }
 OUTPUT_DIR = Path(__file__).parent / "data" / "spread_backup"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -62,11 +74,8 @@ def _get_session_name(utc_hour: int) -> str:
 
 # ── Main ──────────────────────────────────────────────────────────────────────
 def run():
-    client = MetaApiClient()
-
-    if not client.is_configured:
-        print("ERROR: MetaApi credentials not configured. Check .env.local")
-        sys.exit(1)
+    candles_fetcher = get_candles_fetcher()
+    _, live_price_fn, _, _ = get_fetcher()
 
     now_utc    = datetime.now(timezone.utc)
     fetch_time = now_utc.strftime("%Y-%m-%d %H:%M:%S UTC")
@@ -82,7 +91,7 @@ def run():
         pip_mult = 100.0 if "JPY" in symbol else 10000.0
 
         # ── Fetch live spread via bid/ask ─────────────────────────────────────
-        price = client.get_live_price(symbol)
+        price = live_price_fn(symbol)
         if price and price.get("bid") and price.get("ask"):
             bid          = float(price["bid"])
             ask          = float(price["ask"])
@@ -102,10 +111,13 @@ def run():
 
         for tf in TIMEFRAMES:
             count = CANDLE_COUNT.get(tf, 500)
+            # Per-timeframe retention boundary (H1=2 months, others=1 month)
+            retention_days   = RETENTION_DAYS.get(tf, RETENTION_DAYS_DEFAULT)
+            retention_cutoff = pd.Timestamp.now(tz="UTC").tz_localize(None) - pd.Timedelta(days=retention_days)
             print(f"    {tf}...", end=" ", flush=True)
 
             try:
-                df = client.get_candles(symbol, tf, count=count)
+                df = candles_fetcher(symbol, tf, count=count)
 
                 if df.empty:
                     print("no data")
@@ -134,10 +146,15 @@ def run():
                         .sort_values("time")
                         .reset_index(drop=True)
                     )
+                    # Retention: trim to the last RETENTION_DAYS of candle data
+                    before   = len(combined)
+                    combined = combined[combined["time"] >= retention_cutoff].reset_index(drop=True)
+                    removed  = before - len(combined)
                     combined.to_csv(out_file, index=False)
                     new_rows = len(combined) - len(existing)
-                    print(f"{len(df)} fetched  +{new_rows} new rows  total={len(combined)}  → {out_file.name}")
+                    print(f"{len(df)} fetched  +{new_rows} new rows  total={len(combined)}  removed {removed} old  → {out_file.name}")
                 else:
+                    df = df[df["time"] >= retention_cutoff].reset_index(drop=True)
                     df.to_csv(out_file, index=False)
                     print(f"{len(df)} candles saved  → {out_file.name}")
 
@@ -155,7 +172,7 @@ def run():
     print("  " + "-" * 38)
     for symbol in SYMBOLS:
         pip_size = 0.01 if "JPY" in symbol else 0.0001
-        price    = client.get_live_price(symbol)
+        price    = live_price_fn(symbol)
         if price and price.get("bid") and price.get("ask"):
             sp = round((float(price["ask"]) - float(price["bid"])) / pip_size, 2)
         else:

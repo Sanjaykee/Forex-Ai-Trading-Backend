@@ -67,10 +67,6 @@ def get_live_market_price_tool(symbol: str = "EURUSD") -> dict:
     _, get_live_price_fn, _, _ = get_fetcher("mt5")
     price = get_live_price_fn(symbol)
     if not price:
-        _, get_live_price_fn, _, _ = get_fetcher("yfinance")
-        price = get_live_price_fn(symbol)
-    
-    if not price:
         return {"symbol": symbol, "status": "No price available currently."}
         
     return {

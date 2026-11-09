@@ -78,7 +78,7 @@ class SettingsUpdate(BaseModel):
     london_session:    Optional[bool]  = True
     newyork_session:   Optional[bool]  = True
     telegram_alerts:   Optional[bool]  = True
-    data_source:       Optional[str]   = "yfinance"
+    data_source:       Optional[str]   = None
     execution_mode:    Optional[str]   = "manual"
     gemini_api_key:    Optional[str]   = None
     telegram_chat_id:  Optional[str]   = None

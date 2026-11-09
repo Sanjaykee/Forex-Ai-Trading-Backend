@@ -5,71 +5,150 @@ except ImportError:
     mt5 = None
     HAS_MT5 = False
 
-def place_order(symbol: str, direction: str, lot: float, entry: float, sl: float, tp: float, comment: str = "ForexAI", metaapi_token: str = None, metaapi_account_id: str = None, client_order_id: str = None) -> dict:
-    # 1. MetaApi Cloud execution — use per-user credentials if provided, else fall back to env
-    from app.mt5.metaapi_client import MetaApiClient
-    client = MetaApiClient(token=metaapi_token, account_id=metaapi_account_id)
-    if client.is_configured:
-        return client.place_order(symbol=symbol, direction=direction, lot=lot, entry=entry, sl=sl, tp=tp, comment=comment, client_order_id=client_order_id)
 
-    # 2. Local Windows MT5 Terminal execution
-    if HAS_MT5 and mt5 is not None:
-        order_type = mt5.ORDER_TYPE_BUY if direction == "BUY" else mt5.ORDER_TYPE_SELL
-        request = {
-            "action":       mt5.TRADE_ACTION_DEAL,
-            "symbol":       symbol,
-            "volume":       lot,
-            "type":         order_type,
-            "price":        entry,
-            "sl":           sl,
-            "tp":           tp,
-            "deviation":    10,
-            "magic":        20240101,
-            "comment":      comment,
-            "type_time":    mt5.ORDER_TIME_GTC,
-            "type_filling": mt5.ORDER_FILLING_IOC,
-        }
-        try:
-            result = mt5.order_send(request)
-            if result and result.retcode == mt5.TRADE_RETCODE_DONE:
-                return {"success": True, "ticket": result.order}
-            return {"success": False, "error": getattr(result, "comment", "MT5 order rejected")}
-        except Exception as e:
-            return {"success": False, "error": str(e)}
+def _place_order_mt5(symbol: str, direction: str, lot: float, sl: float, tp: float, comment: str) -> dict:
+    """Place a market order on the local MT5 terminal."""
+    if not HAS_MT5 or mt5 is None:
+        return {"success": False, "error": "MetaTrader5 package not installed"}
+    if not mt5.initialize():
+        return {"success": False, "error": "MT5 terminal not running or not logged in"}
 
-    return {
-        "success": False,
-        "error": "No execution bridge available. Configure MetaApi in Settings or run MT5 locally on Windows."
+    tick = mt5.symbol_info_tick(symbol)
+    if tick is None:
+        return {"success": False, "error": f"No tick for {symbol} — add it to Market Watch"}
+
+    order_type = mt5.ORDER_TYPE_BUY if direction.upper() == "BUY" else mt5.ORDER_TYPE_SELL
+    price = tick.ask if direction.upper() == "BUY" else tick.bid
+
+    request = {
+        "action":       mt5.TRADE_ACTION_DEAL,
+        "symbol":       symbol,
+        "volume":       float(lot),
+        "type":         order_type,
+        "price":        price,
+        "sl":           float(sl) if sl else None,
+        "tp":           float(tp) if tp else None,
+        "deviation":    20,
+        "magic":        20240101,
+        "comment":      comment,
+        "type_time":    mt5.ORDER_TIME_GTC,
+        "type_filling": mt5.ORDER_FILLING_IOC,
     }
 
-def close_order(ticket: int, symbol: str, lot: float, direction: str) -> dict:
-    from app.mt5.metaapi_client import metaapi_client
-    if metaapi_client.is_configured:
-        return metaapi_client.close_order(str(ticket))
+    try:
+        result = mt5.order_send(request)
+    except Exception as e:
+        return {"success": False, "error": f"MT5 order_send exception: {e}"}
 
-    if HAS_MT5 and mt5 is not None:
-        close_type = mt5.ORDER_TYPE_SELL if direction == "BUY" else mt5.ORDER_TYPE_BUY
-        tick = mt5.symbol_info_tick(symbol)
-        price = tick.bid if direction == "BUY" else tick.ask
-        request = {
-            "action":       mt5.TRADE_ACTION_DEAL,
-            "symbol":       symbol,
-            "volume":       lot,
-            "type":         close_type,
-            "position":     ticket,
-            "price":        price,
-            "deviation":    10,
-            "magic":        20240101,
-            "comment":      "ForexAI Close",
-            "type_time":    mt5.ORDER_TIME_GTC,
-            "type_filling": mt5.ORDER_FILLING_IOC,
+    if result is None:
+        return {"success": False, "error": f"MT5 order_send returned None: {mt5.last_error()}"}
+
+    if result.retcode == mt5.TRADE_RETCODE_DONE:
+        return {
+            "success":     True,
+            "ticket":      str(result.order),
+            "order_type":  "ORDER_TYPE_MARKET",
+            "fill_price":  getattr(result, "price", None),
+            "actual_lots": float(lot),
         }
-        try:
-            result = mt5.order_send(request)
-            if result and result.retcode == mt5.TRADE_RETCODE_DONE:
-                return {"success": True, "ticket": result.order}
-            return {"success": False, "error": getattr(result, "comment", "Close failed")}
-        except Exception as e:
-            return {"success": False, "error": str(e)}
+    return {"success": False, "error": f"MT5 rejected ({result.retcode}): {result.comment}"}
+
+
+def _close_order_mt5(ticket, symbol: str, lot: float, direction: str) -> dict:
+    """Close a position on the local MT5 terminal."""
+    if not HAS_MT5 or mt5 is None:
+        return {"success": False, "error": "MetaTrader5 package not installed"}
+    if not mt5.initialize():
+        return {"success": False, "error": "MT5 terminal not running"}
+
+    tick = mt5.symbol_info_tick(symbol)
+    if tick is None:
+        return {"success": False, "error": f"No tick for {symbol}"}
+
+    close_type = mt5.ORDER_TYPE_SELL if direction.upper() == "BUY" else mt5.ORDER_TYPE_BUY
+    price = tick.bid if direction.upper() == "BUY" else tick.ask
+
+    request = {
+        "action":       mt5.TRADE_ACTION_DEAL,
+        "symbol":       symbol,
+        "volume":       float(lot),
+        "type":         close_type,
+        "position":     int(ticket),
+        "price":        price,
+        "deviation":    20,
+        "magic":        20240101,
+        "comment":      "ForexAI Close",
+        "type_time":    mt5.ORDER_TIME_GTC,
+        "type_filling": mt5.ORDER_FILLING_IOC,
+    }
+
+    try:
+        result = mt5.order_send(request)
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+    if result is None:
+        return {"success": False, "error": f"MT5 close returned None: {mt5.last_error()}"}
+
+    if result.retcode == mt5.TRADE_RETCODE_DONE:
+        return {"success": True, "ticket": str(result.order)}
+    return {"success": False, "error": f"MT5 close rejected ({result.retcode}): {result.comment}"}
+
+
+def place_order(symbol: str, direction: str, lot: float, entry: float, sl: float, tp: float,
+                comment: str = "ForexAI", metaapi_token: str = None, metaapi_account_id: str = None,
+                client_order_id: str = None) -> dict:
+    """Place an order through the ACTIVE data source (dynamic).
+
+    Routes by the saved `data_source` preference:
+      mt5 -> local MT5 terminal, ctrader -> cTrader, metaapi -> MetaApi cloud.
+    """
+    from app.mt5.source_router import _resolve_user_data_source, _build_ctrader_client, _mt5_available
+    ds = _resolve_user_data_source("auto")
+
+    # 1. cTrader Open API
+    if ds == "ctrader":
+        client = _build_ctrader_client()
+        if client is not None:
+            res = client.place_order(symbol=symbol, direction=direction, volume=lot, sl=sl, tp=tp, comment=comment)
+            if res.get("success"):
+                return res
+            return {"success": False, "error": res.get("error", "cTrader order failed")}
+
+    # 2. Local MT5 terminal
+    if ds in ("mt5", "auto") and _mt5_available():
+        return _place_order_mt5(symbol, direction, lot, sl, tp, comment)
+
+    # 3. MetaApi cloud
+    if ds in ("metaapi", "auto"):
+        from app.mt5.metaapi_client import MetaApiClient
+        client = MetaApiClient(token=metaapi_token, account_id=metaapi_account_id)
+        if client.is_configured:
+            return client.place_order(symbol=symbol, direction=direction, lot=lot, entry=entry,
+                                      sl=sl, tp=tp, comment=comment, client_order_id=client_order_id)
+
+    return {"success": False, "error": "No execution bridge available. Select a data source in Settings."}
+
+
+def close_order(ticket, symbol: str, lot: float, direction: str) -> dict:
+    """Close a position through the ACTIVE data source (dynamic)."""
+    from app.mt5.source_router import _resolve_user_data_source, _build_ctrader_client, _mt5_available
+    ds = _resolve_user_data_source("auto")
+
+    # cTrader Open API
+    if ds == "ctrader":
+        client = _build_ctrader_client()
+        if client is not None:
+            return client.close_order(str(ticket), volume=lot)
+
+    # Local MT5 terminal
+    if ds in ("mt5", "auto") and _mt5_available():
+        return _close_order_mt5(ticket, symbol, lot, direction)
+
+    # MetaApi cloud
+    if ds in ("metaapi", "auto"):
+        from app.mt5.metaapi_client import metaapi_client
+        if metaapi_client.is_configured:
+            return metaapi_client.close_order(str(ticket))
 
     return {"success": False, "error": "No terminal available"}

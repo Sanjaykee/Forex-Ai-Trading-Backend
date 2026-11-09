@@ -112,42 +112,20 @@ def _load(symbol: str, tf: str, days: int) -> pd.DataFrame:
         if now - c_time < 900 and not c_df.empty:
             return c_df.copy()
 
-    from app.db.database import SessionLocal
-    from app.db.models   import User
-    from app.db          import crud
-    from app.config      import settings as _cfg
+    needed = _candles_needed(tf, days)
 
-    user = None
-    region = "backup-new-york"
+    from app.mt5.source_router import get_candles_fetcher
+    fetcher = get_candles_fetcher()
+
     try:
-        db   = SessionLocal()
-        user = db.query(User).filter(
-            User.metaapi_account_id.isnot(None),
-            User.metaapi_account_id != ""
-        ).order_by(User.id.desc()).first() or db.query(User).first()
-        if user:
-            region = crud.get_setting(db, user.id, "metaapi_region") or \
-                     _cfg.METAAPI_REGION or "backup-new-york"
-        db.close()
-    except Exception:
-        pass
-
-    token      = (user.metaapi_token      if user else None) or _cfg.METAAPI_TOKEN      or ""
-    account_id = (user.metaapi_account_id if user else None) or _cfg.METAAPI_ACCOUNT_ID or ""
-    needed     = _candles_needed(tf, days)
-
-    if token and account_id:
-        try:
-            from app.mt5.metaapi_client import MetaApiClient
-            client = MetaApiClient(token=token, account_id=account_id, region=region)
-            df = client.get_candles(symbol, tf, count=needed)
-            if not df.empty and len(df) >= 30:
-                logger.info("Loaded %d candles %s %s", len(df), symbol, tf)
-                norm_df = _normalize(df)
-                _backtest_candle_cache[cache_key] = (now, norm_df)
-                return norm_df.copy()
-        except Exception as e:
-            logger.error("MetaApi %s %s: %s", symbol, tf, e)
+        df = fetcher(symbol, tf, count=needed)
+        if df is not None and not df.empty and len(df) >= 30:
+            logger.info("Loaded %d candles %s %s", len(df), symbol, tf)
+            norm_df = _normalize(df)
+            _backtest_candle_cache[cache_key] = (now, norm_df)
+            return norm_df.copy()
+    except Exception as e:
+        logger.error("data load %s %s: %s", symbol, tf, e)
 
     return pd.DataFrame()
 
@@ -190,7 +168,7 @@ def run_backtest(
     df_raw = _load(symbol, tf, days)
     if df_raw.empty or len(df_raw) < 50:
         return {
-            "error": f"No data for {symbol} {tf}. Connect MetaApi in Settings.",
+            "error": f"No data for {symbol} {tf}. Check your data source in Settings.",
             "symbol": symbol, "timeframe": tf, "days": days,
             "total_signals": 0, "wins": 0, "losses": 0,
             "win_rate": 0.0, "net_pips": 0.0,

@@ -1,5 +1,5 @@
 """
-Variant C Backtest — MetaApi Live Data
+Variant C Backtest — Live Data (dynamic source)
 Full live-scenario display: SL pips, risk $, target $, lot size per trade.
 Usage: python run_yesterday_backtest.py [START_DATE] [END_DATE]
        Dates in YYYY-MM-DD format. Defaults: today
@@ -14,9 +14,6 @@ from app.analysis.smc.mtf_strategy import run_mtf_smc_backtest
 from app.risk.position_sizer import (
     calculate_lot_size, actual_risk_usd, _get_instrument_params
 )
-from app.mt5.metaapi_client import MetaApiClient
-from app.config import settings
-
 PAIRS = ["EURUSD", "GBPUSD", "USDJPY", "USDCHF", "AUDUSD",
          "NZDUSD", "USDCAD", "EURJPY", "GBPJPY"]
 
@@ -28,23 +25,19 @@ MIN_RR     = 3.0
 RISK_USD   = 1.0
 SYM_INFO   = {"volume_min": 0.01, "volume_step": 0.01, "volume_max": 100.0}
 
-_client = MetaApiClient(
-    token=settings.METAAPI_TOKEN,
-    account_id=settings.METAAPI_ACCOUNT_ID,
-    region=settings.METAAPI_REGION or "backup-new-york",
-)
-
 _candle_cache: dict = {}
 
-def load_metaapi(symbol: str, tf: str) -> pd.DataFrame:
-    """Fetch candles from MetaApi with a simple in-process cache."""
+def load_candles(symbol: str, tf: str) -> pd.DataFrame:
+    """Fetch candles from the ACTIVE data source with a simple in-process cache."""
+    from app.mt5.source_router import get_candles_fetcher
     key = f"{symbol}_{tf}"
     if key in _candle_cache:
         return _candle_cache[key]
     # Fetch enough candles to cover warmup + test window
     counts = {"H1": 300, "M5": 1500, "M3": 2500}
-    df = _client.get_candles(symbol, tf, count=counts.get(tf, 1000))
-    if not df.empty:
+    fetcher = get_candles_fetcher()
+    df = fetcher(symbol, tf, count=counts.get(tf, 1000))
+    if df is not None and not df.empty:
         if getattr(df["time"].dt, "tz", None) is not None:
             df["time"] = df["time"].dt.tz_convert("UTC").dt.tz_localize(None)
         df = df.sort_values("time").reset_index(drop=True)
@@ -112,21 +105,24 @@ def run():
     pair_results = []
     trade_idx    = 0
 
+    from app.mt5.source_router import _resolve_user_data_source
+    source = _resolve_user_data_source("auto")
+
     print("=" * 65)
     print("  VARIANT C BACKTEST  %s to %s" % (START_DATE, END_DATE))
     print("  Strategy : MTF SMC A+  |  RR 1:%.1f  |  Score >= %d/14" % (MIN_RR, MIN_SCORE))
-    print("  Risk/Trade: $%.2f  |  Lot step: 0.01" % RISK_USD)
+    print("  Source   : %s  |  Risk/Trade: $%.2f  |  Lot step: 0.01" % (source, RISK_USD))
     print("=" * 65)
 
     for symbol in PAIRS:
-        print("  Fetching %s from MetaApi..." % symbol, end=" ", flush=True)
-        df15 = load_metaapi(symbol, "H1")
-        df5  = load_metaapi(symbol, "M5")
-        df3  = load_metaapi(symbol, "M3")
+        print("  Fetching %s..." % symbol, end=" ", flush=True)
+        df15 = load_candles(symbol, "H1")
+        df5  = load_candles(symbol, "M5")
+        df3  = load_candles(symbol, "M3")
         print("H1=%d M5=%d M3=%d" % (len(df15), len(df5), len(df3)))
 
         if df15.empty or df5.empty or df3.empty:
-            print("\n[%s] SKIPPED - MetaApi returned no data" % symbol)
+            print("\n[%s] SKIPPED - no data from active source" % symbol)
             continue
 
         result = run_mtf_smc_backtest(

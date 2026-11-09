@@ -51,20 +51,26 @@ def get_settings(db: Session = Depends(get_db), user=Depends(get_current_user)):
     if token and account_id:
         res["has_metaapi"] = True
         res["metaapi_account_id"] = account_id
-        try:
-            from app.mt5.metaapi_client import MetaApiClient
-            _client = MetaApiClient(token=token, account_id=account_id, region=region)
-            _info = _client.get_account_information()
-            if _info.get("connected"):
-                res["metaapi_connected"] = True
-                res["metaapi_balance"]   = _info.get("balance", 0)
-                res["metaapi_currency"]  = _info.get("currency", "USD")
-                res["metaapi_server"]    = _info.get("server", "")
-                crud.upsert_setting(db, user.id, "metaapi_connected", "true")
-                crud.upsert_setting(db, user.id, "metaapi_region", region)
-            else:
-                res["metaapi_connected"] = False
-        except Exception:
+        # Only probe MetaApi LIVE when it is the SELECTED data source.
+        # Otherwise reflect the cached state so Settings loads instantly and
+        # no slow MetaApi 504/timeout requests fire on Local PC or cTrader.
+        if res.get("data_source") == "metaapi":
+            try:
+                from app.mt5.metaapi_client import MetaApiClient
+                _client = MetaApiClient(token=token, account_id=account_id, region=region)
+                _info = _client.get_account_information()
+                if _info.get("connected"):
+                    res["metaapi_connected"] = True
+                    res["metaapi_balance"]   = _info.get("balance", 0)
+                    res["metaapi_currency"]  = _info.get("currency", "USD")
+                    res["metaapi_server"]    = _info.get("server", "")
+                    crud.upsert_setting(db, user.id, "metaapi_connected", "true")
+                    crud.upsert_setting(db, user.id, "metaapi_region", region)
+                else:
+                    res["metaapi_connected"] = False
+            except Exception:
+                res["metaapi_connected"] = crud.get_setting(db, user.id, "metaapi_connected") == "true"
+        else:
             res["metaapi_connected"] = crud.get_setting(db, user.id, "metaapi_connected") == "true"
     else:
         res["metaapi_connected"] = False
@@ -77,7 +83,7 @@ def get_settings(db: Session = Depends(get_db), user=Depends(get_current_user)):
     except Exception:
         res["has_gemini_key"] = False
     if not res.get("data_source"):
-        res["data_source"] = "mt5" if user.mt5_login else "yfinance"
+        res["data_source"] = "mt5" if user.mt5_login else ""
     return res
 
 @settings_router.put("/")
