@@ -27,6 +27,20 @@ def get_settings(db: Session = Depends(get_db), user=Depends(get_current_user)):
     res["mt5_server"] = user.mt5_server or ""
     res["telegram_chat_id"] = user.telegram_chat_id or ""
     res["has_mt5_password"] = bool(user.mt5_password)
+    # Local MT5 desktop account info (balance/currency) when a terminal is running
+    res["mt5_connected"] = False
+    if user.mt5_login:
+        try:
+            import MetaTrader5 as _mt5
+            _mt5.initialize()
+            _acc = _mt5.account_info()
+            if _acc is not None:
+                res["mt5_connected"] = True
+                res["mt5_balance"] = _acc.balance
+                res["mt5_currency"] = _acc.currency
+                res["mt5_account_login"] = _acc.login
+        except Exception:
+            pass
     res["has_metaapi"] = bool(user.metaapi_token and user.metaapi_account_id)
     res["metaapi_account_id"] = user.metaapi_account_id or ""
     # Show connected status + live account info on page load
@@ -119,7 +133,13 @@ def setup_mt5(data: MT5Setup, db: Session = Depends(get_db), user=Depends(get_cu
             }
         return {"message": "Credentials saved, but MT5 terminal failed to authorize. Check login & password.", "connected": False}
 
-    return {"message": "MT5 connected successfully", "connected": True}
+    account = {}
+    try:
+        from app.mt5.connection import get_account_info as _mt5_acct
+        account = _mt5_acct()
+    except Exception:
+        account = {}
+    return {"message": "MT5 connected successfully", "connected": True, "account": account}
 
 @settings_router.post("/metaapi")
 def setup_metaapi(data: dict, db: Session = Depends(get_db), user=Depends(get_current_user)):
