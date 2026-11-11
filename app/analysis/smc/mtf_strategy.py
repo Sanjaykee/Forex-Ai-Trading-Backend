@@ -78,61 +78,92 @@ def find_swings(highs: np.ndarray, lows: np.ndarray, n: int = 2) -> Tuple[List[T
 
 def get_m15_bias(df_m15_slice: pd.DataFrame) -> dict:
     """
-    Determine M15 market structure bias.
-    Bullish: Higher High (HH) + Higher Low (HL) or bullish BOS continuation.
-    Bearish: Lower High (LH) + Lower Low (LL) or bearish BOS continuation.
-    Ranging: Conflicting or inside range (Strict NO TRADE).
+    Determine M15 market structure bias using confirmed swing sequence.
+    Requires at least 2 consecutive HH+HL (BULLISH) or LH+LL (BEARISH) to confirm trend.
+    A single retracement swing is NOT enough — must show a sequence of structure.
+    EMA50 used only as a tiebreaker when swing sequence is ambiguous.
     """
     if df_m15_slice is None or len(df_m15_slice) < 20:
         return {"bias": "RANGING", "reason": "Insufficient M15 candles", "is_valid": False}
 
-    highs = df_m15_slice["high"].values.astype(float)
-    lows  = df_m15_slice["low"].values.astype(float)
+    highs  = df_m15_slice["high"].values.astype(float)
+    lows   = df_m15_slice["low"].values.astype(float)
     closes = df_m15_slice["close"].values.astype(float)
 
-    # EMA trend filter (EMA20 vs EMA50)
-    ema20 = pd.Series(closes).ewm(span=20, adjust=False).mean().values
     ema50 = pd.Series(closes).ewm(span=50, adjust=False).mean().values
-    ema_trend = "BULLISH" if ema20[-1] > ema50[-1] else "BEARISH"
+    price_above_ema50 = closes[-1] > ema50[-1]
 
     sh, sl = find_swings(highs, lows, n=2)
-    if len(sh) < 2 or len(sl) < 2:
+
+    if len(sh) < 3 or len(sl) < 3:
+        # Not enough swings for sequence — fall back to EMA50 only
+        bias = "BULLISH" if price_above_ema50 else "BEARISH"
         return {
-            "bias": ema_trend,
-            "reason": f"EMA trend alignment ({ema_trend})",
+            "bias": bias,
+            "reason": f"EMA50 fallback ({bias}) — insufficient swing history",
             "is_valid": True,
             "sh_list": sh,
             "sl_list": sl,
         }
 
-    last_sh_idx, last_sh = sh[-1]
-    prev_sh_idx, prev_sh = sh[-2]
-    last_sl_idx, last_sl = sl[-1]
-    prev_sl_idx, prev_sl = sl[-2]
+    # Use last 3 confirmed swing highs and lows
+    sh3 = sh[-3:]
+    sl3 = sl[-3:]
 
-    is_hh = last_sh > prev_sh
-    is_hl = last_sl > prev_sl
-    is_lh = last_sh < prev_sh
-    is_ll = last_sl < prev_sl
+    # Count how many consecutive HH and HL exist in the last 3 swings
+    hh_count = sum(1 for i in range(1, len(sh3)) if sh3[i][1] > sh3[i-1][1])
+    hl_count = sum(1 for i in range(1, len(sl3)) if sl3[i][1] > sl3[i-1][1])
+    lh_count = sum(1 for i in range(1, len(sh3)) if sh3[i][1] < sh3[i-1][1])
+    ll_count = sum(1 for i in range(1, len(sl3)) if sl3[i][1] < sl3[i-1][1])
 
-    current_close = closes[-1]
-    bullish_bos = current_close > last_sh
-    bearish_bos = current_close < last_sl
+    last_sh = sh3[-1][1]
+    last_sl = sl3[-1][1]
 
-    if (is_hh and is_hl) or (bullish_bos and ema_trend == "BULLISH"):
+    # Strong bullish: 2 HH + 2 HL in last 3 swings AND price above EMA50
+    # Strong bearish: 2 LH + 2 LL in last 3 swings AND price below EMA50
+    # Weak/conflicting: RANGING
+    bullish_structure = hh_count >= 2 and hl_count >= 1
+    bearish_structure = lh_count >= 2 and ll_count >= 1
+
+    # BOS confirmation: current close must have broken the last swing high (bull) or low (bear)
+    # This prevents calling a retracement inside a bearish trend as BULLISH
+    bullish_bos_confirmed = closes[-1] > last_sh
+    bearish_bos_confirmed = closes[-1] < last_sl
+
+    if bullish_structure and price_above_ema50:
         return {
             "bias": "BULLISH",
-            "reason": "Bullish Structure (HH/HL) with BOS continuation",
+            "reason": f"Bullish Structure: {hh_count} HH + {hl_count} HL confirmed",
             "is_valid": True,
             "sh_list": sh,
             "sl_list": sl,
             "last_sh": last_sh,
             "last_sl": last_sl,
         }
-    elif (is_lh and is_ll) or (bearish_bos and ema_trend == "BEARISH"):
+    elif bearish_structure and not price_above_ema50:
         return {
             "bias": "BEARISH",
-            "reason": "Bearish Structure (LH/LL) with BOS continuation",
+            "reason": f"Bearish Structure: {lh_count} LH + {ll_count} LL confirmed",
+            "is_valid": True,
+            "sh_list": sh,
+            "sl_list": sl,
+            "last_sh": last_sh,
+            "last_sl": last_sl,
+        }
+    elif bullish_bos_confirmed and price_above_ema50:
+        return {
+            "bias": "BULLISH",
+            "reason": "Bullish BOS: price broke above last swing high + above EMA50",
+            "is_valid": True,
+            "sh_list": sh,
+            "sl_list": sl,
+            "last_sh": last_sh,
+            "last_sl": last_sl,
+        }
+    elif bearish_bos_confirmed and not price_above_ema50:
+        return {
+            "bias": "BEARISH",
+            "reason": "Bearish BOS: price broke below last swing low + below EMA50",
             "is_valid": True,
             "sh_list": sh,
             "sl_list": sl,
@@ -142,7 +173,7 @@ def get_m15_bias(df_m15_slice: pd.DataFrame) -> dict:
     else:
         return {
             "bias": "RANGING",
-            "reason": "Conflicting M15 structure / consolidation (NO TRADE)",
+            "reason": f"Conflicting structure (HH:{hh_count} HL:{hl_count} LH:{lh_count} LL:{ll_count}) — NO TRADE",
             "is_valid": False,
             "sh_list": sh,
             "sl_list": sl,
