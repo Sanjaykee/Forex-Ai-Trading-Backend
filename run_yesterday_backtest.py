@@ -172,11 +172,9 @@ def run():
                     sig_utc = pd.Timestamp(START_DATE)
 
                 # Re-validate session from actual UTC signal time
-                # (stored session label may be wrong if M3 entry was Off-Session)
+                # (stored session label may be wrong if M3 entry was in different session)
                 from app.analysis.smc.mtf_strategy import validate_session as _vs
-                sess_valid, session = _vs(sig_utc)
-                if not sess_valid:
-                    continue
+                _sess_valid, session = _vs(sig_utc)
 
                 subsequent = df3[df3["time"] > sig_utc].head(400)
                 if subsequent.empty:
@@ -315,6 +313,34 @@ def run():
             print("  %-10s %7d %4d %4d %5.1f%%  %s$%.2f" % (
                 p["symbol"], p["signals"], p["wins"], p["losses"],
                 p["win_rate"], sign, p["net_pnl"]
+            ))
+
+    # ── Per-Session Summary ───────────────────────────────────────────────────
+    sess_map: dict = {}
+    for t, fin in all_trades:
+        s = t.get("session", "Unknown")
+        if s not in sess_map:
+            sess_map[s] = {"trades": 0, "wins": 0, "losses": 0, "pnl": 0.0}
+        sess_map[s]["trades"] += 1
+        if t["result"] == "WIN":
+            sess_map[s]["wins"] += 1
+        else:
+            sess_map[s]["losses"] += 1
+        sess_map[s]["pnl"] += fin["pnl"]
+
+    if sess_map:
+        print("\n  Per-Session Summary:")
+        print("  %-14s %7s %4s %4s %6s %10s" % (
+            "Session", "Trades", "W", "L", "WR%", "Net P&L"))
+        print("  " + "-" * 54)
+        for sess in ["Asian", "London", "New York", "Off-Session"]:
+            if sess not in sess_map:
+                continue
+            d = sess_map[sess]
+            wr = round(d["wins"] / d["trades"] * 100, 1) if d["trades"] else 0.0
+            sign = "+" if d["pnl"] >= 0 else ""
+            print("  %-14s %7d %4d %4d %5.1f%%  %s$%.2f" % (
+                sess, d["trades"], d["wins"], d["losses"], wr, sign, abs(d["pnl"])
             ))
 
 

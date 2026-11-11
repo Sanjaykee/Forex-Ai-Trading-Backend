@@ -33,9 +33,11 @@ logger = logging.getLogger(__name__)
 
 # ── Session & Killzone Configurations (UTC) ──────────────────────────────────
 ALLOWED_SESSIONS = {
-    "London":   (7, 11),   # 07:00 - 11:00 UTC (12:30 - 16:30 IST)
-    "New York": (12, 17),  # 12:00 - 17:00 UTC (17:30 - 22:30 IST)
-    "Asian":    (0, 4),    # 00:00 - 04:00 UTC (05:30 - 09:30 IST)
+    "London":        (7, 11),   # 07:00 - 11:00 UTC (12:30 - 16:30 IST)
+    "New York":      (12, 17),  # 12:00 - 17:00 UTC (17:30 - 22:30 IST)
+    "Asian":         (0, 4),    # 00:00 - 04:00 UTC (05:30 - 09:30 IST)
+    "Off-Session-1": (4, 7),    # 04:00 - 07:00 UTC (09:30 - 12:30 IST)
+    "Off-Session-2": (17, 24),  # 17:00 - 24:00 UTC (22:30 - 05:30 IST)
 }
 
 
@@ -687,9 +689,11 @@ def validate_session(time_val: pd.Timestamp, allowed_sessions: Optional[List[str
     hour = time_val.hour
     for name, (start_h, end_h) in ALLOWED_SESSIONS.items():
         if start_h <= hour < end_h:
-            if allowed_sessions and name not in allowed_sessions:
-                return False, f"Off-Session ({name} not permitted)"
-            return True, name
+            # Normalise internal Off-Session keys to display label
+            display = "Off-Session" if name.startswith("Off-Session") else name
+            if allowed_sessions and display not in allowed_sessions:
+                return False, f"Off-Session ({display} not permitted)"
+            return True, display
     return False, "Off-Session"
 
 
