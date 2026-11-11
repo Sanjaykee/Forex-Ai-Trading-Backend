@@ -482,9 +482,6 @@ class MetaApiClient:
 
         digits   = 3 if "JPY" in symbol else 5
         pip_mult = 100 if "JPY" in symbol else 10000
-        # Issue 3: 3-pip tolerance window for limit vs market decision
-        LIMIT_TOLERANCE_PIPS = 3
-        tolerance = LIMIT_TOLERANCE_PIPS / pip_mult
 
         sl_r = round(float(sl), digits) if sl else None
         tp_r = round(float(tp), digits) if tp else None
@@ -506,42 +503,32 @@ class MetaApiClient:
                     return {"success": False, "error": f"BUY rejected: ask {ask} <= SL {sl_r}. OB structure broken."}
 
                 # Issue 6: enforce broker min SL distance
-                if sl_r and (ask - sl_r) < min_sl_dist:
-                    sl_r = round(ask - min_sl_dist, digits)
+                if sl_r and (entry_r - sl_r) < min_sl_dist:
+                    sl_r = round(entry_r - min_sl_dist, digits)
                     logger.info("Adjusting BUY SL to %s to meet broker min stop distance", sl_r)
-                if tp_r and (tp_r - ask) < min_sl_dist:
-                    tp_r = round(ask + min_sl_dist * 2.0, digits)
+                if tp_r and (tp_r - entry_r) < min_sl_dist:
+                    tp_r = round(entry_r + min_sl_dist * 2.0, digits)
                     logger.info("Adjusting BUY TP to %s to meet broker min stop distance", tp_r)
 
-                # Issue 3: within tolerance -> MARKET, else LIMIT
-                gap = ask - entry_r
-                if gap <= tolerance:
-                    action = "ORDER_TYPE_BUY"
-                    logger.info("BUY MARKET: ask %s within %.1f pips of entry %s", ask, LIMIT_TOLERANCE_PIPS, entry_r)
-                else:
-                    action = "ORDER_TYPE_BUY_LIMIT"
-                    logger.info("BUY LIMIT at %s (ask=%s, gap=%.1f pips)", entry_r, ask, gap * pip_mult)
+                # Always LIMIT at exact signal entry — backtest only fills on retest
+                action = "ORDER_TYPE_BUY_LIMIT"
+                logger.info("BUY LIMIT at %s (ask=%s)", entry_r, ask)
 
             else:  # SELL
                 if sl_r and bid >= sl_r:
                     return {"success": False, "error": f"SELL rejected: bid {bid} >= SL {sl_r}. OB structure broken."}
 
                 # Issue 6: enforce broker min SL distance
-                if sl_r and (sl_r - bid) < min_sl_dist:
-                    sl_r = round(bid + min_sl_dist, digits)
+                if sl_r and (sl_r - entry_r) < min_sl_dist:
+                    sl_r = round(entry_r + min_sl_dist, digits)
                     logger.info("Adjusting SELL SL to %s to meet broker min stop distance", sl_r)
-                if tp_r and (bid - tp_r) < min_sl_dist:
-                    tp_r = round(bid - min_sl_dist * 2.0, digits)
+                if tp_r and (entry_r - tp_r) < min_sl_dist:
+                    tp_r = round(entry_r - min_sl_dist * 2.0, digits)
                     logger.info("Adjusting SELL TP to %s to meet broker min stop distance", tp_r)
 
-                # Issue 3: within tolerance -> MARKET, else LIMIT
-                gap = entry_r - bid
-                if gap <= tolerance:
-                    action = "ORDER_TYPE_SELL"
-                    logger.info("SELL MARKET: bid %s within %.1f pips of entry %s", bid, LIMIT_TOLERANCE_PIPS, entry_r)
-                else:
-                    action = "ORDER_TYPE_SELL_LIMIT"
-                    logger.info("SELL LIMIT at %s (bid=%s, gap=%.1f pips)", entry_r, bid, gap * pip_mult)
+                # Always LIMIT at exact signal entry — backtest only fills on retest
+                action = "ORDER_TYPE_SELL_LIMIT"
+                logger.info("SELL LIMIT at %s (bid=%s)", entry_r, bid)
         else:
             action = "ORDER_TYPE_BUY" if direction.upper() == "BUY" else "ORDER_TYPE_SELL"
 

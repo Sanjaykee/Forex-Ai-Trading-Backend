@@ -1,0 +1,50 @@
+{
+  "GBPJPY": [
+    {
+      "entry": 211.849,
+      "sl": 211.76,
+      "tp": 212.086,
+      "direction": "BUY",
+      "lot": 0.02,
+      "time_ist": "12:49:00 IST",
+      "session": "London",
+      "score": 13
+    }
+  ],
+  "AUDUSD": [
+    {
+      "entry": 0.68771,
+      "sl": 0.68706,
+      "tp": 0.68966,
+      "direction": "BUY",
+      "lot": 0.02,
+      "time_ist": "12:51:09 IST",
+      "session": "London",
+      "score": 13
+    }
+  ],
+  "EURJPY": [
+    {
+      "entry": 177.185,
+      "sl": 177.118,
+      "tp": 177.356,
+      "direction": "BUY",
+      "lot": 0.03,
+      "time_ist": "12:51:13 IST",
+      "session": "London",
+      "score": 13
+    }
+  ],
+  "GBPUSD": [
+    {
+      "entry": 1.33442,
+      "sl": 1.33306,
+      "tp": 1.3385,
+      "direction": "BUY",
+      "lot": 0.01,
+      "time_ist": "12:57:08 IST",
+      "session": "London",
+      "score": 13
+    }
+  ]
+}

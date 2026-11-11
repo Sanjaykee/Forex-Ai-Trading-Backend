@@ -19,28 +19,38 @@ PAIRS = ["EURUSD", "GBPUSD", "USDJPY", "USDCHF", "AUDUSD",
 
 TODAY      = str(date.today())
 START_DATE = sys.argv[1] if len(sys.argv) > 1 else TODAY
-END_DATE   = sys.argv[2] if len(sys.argv) > 2 else TODAY
+# If only one date arg given, END_DATE = same day (single-day backtest)
+END_DATE   = sys.argv[2] if len(sys.argv) > 2 else START_DATE
 MIN_SCORE  = 11
 MIN_RR     = 3.0
 RISK_USD   = 1.0
 SYM_INFO   = {"volume_min": 0.01, "volume_step": 0.01, "volume_max": 100.0}
 
+from app.mt5.source_router import get_candles_fetcher
+from app.signals.signal_logger import load_signals
+
+CANDLE_COUNT = {"H1": 1500, "M5": 4500, "M3": 7500}
+_fetcher     = get_candles_fetcher()
 _candle_cache: dict = {}
 
 def load_candles(symbol: str, tf: str) -> pd.DataFrame:
-    """Fetch candles from the ACTIVE data source with a simple in-process cache."""
-    from app.mt5.source_router import get_candles_fetcher
+    """Fetch candles from MT5 — same source as the live scanner."""
     key = f"{symbol}_{tf}"
     if key in _candle_cache:
         return _candle_cache[key]
-    # Fetch enough candles to cover warmup + test window
-    counts = {"H1": 300, "M5": 1500, "M3": 2500}
-    fetcher = get_candles_fetcher()
-    df = fetcher(symbol, tf, count=counts.get(tf, 1000))
-    if df is not None and not df.empty:
-        if getattr(df["time"].dt, "tz", None) is not None:
+    try:
+        df = _fetcher(symbol, tf, count=CANDLE_COUNT.get(tf, 500))
+        if df.empty:
+            _candle_cache[key] = pd.DataFrame()
+            return pd.DataFrame()
+        if df["time"].dt.tz is not None:
             df["time"] = df["time"].dt.tz_convert("UTC").dt.tz_localize(None)
         df = df.sort_values("time").reset_index(drop=True)
+        needed = ["time", "open", "high", "low", "close", "volume"]
+        df = df[needed].copy()
+    except Exception as e:
+        print(f"  [WARN] MT5 fetch failed for {symbol} {tf}: {e}")
+        df = pd.DataFrame()
     _candle_cache[key] = df
     return df
 
@@ -105,13 +115,17 @@ def run():
     pair_results = []
     trade_idx    = 0
 
-    from app.mt5.source_router import _resolve_user_data_source
-    source = _resolve_user_data_source("auto")
+    # Load signal log for the date range (use START_DATE for single-day)
+    signal_log = load_signals(START_DATE)
+    using_log  = bool(signal_log)
+    source_label = "signal_log" if using_log else "mt5"
 
     print("=" * 65)
     print("  VARIANT C BACKTEST  %s to %s" % (START_DATE, END_DATE))
     print("  Strategy : MTF SMC A+  |  RR 1:%.1f  |  Score >= %d/14" % (MIN_RR, MIN_SCORE))
-    print("  Source   : %s  |  Risk/Trade: $%.2f  |  Lot step: 0.01" % (source, RISK_USD))
+    print("  Source   : %s  |  Risk/Trade: $%.2f  |  Lot step: 0.01" % (source_label, RISK_USD))
+    if using_log:
+        print("  Signal log found — using exact live entry prices for %s" % START_DATE)
     print("=" * 65)
 
     for symbol in PAIRS:
@@ -125,24 +139,106 @@ def run():
             print("\n[%s] SKIPPED - no data from active source" % symbol)
             continue
 
-        result = run_mtf_smc_backtest(
-            df15=df15, df5=df5, df3=df3,
-            symbol=symbol,
-            start_date=START_DATE,
-            end_date=END_DATE,
-            min_score=MIN_SCORE,
-            min_rr=MIN_RR,
-            apply_daily_protection=True,
-            max_daily_trades=3,
-            max_daily_loss_r=2.0,
-            max_consec_losses=2,
-        )
+        # ── If signal log exists for this date, replay from logged prices ──
+        if using_log and symbol in signal_log:
+            log_records = signal_log[symbol]
+            trades = []
+            seen_log = set()   # dedup existing log records by (entry, sl, tp, direction)
+            for rec in log_records:
+                entry     = float(rec["entry"])
+                sl_price  = float(rec["sl"])
+                tp_price  = float(rec["tp"])
+                direction = rec["direction"]
 
-        trades = result["all_trades"]
-        total  = result["total_signals"]
-        wins   = result["wins"]
-        losses = result["losses"]
-        wr     = result["win_rate"]
+                sig_key = (entry, sl_price, tp_price, direction)
+                if sig_key in seen_log:
+                    continue
+                seen_log.add(sig_key)
+
+                time_ist  = rec.get("time_ist", "?")
+                session   = rec.get("session", "?")
+                score     = rec.get("score", 0)
+                pip_size  = 0.01 if "JPY" in symbol else 0.0001
+                pip_mult  = 100.0 if "JPY" in symbol else 10000.0
+
+                # Forward simulate from M3 candles after signal time
+                # Parse signal time to find candles after it
+                try:
+                    sig_date = pd.Timestamp(START_DATE)
+                    sig_time_str = time_ist.replace(" IST", "")
+                    sig_ist = pd.Timestamp("%s %s" % (START_DATE, sig_time_str))
+                    sig_utc = sig_ist - pd.Timedelta(hours=5, minutes=30)
+                except Exception:
+                    sig_utc = pd.Timestamp(START_DATE)
+
+                # Re-validate session from actual UTC signal time
+                # (stored session label may be wrong if M3 entry was Off-Session)
+                from app.analysis.smc.mtf_strategy import validate_session as _vs
+                sess_valid, session = _vs(sig_utc)
+                if not sess_valid:
+                    continue
+
+                subsequent = df3[df3["time"] > sig_utc].head(400)
+                if subsequent.empty:
+                    subsequent = df5[df5["time"] > sig_utc].head(150)
+
+                outcome   = "OPEN"
+                exit_time = None
+                for _, row in subsequent.iterrows():
+                    h, l, t = float(row["high"]), float(row["low"]), row["time"]
+                    if direction == "SELL":
+                        if h >= sl_price:  outcome = "LOSS"; exit_time = t; break
+                        if l <= tp_price:  outcome = "WIN";  exit_time = t; break
+                    else:
+                        if l <= sl_price:  outcome = "LOSS"; exit_time = t; break
+                        if h >= tp_price:  outcome = "WIN";  exit_time = t; break
+
+                if outcome == "OPEN":
+                    continue
+
+                exit_ist = (exit_time + pd.Timedelta(hours=5, minutes=30)).strftime("%Y-%m-%d %H:%M IST") if exit_time is not None else "?"
+
+                trades.append({
+                    "timestamp":     str(sig_utc),
+                    "timestamp_ist": "%s %s" % (START_DATE, time_ist),
+                    "pair":          symbol,
+                    "direction":     direction,
+                    "entry":         entry,
+                    "stop_loss":     sl_price,
+                    "take_profit":   tp_price,
+                    "rr":            "1:3.00",
+                    "rr_val":        3.0,
+                    "score":         score,
+                    "session":       session,   # re-validated from sig_utc
+                    "result":        outcome,
+                    "exit_time_ist": exit_ist,
+                    "risk_pips":     round(abs(entry - sl_price) / pip_size, 1),
+                    "spread_pips":   1.5,
+                })
+
+            total = len(trades)
+            wins   = sum(1 for t in trades if t["result"] == "WIN")
+            losses = sum(1 for t in trades if t["result"] == "LOSS")
+            wr     = round(wins / total * 100, 1) if total else 0.0
+            spread_adj_net_r = 0.0
+
+        else:
+            # No signal log — use MT5 backtest engine
+            result = run_mtf_smc_backtest(
+                df15=df15, df5=df5, df3=df3,
+                symbol=symbol,
+                start_date=START_DATE,
+                end_date=END_DATE,
+                min_score=MIN_SCORE,
+                min_rr=MIN_RR,
+                apply_daily_protection=False,
+            )
+            trades = result["all_trades"]
+            total  = result["total_signals"]
+            wins   = result["wins"]
+            losses = result["losses"]
+            wr     = result["win_rate"]
+            spread_adj_net_r = result.get("spread_adj_net_r", 0.0)
 
         # compute financials per trade
         pair_pnl = 0.0
@@ -151,6 +247,8 @@ def run():
         fin_list = []
         for t in trades:
             fin = trade_financials(t)
+            if fin["lot"] <= 0:          # skip zero-lot trades
+                continue
             fin_list.append(fin)
             pair_pnl    += fin["pnl"]
             pair_risk   += fin["risk_amt"]
@@ -160,7 +258,7 @@ def run():
             "symbol": symbol, "signals": total,
             "wins": wins, "losses": losses,
             "win_rate": wr, "net_pnl": round(pair_pnl, 2),
-            "spread_adj_net_r": result.get("spread_adj_net_r", 0.0),
+            "spread_adj_net_r": spread_adj_net_r if not using_log else 0.0,
         })
         all_trades.extend(zip(trades, fin_list))
 

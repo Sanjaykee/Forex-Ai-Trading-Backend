@@ -28,21 +28,21 @@ import requests
 from datetime import datetime, timezone, timedelta
 from app.db.database import SessionLocal
 from app.db import models, crud
-from app.signals.scanner import scan_all_pairs, scan_pair_all_m5_candles, _apply_spread, SPREAD_PIPS
+from app.signals.scanner import scan_all_pairs, scan_pair_all_m5_candles, SPREAD_PIPS
 from app.risk.position_sizer import (
     calculate_lot_size, enforce_min_sl, get_min_sl_pips, actual_risk_usd,
-    get_risk_per_trade,
+    get_risk_per_trade, _get_instrument_params,
 )
 from app.notifications.telegram_bot import send_signal_alert, _get_token
 from app.mt5.order_manager import place_order
 from app.filters.news_filter import is_news_safe, get_upcoming_news
+from app.config import settings
 
 logger = logging.getLogger(__name__)
 
 # -- Paper mode ---------------------------------------------------------------
-# Set PAPER_MODE=false in environment to enable live execution.
-# Defaults to true (safe) so accidental deploys never fire real orders.
-PAPER_MODE = os.environ.get("PAPER_MODE", "true").strip().lower() != "false"
+# Controlled via PAPER_MODE in .env.local (false = live execution).
+PAPER_MODE = settings.PAPER_MODE
 
 _PAPER_LOG_PATH = os.path.join(
     os.path.dirname(__file__), "..", "..", "..", "logs", "paper_signals.log"
@@ -62,6 +62,21 @@ def _get_paper_logger() -> logging.Logger:
     return plog
 
 
+def _compute_pnl(symbol: str, direction: str, entry: float, sl: float,
+                 tp: float, lot: float) -> tuple:
+    """
+    Return (risk_amt, reward_amt) in USD using the same formula as the backtest.
+    risk_amt   = loss if SL hit  = lot × sl_pips × pip_val
+    reward_amt = gain if TP hit  = lot × tp_pips × pip_val
+    """
+    pip_size, pip_val = _get_instrument_params(symbol, entry)
+    sl_pips    = abs(entry - sl) / pip_size
+    tp_pips    = abs(tp - entry) / pip_size
+    risk_amt   = round(lot * sl_pips * pip_val, 4)
+    reward_amt = round(lot * tp_pips * pip_val, 4)
+    return risk_amt, reward_amt
+
+
 def _log_paper_signal(db, user_id: int, r: dict, entry: float, sl: float,
                       tp: float, lot: float, risk_usd: float,
                       spread_pips: float | None):
@@ -73,9 +88,11 @@ def _log_paper_signal(db, user_id: int, r: dict, entry: float, sl: float,
     direction  = r["direction"]
     score      = r.get("score", 0)
 
+    risk_amt, reward_amt = _compute_pnl(pair, direction, entry, sl, tp, lot)
+
     _get_paper_logger().info(
-        "PAPER_SIGNAL: %s %s entry=%s sl=%s tp=%s score=%d time=%s",
-        pair, direction, entry, sl, tp, score, ist_time,
+        "PAPER_SIGNAL: %s %s entry=%s sl=%s tp=%s lot=%.2f risk=$%.4f reward=$%.4f score=%d time=%s",
+        pair, direction, entry, sl, tp, lot, risk_amt, reward_amt, score, ist_time,
     )
 
     sig_id = str(uuid.uuid4())
@@ -182,8 +199,11 @@ VC_NORMALIZED_THRESHOLD = round(VC_MIN_RAW_SCORE / 14.0 * 100, 2)
 # -- Fixed risk per trade matching backtest RISK_USD = $1.00 ------------------
 BACKTEST_RISK_USD = 1.0
 
-# -- Slippage buffer (applied at order submission only, not before validation) -
-SLIPPAGE_PIPS = {"JPY": 3, "default": 1}
+# -- Slippage buffer — reduced to 1 pip JPY, 0 non-JPY for backtest parity.
+# Backtest uses raw SL with no buffer. 3-pip JPY buffer was widening SL by 3
+# pips on every JPY trade, increasing real risk vs backtest. 1 pip kept only
+# as a minimal broker min-distance guard.
+SLIPPAGE_PIPS = {"JPY": 1, "default": 0}
 
 # -- Fix 2: Spread guard raised to 50% of SL (was 25%) -----------------------
 MAX_SPREAD_PCT_OF_SL = 0.50
@@ -571,7 +591,7 @@ def _handle_manual(db, user, r: dict, entry_ref: float, sl: float, tp: float,
 
 # -- Fix 8: Auto-execute with retry -------------------------------------------
 
-def _place_order_with_retry(symbol, direction, lot, sl, tp,
+def _place_order_with_retry(symbol, direction, lot, entry, sl, tp,
                             metaapi_token, metaapi_account_id,
                             client_order_id: str | None = None) -> dict:
     import time
@@ -579,7 +599,7 @@ def _place_order_with_retry(symbol, direction, lot, sl, tp,
     for attempt in range(1, ORDER_MAX_RETRIES + 1):
         result = place_order(
             symbol=symbol, direction=direction, lot=lot,
-            entry=None, sl=sl, tp=tp, comment="VariantC-M3",
+            entry=entry, sl=sl, tp=tp, comment="VariantC-M3",
             metaapi_token=metaapi_token,
             metaapi_account_id=metaapi_account_id,
             client_order_id=client_order_id,
@@ -636,11 +656,11 @@ def _handle_auto_execute(db, user, r: dict, entry_ref: float, sl: float,
     db.commit()
     db.refresh(trade)
 
-    logger.info("[VariantC] %s %s MARKET order submitting lot=%.4f SL=%s TP=%s",
-                symbol, direction, lot, sl, tp)
+    logger.info("[VariantC] %s %s LIMIT order submitting lot=%.4f entry=%s SL=%s TP=%s",
+                symbol, direction, lot, entry_ref, sl, tp)
 
     result = _place_order_with_retry(
-        symbol, direction, lot, sl, tp,
+        symbol, direction, lot, entry_ref, sl, tp,
         user.metaapi_token, user.metaapi_account_id,
         client_order_id="VC-%d" % trade.id,
     )
@@ -656,21 +676,25 @@ def _handle_auto_execute(db, user, r: dict, entry_ref: float, sl: float,
         # fill_price + actual_lots. Refresh the local trade object to reflect that.
         db.refresh(trade)
 
-        if "LIMIT" in order_type.upper():
-            trade.result = "REJECTED"
-            saved.status = "rejected"
-            db.commit()
-            logger.error("[VariantC] %s %s unexpected LIMIT order - rejected", symbol, direction)
-            _send_telegram(user, r, entry_ref, sl, tp, lot, risk_usd, rr_ratio,
-                           "WARNING: Unexpected LIMIT order - rejected",
-                           "Trade NOT opened. Variant C requires market execution.")
-            return
+        # Write expected P&L onto the trade row using the same formula as backtest
+        effective_entry = float(trade.actual_fill_price or entry_ref)
+        effective_lot   = float(trade.lot_size or lot)
+        risk_amt, reward_amt = _compute_pnl(
+            symbol, direction, effective_entry, sl, tp, effective_lot
+        )
+        # profit_usd = +reward if WIN, -risk if LOSS — set to expected reward now;
+        # trade monitor overwrites with actual broker P&L when trade closes.
+        trade.profit_usd = reward_amt
+        db.commit()
 
         fill_str = "%.5f" % fill_price if fill_price else "pending"
         db_str   = "db_ok" if db_write_ok else "db_FAILED"
-        logger.info("[VariantC] %s %s confirmed ticket=%s fill=%s lots=%s %s",
-                    symbol, direction, ticket, fill_str,
-                    "%.4f" % actual_lots if actual_lots else "?", db_str)
+        logger.info(
+            "[VariantC] %s %s confirmed ticket=%s fill=%s lots=%s risk=$%.4f reward=$%.4f %s",
+            symbol, direction, ticket, fill_str,
+            "%.4f" % actual_lots if actual_lots else "?",
+            risk_amt, reward_amt, db_str,
+        )
         _send_telegram(user, r, entry_ref, sl, tp, lot, risk_usd, rr_ratio,
                        "Market order executed ticket=%s fill=%s" % (ticket, fill_str),
                        "Price monitor active - closes at full TP or SL.")
@@ -741,6 +765,92 @@ def _send_telegram(user, r: dict, entry_ref: float, sl: float, tp: float,
         )
     except Exception as e:
         logger.error("[VariantC] Telegram send failed: %s", e)
+
+
+# -- Pending LIMIT order monitor ---------------------------------------------
+# Runs every M3 cycle. Cancels pending LIMIT orders whose setup is invalidated:
+#   BUY LIMIT:  bid >= tp  (price ran past TP without retesting entry)
+#               bid <= sl  (price hit SL level before entry — setup broken)
+#   SELL LIMIT: ask <= tp  (price ran past TP without retesting entry)
+#               ask >= sl  (price hit SL level before entry — setup broken)
+
+async def pending_limit_monitor():
+    """Background loop: cancel invalidated pending LIMIT orders every M3 cycle."""
+    from app.mt5.order_manager import cancel_pending_order
+    from app.mt5.source_router import get_fetcher
+
+    logger.info("[PendingMonitor] Started.")
+    await asyncio.sleep(60)  # give scanner time to place first orders
+
+    while True:
+        db = SessionLocal()
+        try:
+            pending_trades = db.query(models.Trade).filter(
+                models.Trade.result == "PENDING",
+                models.Trade.mt5_ticket.isnot(None),
+            ).all()
+
+            if pending_trades:
+                try:
+                    _, get_live_price_fn, _, _ = get_fetcher()
+                except Exception as e:
+                    logger.warning("[PendingMonitor] get_fetcher failed: %s", e)
+                    get_live_price_fn = None
+
+            for trade in pending_trades:
+                try:
+                    symbol    = trade.symbol
+                    direction = trade.direction
+                    entry     = float(trade.entry_price or 0)
+                    sl        = float(trade.stop_loss   or 0)
+                    tp        = float(trade.take_profit or 0)
+                    ticket    = str(trade.mt5_ticket)
+
+                    if not entry or not sl or not tp or not get_live_price_fn:
+                        continue
+
+                    price = get_live_price_fn(symbol)
+                    if not price:
+                        continue
+
+                    bid = float(price.get("bid", 0))
+                    ask = float(price.get("ask", 0))
+
+                    cancel_reason = None
+                    if direction == "BUY":
+                        if bid >= tp:
+                            cancel_reason = "price ran past TP (bid=%.5f >= tp=%.5f) without retest" % (bid, tp)
+                        elif bid <= sl:
+                            cancel_reason = "price hit SL before entry (bid=%.5f <= sl=%.5f)" % (bid, sl)
+                    else:  # SELL
+                        if ask <= tp:
+                            cancel_reason = "price ran past TP (ask=%.5f <= tp=%.5f) without retest" % (ask, tp)
+                        elif ask >= sl:
+                            cancel_reason = "price hit SL before entry (ask=%.5f >= sl=%.5f)" % (ask, sl)
+
+                    if cancel_reason:
+                        result = cancel_pending_order(ticket, symbol, direction)
+                        if result.get("success"):
+                            trade.result = "CANCELLED"
+                            db.commit()
+                            logger.info(
+                                "[PendingMonitor] %s %s ticket=%s CANCELLED — %s",
+                                symbol, direction, ticket, cancel_reason,
+                            )
+                        else:
+                            logger.warning(
+                                "[PendingMonitor] %s ticket=%s cancel FAILED: %s",
+                                symbol, ticket, result.get("error"),
+                            )
+                except Exception as e:
+                    logger.error("[PendingMonitor] Error checking trade #%d: %s", trade.id, e)
+
+        except Exception as e:
+            logger.error("[PendingMonitor] Unexpected error: %s", e)
+        finally:
+            db.close()
+
+        await asyncio.sleep(M3_PERIOD_S)  # check every M3 cycle (~3 min)
 
 
 # -- Per-pair sequencing state ------------------------------------------------
@@ -928,14 +1038,15 @@ async def auto_scan_loop():
                                     _cycle_filtered += 1
                                     continue
 
-                            # Fixed spread applied at order submission — matches backtest
-                            # effective_entry = entry ± SPREAD_PIPS[symbol] * pip_size
-                            effective_entry = _apply_spread(symbol, direction, entry_ref)
+                            # Broker handles spread naturally on market orders — no manual shift.
+                            # Using raw entry matches backtest fill price exactly.
+                            effective_entry   = entry_ref
                             fixed_spread_pips = SPREAD_PIPS.get(symbol.upper(), 1.5)
 
                             if exec_mode == "auto":
                                 lot = _calculate_lot(risk_usd, effective_entry, sl, symbol, user)
 
+                                # 1-pip JPY buffer only — minimal broker min-distance guard
                                 sl_with_slip = _apply_slippage_buffer(symbol, direction, sl)
 
                                 # Correlation bloc guard — disabled by default for backtest parity
@@ -965,6 +1076,10 @@ async def auto_scan_loop():
                                 _time.sleep(ORDER_SUBMIT_DELAY)
 
                                 try:
+                                    from app.signals.signal_logger import save_signal as _save_sig
+                                    _save_sig(symbol, direction, effective_entry,
+                                              sl_with_slip, tp, lot,
+                                              r.get("session", ""), raw_score)
                                     if PAPER_MODE:
                                         logger.info(
                                             "[PAPER] %s %s score=%d/14 eff_entry=%.5f — PAPER_MODE",
@@ -996,14 +1111,18 @@ async def auto_scan_loop():
 
                             else:
                                 try:
-                                    lot = _calculate_lot(risk_usd, effective_entry, sl, symbol, user)
+                                    lot = _calculate_lot(risk_usd, entry_ref, sl, symbol, user)
                                     if lot is None:
                                         logger.warning(
                                             "[VariantC] %s MANUAL signal lot=0 — size manually.",
                                             symbol,
                                         )
                                         lot = BACKTEST_SYM_INFO["volume_min"]
-                                    _handle_manual(db, user, r, effective_entry, sl, tp,
+                                    from app.signals.signal_logger import save_signal as _save_sig
+                                    _save_sig(symbol, direction, entry_ref,
+                                              sl, tp, lot,
+                                              r.get("session", ""), raw_score)
+                                    _handle_manual(db, user, r, entry_ref, sl, tp,
                                                    lot, risk_usd, rr_ratio, fixed_spread_pips)
                                     _record_api_success()
                                 except Exception as api_err:

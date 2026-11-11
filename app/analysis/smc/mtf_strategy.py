@@ -832,7 +832,15 @@ def evaluate_mtf_smc_setup(
         return {**empty, "reason": "no_m3_confirmation"}
 
     entry_price = m3_info["entry_price"]
-    entry_time = m3_info["entry_time"]
+    entry_time  = m3_info["entry_time"]
+
+    # Re-validate session at M3 entry time — this is the actual trade entry
+    # moment, which can differ from t_m5 by up to 90 min (M3 lookback window).
+    # Using t_m5 for session caused trades to pass session check at M5 time
+    # but actually enter in Off-Session at M3 time.
+    is_sess, sess_name = validate_session(pd.Timestamp(entry_time), allowed_sessions)
+    if not is_sess:
+        return {**empty, "reason": "outside_session"}
 
     # 10. Natural SL, Logical TP & RR Filter
     buffer = 0.015 if "JPY" in symbol.upper() else 0.00015
@@ -972,7 +980,8 @@ def run_mtf_smc_backtest(
         max_consec_losses=max_consec_losses,
     ) if apply_daily_protection else None
 
-    last_exit_time = pd.Timestamp.min
+    last_exit_time  = pd.Timestamp.min
+    seen_entry_times: set = set()   # dedup: same entry_time = same M3 candle
 
     for idx in test_indices:
         candle_m5 = df5.iloc[idx]
@@ -1007,8 +1016,11 @@ def run_mtf_smc_backtest(
                 rejections[reason_key] += 1
             continue
 
-        # Trade forward simulation
+        # Deduplicate: same M3 entry_time = same candle already taken
         entry_time  = setup["entry_time"]
+        if entry_time in seen_entry_times:
+            continue
+        seen_entry_times.add(entry_time)
         entry_price = setup["entry_price"]
         sl_price    = setup["stop_loss"]
         tp_price    = setup["take_profit"]

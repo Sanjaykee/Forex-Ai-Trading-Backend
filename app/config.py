@@ -33,6 +33,7 @@ class Settings(BaseSettings):
     METAAPI_TOKEN: str = ""
     METAAPI_ACCOUNT_ID: str = ""
     METAAPI_REGION: str = "backup-new-york"
+    PAPER_MODE: bool = True
 
     @property
     def is_production(self) -> bool:

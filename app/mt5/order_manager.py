@@ -6,8 +6,13 @@ except ImportError:
     HAS_MT5 = False
 
 
-def _place_order_mt5(symbol: str, direction: str, lot: float, sl: float, tp: float, comment: str) -> dict:
-    """Place a market order on the local MT5 terminal."""
+def _place_order_mt5(symbol: str, direction: str, lot: float, sl: float, tp: float,
+                     comment: str, entry: float = None) -> dict:
+    """Place a limit order at exact signal entry on the local MT5 terminal.
+
+    Always uses LIMIT at signal entry price to match backtest retest fill behavior.
+    If entry is None: falls back to MARKET at current tick (manual/emergency use only).
+    """
     if not HAS_MT5 or mt5 is None:
         return {"success": False, "error": "MetaTrader5 package not installed"}
     if not mt5.initialize():
@@ -17,11 +22,23 @@ def _place_order_mt5(symbol: str, direction: str, lot: float, sl: float, tp: flo
     if tick is None:
         return {"success": False, "error": f"No tick for {symbol} — add it to Market Watch"}
 
-    order_type = mt5.ORDER_TYPE_BUY if direction.upper() == "BUY" else mt5.ORDER_TYPE_SELL
-    price = tick.ask if direction.upper() == "BUY" else tick.bid
+    digits = 3 if "JPY" in symbol.upper() else 5
+
+    if entry:
+        price      = round(float(entry), digits)
+        order_type = mt5.ORDER_TYPE_BUY_LIMIT if direction.upper() == "BUY" else mt5.ORDER_TYPE_SELL_LIMIT
+        action     = mt5.TRADE_ACTION_PENDING
+        filling    = mt5.ORDER_FILLING_RETURN
+        otype_str  = "ORDER_TYPE_BUY_LIMIT" if direction.upper() == "BUY" else "ORDER_TYPE_SELL_LIMIT"
+    else:
+        price      = tick.ask if direction.upper() == "BUY" else tick.bid
+        order_type = mt5.ORDER_TYPE_BUY if direction.upper() == "BUY" else mt5.ORDER_TYPE_SELL
+        action     = mt5.TRADE_ACTION_DEAL
+        filling    = mt5.ORDER_FILLING_IOC
+        otype_str  = "ORDER_TYPE_MARKET"
 
     request = {
-        "action":       mt5.TRADE_ACTION_DEAL,
+        "action":       action,
         "symbol":       symbol,
         "volume":       float(lot),
         "type":         order_type,
@@ -32,7 +49,7 @@ def _place_order_mt5(symbol: str, direction: str, lot: float, sl: float, tp: flo
         "magic":        20240101,
         "comment":      comment,
         "type_time":    mt5.ORDER_TIME_GTC,
-        "type_filling": mt5.ORDER_FILLING_IOC,
+        "type_filling": filling,
     }
 
     try:
@@ -47,8 +64,8 @@ def _place_order_mt5(symbol: str, direction: str, lot: float, sl: float, tp: flo
         return {
             "success":     True,
             "ticket":      str(result.order),
-            "order_type":  "ORDER_TYPE_MARKET",
-            "fill_price":  getattr(result, "price", None),
+            "order_type":  otype_str,
+            "fill_price":  getattr(result, "price", price),
             "actual_lots": float(lot),
         }
     return {"success": False, "error": f"MT5 rejected ({result.retcode}): {result.comment}"}
@@ -117,7 +134,7 @@ def place_order(symbol: str, direction: str, lot: float, entry: float, sl: float
 
     # 2. Local MT5 terminal
     if ds in ("mt5", "auto") and _mt5_available():
-        return _place_order_mt5(symbol, direction, lot, sl, tp, comment)
+        return _place_order_mt5(symbol, direction, lot, sl, tp, comment, entry=entry)
 
     # 3. MetaApi cloud
     if ds in ("metaapi", "auto"):
@@ -128,6 +145,38 @@ def place_order(symbol: str, direction: str, lot: float, entry: float, sl: float
                                       sl=sl, tp=tp, comment=comment, client_order_id=client_order_id)
 
     return {"success": False, "error": "No execution bridge available. Select a data source in Settings."}
+
+
+def cancel_pending_order(ticket: str, symbol: str = None, direction: str = None) -> dict:
+    """Cancel a pending LIMIT order through the active data source."""
+    from app.mt5.source_router import _resolve_user_data_source, _mt5_available
+    ds = _resolve_user_data_source("auto")
+
+    if ds in ("mt5", "auto") and _mt5_available():
+        if not HAS_MT5 or mt5 is None:
+            return {"success": False, "error": "MT5 not available"}
+        if not mt5.initialize():
+            return {"success": False, "error": "MT5 terminal not running"}
+        request = {
+            "action":  mt5.TRADE_ACTION_REMOVE,
+            "order":   int(ticket),
+        }
+        try:
+            result = mt5.order_send(request)
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+        if result is None:
+            return {"success": False, "error": f"MT5 cancel returned None: {mt5.last_error()}"}
+        if result.retcode == mt5.TRADE_RETCODE_DONE:
+            return {"success": True, "ticket": ticket}
+        return {"success": False, "error": f"MT5 cancel rejected ({result.retcode}): {result.comment}"}
+
+    if ds in ("metaapi", "auto"):
+        from app.mt5.metaapi_client import metaapi_client
+        if metaapi_client.is_configured:
+            return metaapi_client.cancel_order(str(ticket))
+
+    return {"success": False, "error": "No terminal available"}
 
 
 def close_order(ticket, symbol: str, lot: float, direction: str) -> dict:

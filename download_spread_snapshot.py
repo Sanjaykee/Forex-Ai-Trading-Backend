@@ -55,7 +55,7 @@ SYMBOLS    = ["EURUSD", "GBPUSD", "USDJPY", "USDCHF", "AUDUSD",
               "NZDUSD", "USDCAD", "EURJPY", "GBPJPY"]
 TIMEFRAMES = ["H1", "M15", "M5", "M3"]
 CANDLE_COUNT = {
-    "H1":  500,
+    "H1":  1000,
     "M15": 500,
     "M5":  500,
     "M3":  400,

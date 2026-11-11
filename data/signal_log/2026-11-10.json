@@ -1,0 +1,90 @@
+{
+  "GBPJPY": [
+    {
+      "entry": 212.408,
+      "sl": 212.326,
+      "tp": 212.624,
+      "direction": "BUY",
+      "lot": 0.02,
+      "time_ist": "17:55:50 IST",
+      "session": "New York",
+      "score": 13
+    },
+    {
+      "entry": 212.408,
+      "sl": 212.326,
+      "tp": 212.624,
+      "direction": "BUY",
+      "lot": 0.02,
+      "time_ist": "18:04:07 IST",
+      "session": "New York",
+      "score": 13
+    },
+    {
+      "entry": 212.408,
+      "sl": 212.326,
+      "tp": 212.624,
+      "direction": "BUY",
+      "lot": 0.02,
+      "time_ist": "18:08:24 IST",
+      "session": "New York",
+      "score": 13
+    },
+    {
+      "entry": 212.408,
+      "sl": 212.326,
+      "tp": 212.624,
+      "direction": "BUY",
+      "lot": 0.02,
+      "time_ist": "18:10:32 IST",
+      "session": "New York",
+      "score": 13
+    },
+    {
+      "entry": 212.408,
+      "sl": 212.326,
+      "tp": 212.624,
+      "direction": "BUY",
+      "lot": 0.02,
+      "time_ist": "18:12:25 IST",
+      "session": "New York",
+      "score": 13
+    }
+  ],
+  "USDJPY": [
+    {
+      "entry": 158.485,
+      "sl": 158.128,
+      "tp": 159.526,
+      "direction": "BUY",
+      "lot": 0.01,
+      "time_ist": "19:33:12 IST",
+      "session": "New York",
+      "score": 13
+    }
+  ],
+  "USDCHF": [
+    {
+      "entry": 0.82253,
+      "sl": 0.82027,
+      "tp": 0.82931,
+      "direction": "BUY",
+      "lot": 0.01,
+      "time_ist": "19:42:09 IST",
+      "session": "New York",
+      "score": 13
+    }
+  ],
+  "EURJPY": [
+    {
+      "entry": 177.424,
+      "sl": 177.288,
+      "tp": 177.802,
+      "direction": "BUY",
+      "lot": 0.01,
+      "time_ist": "20:00:10 IST",
+      "session": "New York",
+      "score": 13
+    }
+  ]
+}

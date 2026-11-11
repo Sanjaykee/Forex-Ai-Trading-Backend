@@ -53,12 +53,11 @@ app.include_router(telegram_router)
 async def startup_event():
     import asyncio
     from app.signals.trade_monitor import monitor_open_trades_loop
-    from app.signals.auto_scanner import auto_scan_loop
-    from download_spread_snapshot import spread_snapshot_loop
+    from app.signals.auto_scanner import auto_scan_loop, pending_limit_monitor
     asyncio.create_task(monitor_open_trades_loop())
     asyncio.create_task(auto_scan_loop())
-    asyncio.create_task(spread_snapshot_loop())
-    logger.info("[Startup] Trade monitor, Auto-Scanner & Spread Snapshot background tasks started.")
+    asyncio.create_task(pending_limit_monitor())
+    logger.info("[Startup] Trade monitor, Auto-Scanner & Pending limit monitor started.")
 
 @app.get("/")
 def root():
