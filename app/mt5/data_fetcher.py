@@ -47,6 +47,20 @@ def get_candles(symbol: str, timeframe: str, count: int = 500) -> pd.DataFrame:
     df.rename(columns={"tick_volume": "volume"}, inplace=True)
     return df[["time", "open", "high", "low", "close", "volume"]]
 
+
+def get_candles_range(symbol: str, timeframe: str, from_date: datetime, to_date: datetime) -> pd.DataFrame:
+    """Fetch candles by date range using copy_rates_range — no count limit."""
+    if not HAS_MT5 or mt5 is None:
+        return pd.DataFrame()
+    tf  = TIMEFRAMES.get(timeframe, getattr(mt5, "TIMEFRAME_M15", 15))
+    raw = mt5.copy_rates_range(symbol, tf, from_date, to_date)
+    if raw is None or len(raw) == 0:
+        return pd.DataFrame()
+    df = pd.DataFrame(raw)
+    df["time"] = pd.to_datetime(df["time"], unit="s")
+    df.rename(columns={"tick_volume": "volume"}, inplace=True)
+    return df[["time", "open", "high", "low", "close", "volume"]]
+
 def get_live_price(symbol: str) -> dict:
     tick = mt5.symbol_info_tick(symbol)
     if not tick:

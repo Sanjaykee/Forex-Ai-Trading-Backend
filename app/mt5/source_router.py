@@ -95,6 +95,10 @@ def _no_data_candles(symbol: str, timeframe: str, count: int = 500):
     return pd.DataFrame()
 
 
+def _no_data_candles_range(symbol: str, timeframe: str, from_date, to_date):
+    return pd.DataFrame()
+
+
 def _no_data_live_price(symbol: str) -> dict:
     return {}
 
@@ -149,9 +153,21 @@ def get_candles_fetcher(data_source: str = "auto"):
         logger.warning("[SourceRouter] no data source available — no data")
         return _no_data_candles
 
-    # Any other/legacy value (e.g. 'yfinance') — no fallback
     logger.warning("[SourceRouter] unknown data_source=%r — no data", ds)
     return _no_data_candles
+
+
+def get_candles_range_fetcher(data_source: str = "auto"):
+    """Return a callable `get_candles_range(symbol, timeframe, from_date, to_date) -> DataFrame`
+    for date-range fetching (no count limit). Falls back to no-data when unavailable."""
+    ds = _resolve_user_data_source(data_source)
+
+    if ds in ("mt5", "auto") and _mt5_available():
+        from app.mt5.data_fetcher import get_candles_range as _cr
+        return _cr
+
+    logger.warning("[SourceRouter] get_candles_range_fetcher: only MT5 supports range fetch — no data")
+    return _no_data_candles_range
 
 
 def get_fetcher(data_source: str = "auto"):

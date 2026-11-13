@@ -10,10 +10,8 @@ from app.api.routes.other_routes import (
 from app.api.routes.chat import router as chat_router
 from app.api.routes.telegram_webhook import router as telegram_router
 from app.config import settings
-import logging
-
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+from app.core.logger import get_logger
+logger = get_logger(__name__)
 
 # Create tables and sync schema columns
 try:

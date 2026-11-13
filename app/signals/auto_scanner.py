@@ -264,11 +264,22 @@ SESSION_RULES: dict[str, list[str]] = {
 def _session_allowed(symbol: str, session: str) -> bool:
     """Return True if the current session is permitted for this pair.
 
-    ALLOW_ASIAN=true adds Asian to every group at runtime without touching
-    SESSION_RULES, so the base dict stays clean for future per-group tuning.
+    Backtest passes allowed_sessions=None to evaluate_mtf_smc_setup, which
+    means validate_session() accepts ALL named sessions including Off-Session
+    gaps. To match that behaviour live, Off-Session is now treated as a valid
+    scan window — the scanner runs and lets evaluate_mtf_smc_setup decide
+    via its own session check inside the strategy.
+
+    ALLOW_ASIAN=true adds Asian to every group at runtime.
     """
-    if session in ("Off-Session", "Unknown"):
+    # Off-Session gaps (04-07, 11-12, 17-24 UTC) are allowed — backtest trades them.
+    # Only hard-block the weekend (returned as "Off-Session" by _get_session with
+    # the weekend guard already applied, so we never reach here on weekends).
+    if session == "Unknown":
         return False
+    # Off-Session is now permitted — mirrors backtest allowed_sessions=None
+    if session == "Off-Session":
+        return True
     group   = "JPY" if symbol.upper() in _JPY_PAIRS else "other"
     allowed = list(SESSION_RULES[group])
     if ALLOW_ASIAN:
@@ -301,13 +312,15 @@ def _get_wait_seconds() -> int:
 def _get_session() -> str:
     """Return the trading session label for the current UTC hour.
 
-    Windows mirror ALLOWED_SESSIONS in app/analysis/smc/mtf_strategy.py, which
-    defines what the backtest is allowed to trade. Hours outside those windows
-    return "Off-Session" so the scanner skips them, matching the backtest.
-
-    A weekend guard is kept on top of the windows: the backtest never has to
-    handle weekends because FX candles simply do not exist then, while live can
-    be scheduled to run at any moment.
+    Mirrors ALLOWED_SESSIONS in app/analysis/smc/mtf_strategy.py exactly so
+    the live scanner trades the same hours as the backtest:
+      Asian        00:00 - 04:00 UTC
+      Off-Session  04:00 - 07:00 UTC  (pre-London gap)
+      London       07:00 - 11:00 UTC
+      Off-Session  11:00 - 12:00 UTC  (London/NY gap)
+      New York     12:00 - 17:00 UTC
+      Off-Session  17:00 - 24:00 UTC  (post-NY)
+    Weekend guard: Fri 22:00 -> Sun 21:00 UTC market is closed.
     """
     now     = datetime.now(timezone.utc)
     weekday = now.weekday()
@@ -894,9 +907,8 @@ async def auto_scan_loop():
         wait_s  = _get_wait_seconds()
 
         if session == "Off-Session":
-            logger.debug("[AutoScanner] Off-session - sleeping %ds.", wait_s)
-            await asyncio.sleep(wait_s)
-            continue
+            logger.info("[AutoScanner] Off-session (%s UTC) - scanning (backtest parity).",
+                        datetime.now(timezone.utc).strftime("%H:%M"))
 
         logger.info("[AutoScanner] Scanning - Variant C - session=%s", session)
         db = SessionLocal()
