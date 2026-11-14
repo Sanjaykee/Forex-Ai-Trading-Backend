@@ -236,22 +236,34 @@ def get_m15_range_and_location(df_m15_slice: pd.DataFrame, current_price: float,
 # ── Step 3: External Liquidity Sweeps ─────────────────────────────────────────
 
 def get_session_levels(df_m5_slice: pd.DataFrame, current_time: pd.Timestamp) -> dict:
-    """Extract Asian (00:00-04:00 UTC) and London (07:00-11:00 UTC) session highs and lows."""
+    """Extract Previous Day High/Low (PDH/PDL), Completed Asian H/L and Completed London H/L."""
     levels = {}
+    cur_date = current_time.date()
     today_start = current_time.floor("D")
-    
-    # Asian Session (00:00 to 04:00 UTC)
-    asian_df = df_m5_slice[(df_m5_slice["time"] >= today_start) & (df_m5_slice["time"] < today_start + timedelta(hours=4))]
-    if len(asian_df) >= 6:
-        levels["asian_high"] = float(asian_df["high"].max())
-        levels["asian_low"] = float(asian_df["low"].min())
-        
-    # London Session (07:00 to 11:00 UTC)
-    london_df = df_m5_slice[(df_m5_slice["time"] >= today_start + timedelta(hours=7)) & (df_m5_slice["time"] < today_start + timedelta(hours=11))]
-    if len(london_df) >= 6 and current_time >= today_start + timedelta(hours=11):
-        levels["london_high"] = float(london_df["high"].max())
-        levels["london_low"] = float(london_df["low"].min())
-        
+
+    # 1. Previous Day High & Low (PDH / PDL from last completed trading day)
+    past_dates = df_m5_slice[df_m5_slice["time"].dt.date < cur_date]
+    if not past_dates.empty:
+        prev_date = past_dates["time"].dt.date.max()
+        prev_df = past_dates[past_dates["time"].dt.date == prev_date]
+        if len(prev_df) >= 20:
+            levels["pdh"] = float(prev_df["high"].max())
+            levels["pdl"] = float(prev_df["low"].min())
+
+    # 2. Asian Session (00:00 to 04:00 UTC) - eligible only after 04:30 UTC for London & NY
+    if current_time >= today_start + timedelta(hours=4, minutes=30):
+        asian_df = df_m5_slice[(df_m5_slice["time"] >= today_start) & (df_m5_slice["time"] < today_start + timedelta(hours=4))]
+        if len(asian_df) >= 12:
+            levels["asian_high"] = float(asian_df["high"].max())
+            levels["asian_low"] = float(asian_df["low"].min())
+
+    # 3. London Session (07:00 to 11:00 UTC) - eligible only after 11:30 UTC for NY
+    if current_time >= today_start + timedelta(hours=11, minutes=30):
+        london_df = df_m5_slice[(df_m5_slice["time"] >= today_start + timedelta(hours=7)) & (df_m5_slice["time"] < today_start + timedelta(hours=11))]
+        if len(london_df) >= 12:
+            levels["london_high"] = float(london_df["high"].max())
+            levels["london_low"] = float(london_df["low"].min())
+
     return levels
 
 
@@ -264,11 +276,12 @@ def detect_external_liquidity_sweep(
 ) -> dict:
     """
     Require sweep of MEANINGFUL EXTERNAL liquidity:
-      1. Previous M15 swing high / low
-      2. Previous session high / low (Asian H/L, London H/L)
-      3. Equal highs / lows (within 2 pips tolerance)
-      4. Confirmed external M5 swing high/low (n >= 3, major pivot)
-    Minor 2-candle M5 internal wicks are strictly excluded.
+      1. Previous Day High / Low (PDH / PDL)
+      2. Previous completed session high / low (Asian H/L, London H/L)
+      3. Previous M15 swing high / low
+      4. Equal highs / lows (within 2.5 pips tolerance)
+      5. Confirmed major external M5 swing high/low (n >= 4, major pivot)
+    Minor internal wicks are strictly excluded. Candle must reject the level cleanly.
     """
     empty = {"detected": False, "level": None, "sweep_idx": None, "sweep_high": None, "sweep_low": None, "sweep_type": None, "direction": None, "liq_source": None}
     if len(df_m5_slice) < 25:
@@ -285,28 +298,32 @@ def detect_external_liquidity_sweep(
     lows_m15  = df_m15_slice["low"].values.astype(float)
     sh_m15, sl_m15 = find_swings(highs_m15, lows_m15, n=2)
 
-    # Extract major M5 swings (n=3 for external structural pivots)
-    sh_m5, sl_m5 = find_swings(highs_m5, lows_m5, n=3)
+    # Extract major M5 swings (n=4 for confirmed structural pivots)
+    sh_m5, sl_m5 = find_swings(highs_m5, lows_m5, n=4)
 
     # 1. Bearish Setup: Sweep of Buy-Side Liquidity (BSL)
     if m15_bias == "BEARISH":
         candidate_levels = []
-        if len(sh_m15) >= 1:
-            candidate_levels.append((sh_m15[-1][1], "M15 Swing High (BSL)"))
+        if "pdh" in session_levels:
+            candidate_levels.append((session_levels["pdh"], "Previous Day High (PDH BSL)"))
         if "asian_high" in session_levels:
             candidate_levels.append((session_levels["asian_high"], "Asian Session High (BSL)"))
         if "london_high" in session_levels:
             candidate_levels.append((session_levels["london_high"], "London Session High (BSL)"))
+        if len(sh_m15) >= 1:
+            candidate_levels.append((sh_m15[-1][1], "M15 Swing High (BSL)"))
         if len(sh_m5) >= 2:
             # Check for Equal Highs (EQH)
             p1, p2 = sh_m5[-1][1], sh_m5[-2][1]
-            if abs(p1 - p2) <= pip_unit * 2.0:
+            if abs(p1 - p2) <= pip_unit * 2.5:
                 candidate_levels.append((max(p1, p2), "Equal Highs (EQH BSL)"))
-            candidate_levels.append((sh_m5[-1][1], "External M5 Swing High (BSL)"))
+        if len(sh_m5) >= 1:
+            candidate_levels.append((sh_m5[-1][1], "Major M5 Swing High (BSL)"))
 
         for lvl, desc in candidate_levels:
-            for k in range(max(0, len(df_m5_slice) - 15), len(df_m5_slice)):
-                if highs_m5[k] >= lvl and (closes_m5[k] < lvl or (closes_m5[k] < opens_m5[k] and closes_m5[k] <= lvl + pip_unit * 1.5)):
+            for k in range(max(0, len(df_m5_slice) - 12), len(df_m5_slice)):
+                # Must poke above level, but close strictly at or below level (clean rejection)
+                if highs_m5[k] >= lvl and closes_m5[k] <= lvl + pip_unit * 0.15:
                     return {
                         "detected": True,
                         "level": round(lvl, 5),
@@ -321,22 +338,26 @@ def detect_external_liquidity_sweep(
     # 2. Bullish Setup: Sweep of Sell-Side Liquidity (SSL)
     elif m15_bias == "BULLISH":
         candidate_levels = []
-        if len(sl_m15) >= 1:
-            candidate_levels.append((sl_m15[-1][1], "M15 Swing Low (SSL)"))
+        if "pdl" in session_levels:
+            candidate_levels.append((session_levels["pdl"], "Previous Day Low (PDL SSL)"))
         if "asian_low" in session_levels:
             candidate_levels.append((session_levels["asian_low"], "Asian Session Low (SSL)"))
         if "london_low" in session_levels:
             candidate_levels.append((session_levels["london_low"], "London Session Low (SSL)"))
+        if len(sl_m15) >= 1:
+            candidate_levels.append((sl_m15[-1][1], "M15 Swing Low (SSL)"))
         if len(sl_m5) >= 2:
             # Check for Equal Lows (EQL)
             p1, p2 = sl_m5[-1][1], sl_m5[-2][1]
-            if abs(p1 - p2) <= pip_unit * 2.0:
+            if abs(p1 - p2) <= pip_unit * 2.5:
                 candidate_levels.append((min(p1, p2), "Equal Lows (EQL SSL)"))
-            candidate_levels.append((sl_m5[-1][1], "External M5 Swing Low (SSL)"))
+        if len(sl_m5) >= 1:
+            candidate_levels.append((sl_m5[-1][1], "Major M5 Swing Low (SSL)"))
 
         for lvl, desc in candidate_levels:
-            for k in range(max(0, len(df_m5_slice) - 15), len(df_m5_slice)):
-                if lows_m5[k] <= lvl and (closes_m5[k] > lvl or (closes_m5[k] > opens_m5[k] and closes_m5[k] >= lvl - pip_unit * 1.5)):
+            for k in range(max(0, len(df_m5_slice) - 12), len(df_m5_slice)):
+                # Must poke below level, but close strictly at or above level (clean rejection)
+                if lows_m5[k] <= lvl and closes_m5[k] >= lvl - pip_unit * 0.15:
                     return {
                         "detected": True,
                         "level": round(lvl, 5),
@@ -714,13 +735,16 @@ def calculate_a_plus_score(
 # ── Step 10: Session Validation & IST Conversion ──────────────────────────────
 
 def validate_session(time_val: pd.Timestamp, allowed_sessions: Optional[List[str]] = None) -> Tuple[bool, str]:
-    """Validate if candle time falls inside permitted sessions."""
+    """Validate if candle time falls inside permitted sessions (Default: Asian, London, New York)."""
+    if allowed_sessions is None:
+        allowed_sessions = ["Asian", "London", "New York"]
     hour = time_val.hour
     for name, (start_h, end_h) in ALLOWED_SESSIONS.items():
         if start_h <= hour < end_h:
-            if allowed_sessions and name not in allowed_sessions:
+            display = "Off-Session" if name.startswith("Off-Session") else name
+            if display not in allowed_sessions:
                 return False, "Off-Session"
-            return True, name
+            return True, display
     return False, "Off-Session"
 
 
@@ -788,6 +812,122 @@ class DailyRiskProtector:
             self.is_locked = True
 
 
+# ── Step 11b: Specialized Asian Range Fade Strategy ───────────────────────────
+
+def evaluate_asian_range_fade(
+    df15: pd.DataFrame,
+    df5: pd.DataFrame,
+    symbol: str,
+    t_m5: pd.Timestamp,
+) -> dict:
+    """
+    Dedicated Institutional Asian Range Fade (Mean Reversion) Engine:
+      1. Reference Box: Late US / Early Asian (21:00 UTC yesterday to 00:45 UTC today).
+      2. Valid box span: 10 to 35 pips (consolidation).
+      3. Trend-alignment: Only fade with higher-timeframe trend (H1 bias).
+      4. Entry: M5 candle sweeps the box boundary and closes back inside (rejection).
+      5. Target: Opposite range boundary (or Equilibrium).
+    """
+    empty = {"valid": False, "reason": None}
+    day_start = t_m5.floor("D")
+    ref_start = day_start - timedelta(hours=3)
+    ref_end   = day_start + timedelta(minutes=45)
+
+    if t_m5 < ref_end:
+        return {**empty, "reason": "asian_box_forming"}
+
+    ref_slice = df5[(df5["time"] >= ref_start) & (df5["time"] < ref_end)]
+    if len(ref_slice) < 10:
+        return {**empty, "reason": "insufficient_box_candles"}
+
+    pip_unit = 0.01 if "JPY" in symbol.upper() else 0.0001
+    box_high = float(ref_slice["high"].max())
+    box_low  = float(ref_slice["low"].min())
+    box_span_pips = (box_high - box_low) / pip_unit
+
+    if not (10.0 <= box_span_pips <= 35.0):
+        return {**empty, "reason": f"box_span_out_of_range ({box_span_pips:.1f}p)"}
+
+    c = df5.iloc[-1]
+    h = float(c["high"])
+    l = float(c["low"])
+    close = float(c["close"])
+
+    h1_slice = df15[df15["time"] <= t_m5]
+    bias_info = get_m15_bias(h1_slice)
+    htf_bias = bias_info.get("bias", "RANGING")
+
+    if htf_bias == "BEARISH" and h >= box_high and close < box_high:
+        entry_price = close
+        sweep_high = h
+        sl_price = round(max(sweep_high + 2.5 * pip_unit, entry_price + 6.5 * pip_unit), 5)
+        risk_dist = abs(entry_price - sl_price)
+
+        tp_dist = abs(entry_price - box_low)
+        tp_price = round(box_low, 5)
+        rr = tp_dist / risk_dist if risk_dist > 0 else 0
+
+        if rr >= 1.5:
+            return {
+                "valid": True,
+                "symbol": symbol,
+                "direction": "SELL",
+                "entry_price": entry_price,
+                "entry_time": c["time"],
+                "stop_loss": sl_price,
+                "take_profit": tp_price,
+                "rr_val": round(rr, 2),
+                "score": 13,
+                "setup_class": "A+ TRADE (Asian Range Fade)",
+                "session": "Asian",
+                "m15_bias": htf_bias,
+                "m15_location": "Range High (Premium)",
+                "liquidity_type": "Asian Box High Sweep",
+                "sweep_price": round(box_high, 5),
+                "choch_type": "Asian Boundary Rejection",
+                "ob_zone": f"Range ({box_low:.5f}-{box_high:.5f})",
+                "fvg_overlap": False,
+                "m3_trigger": "Asian M5 Boundary Rejection",
+                "disp_ratio": 1.0,
+            }
+
+    elif htf_bias == "BULLISH" and l <= box_low and close > box_low:
+        entry_price = close
+        sweep_low = l
+        sl_price = round(min(sweep_low - 2.5 * pip_unit, entry_price - 6.5 * pip_unit), 5)
+        risk_dist = abs(entry_price - sl_price)
+
+        tp_dist = abs(box_high - entry_price)
+        tp_price = round(box_high, 5)
+        rr = tp_dist / risk_dist if risk_dist > 0 else 0
+
+        if rr >= 1.5:
+            return {
+                "valid": True,
+                "symbol": symbol,
+                "direction": "BUY",
+                "entry_price": entry_price,
+                "entry_time": c["time"],
+                "stop_loss": sl_price,
+                "take_profit": tp_price,
+                "rr_val": round(rr, 2),
+                "score": 13,
+                "setup_class": "A+ TRADE (Asian Range Fade)",
+                "session": "Asian",
+                "m15_bias": htf_bias,
+                "m15_location": "Range Low (Discount)",
+                "liquidity_type": "Asian Box Low Sweep",
+                "sweep_price": round(box_low, 5),
+                "choch_type": "Asian Boundary Rejection",
+                "ob_zone": f"Range ({box_low:.5f}-{box_high:.5f})",
+                "fvg_overlap": False,
+                "m3_trigger": "Asian M5 Boundary Rejection",
+                "disp_ratio": 1.0,
+            }
+
+    return {**empty, "reason": "no_asian_range_fade_setup"}
+
+
 # ── Step 12: Unified Strategy Evaluation Function (Backtest & Live) ───────────
 
 def evaluate_mtf_smc_setup(
@@ -816,6 +956,12 @@ def evaluate_mtf_smc_setup(
     if not is_sess:
         return {**empty, "reason": "outside_session"}
 
+    # In Asian session: evaluate the specialized Trend-Aligned Range Fade strategy first
+    if sess_name == "Asian":
+        asian_fade = evaluate_asian_range_fade(df15, df5, symbol, t_m5)
+        if asian_fade["valid"]:
+            return asian_fade
+
     # 2. M15 Trend Direction Bias
     m15_slice = df15[df15["time"] <= t_m5]
     m15_info = get_m15_bias(m15_slice)
@@ -831,8 +977,16 @@ def evaluate_mtf_smc_setup(
     if not sweep_info["detected"] or sweep_info["direction"] != trade_dir:
         return {**empty, "reason": "no_external_liquidity_sweep"}
 
+    # In Asian session (low-volume hours), M5 swings are retail noise.
+    # Institutional setups in Asian require macro liquidity (M15 swings, PDH/PDL, Session H/L, EQH/EQL).
+    if sess_name == "Asian" and "Major M5 Swing" in sweep_info.get("liq_source", ""):
+        return {**empty, "reason": "asian_requires_macro_liquidity"}
+
     # 4. Strong Displacement (ATR-Relative)
-    disp_info = detect_strong_displacement(df5, sweep_info["sweep_idx"], trade_dir, atr_multiplier=disp_threshold)
+    curr_disp = disp_threshold
+    if sess_name == "Asian" and "JPY" not in symbol.upper() and "AUD" not in symbol.upper() and "NZD" not in symbol.upper():
+        curr_disp = max(disp_threshold, 1.2)
+    disp_info = detect_strong_displacement(df5, sweep_info["sweep_idx"], trade_dir, atr_multiplier=curr_disp)
     if not disp_info["detected"]:
         return {**empty, "reason": "weak_displacement"}
 
@@ -867,14 +1021,16 @@ def evaluate_mtf_smc_setup(
 
     # Re-validate session at M3 entry time — this is the actual trade entry
     # moment, which can differ from t_m5 by up to 90 min (M3 lookback window).
-    # Using t_m5 for session caused trades to pass session check at M5 time
-    # but actually enter in Off-Session at M3 time.
     is_sess, sess_name = validate_session(pd.Timestamp(entry_time), allowed_sessions)
     if not is_sess:
         return {**empty, "reason": "outside_session"}
 
-    # 10. Natural SL, Logical TP & RR Filter
-    buffer = 0.015 if "JPY" in symbol.upper() else 0.00015
+    # 10. Natural SL, Logical TP & Dynamic Guard
+    pip_unit = 0.01 if "JPY" in symbol.upper() else 0.0001
+    atr_m5 = calculate_atr(df5, period=14)
+    min_buf_pips = 2.5 if "JPY" in symbol.upper() else 2.2
+    buffer = max(min_buf_pips * pip_unit, atr_m5 * 0.25)
+
     zh = zone_info["zone_high"]
     zl = zone_info["zone_low"]
     sh = sweep_info.get("sweep_high")
@@ -882,14 +1038,28 @@ def evaluate_mtf_smc_setup(
 
     if trade_dir == "SELL":
         sl_price = round(max(sh or zh, zh) + buffer, 5)
-        tp_price, final_rr = calculate_rr(m15_slice, entry_price, sl_price, "SELL", min_rr=min_rr)
-        if tp_price is None:
-            return {**empty, "reason": "rr_below_min"}
     else: # BUY
         sl_price = round(min(sl_val or zl, zl) - buffer, 5)
-        tp_price, final_rr = calculate_rr(m15_slice, entry_price, sl_price, "BUY", min_rr=min_rr)
-        if tp_price is None:
-            return {**empty, "reason": "rr_below_min"}
+
+    # Minimum SL guard against spread stopouts
+    spread_pips = 1.8 if "JPY" in symbol.upper() else 1.4
+    min_sl_dist_pips = max(6.5, spread_pips * 4.5)
+    cur_sl_dist_pips = abs(entry_price - sl_price) / pip_unit
+    if cur_sl_dist_pips < min_sl_dist_pips:
+        if trade_dir == "SELL":
+            sl_price = round(entry_price + min_sl_dist_pips * pip_unit, 5)
+        else:
+            sl_price = round(entry_price - min_sl_dist_pips * pip_unit, 5)
+
+    # Maximum SL cap to ensure realistic intraday 1:3 targets
+    max_sl_pips = 28.0 if "JPY" in symbol.upper() else 20.0
+    final_sl_dist_pips = abs(entry_price - sl_price) / pip_unit
+    if final_sl_dist_pips > max_sl_pips:
+        return {**empty, "reason": f"sl_too_wide ({final_sl_dist_pips:.1f}p > {max_sl_pips}p)"}
+
+    tp_price, final_rr = calculate_rr(m15_slice, entry_price, sl_price, trade_dir, min_rr=min_rr)
+    if tp_price is None:
+        return {**empty, "reason": "rr_below_min"}
 
     # 11. Score Setup
     score = calculate_a_plus_score(

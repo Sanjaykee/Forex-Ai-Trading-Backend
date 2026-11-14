@@ -255,7 +255,8 @@ def run():
                 end_date=END_DATE,
                 min_score=MIN_SCORE,
                 min_rr=MIN_RR,
-                apply_daily_protection=False,
+                allowed_sessions=["Asian", "London", "New York"],
+                apply_daily_protection=True,
             )
             trades = result["all_trades"]
             total  = result["total_signals"]
