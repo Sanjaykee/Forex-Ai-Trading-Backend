@@ -862,68 +862,60 @@ def evaluate_asian_range_fade(
         sweep_high = h
         sl_price = round(max(sweep_high + 2.5 * pip_unit, entry_price + 6.5 * pip_unit), 5)
         risk_dist = abs(entry_price - sl_price)
+        tp_price = round(entry_price - risk_dist * 3.0, 5)  # fixed 1:3 RR
 
-        tp_dist = abs(entry_price - box_low)
-        tp_price = round(box_low, 5)
-        rr = tp_dist / risk_dist if risk_dist > 0 else 0
-
-        if rr >= 1.5:
-            return {
-                "valid": True,
-                "symbol": symbol,
-                "direction": "SELL",
-                "entry_price": entry_price,
-                "entry_time": c["time"],
-                "stop_loss": sl_price,
-                "take_profit": tp_price,
-                "rr_val": round(rr, 2),
-                "score": 13,
-                "setup_class": "A+ TRADE (Asian Range Fade)",
-                "session": "Asian",
-                "m15_bias": htf_bias,
-                "m15_location": "Range High (Premium)",
-                "liquidity_type": "Asian Box High Sweep",
-                "sweep_price": round(box_high, 5),
-                "choch_type": "Asian Boundary Rejection",
-                "ob_zone": f"Range ({box_low:.5f}-{box_high:.5f})",
-                "fvg_overlap": False,
-                "m3_trigger": "Asian M5 Boundary Rejection",
-                "disp_ratio": 1.0,
-            }
+        return {
+            "valid": True,
+            "symbol": symbol,
+            "direction": "SELL",
+            "entry_price": entry_price,
+            "entry_time": c["time"],
+            "stop_loss": sl_price,
+            "take_profit": tp_price,
+            "rr_val": 3.0,
+            "score": 13,
+            "setup_class": "A+ TRADE (Asian Range Fade)",
+            "session": "Asian",
+            "m15_bias": htf_bias,
+            "m15_location": "Range High (Premium)",
+            "liquidity_type": "Asian Box High Sweep",
+            "sweep_price": round(box_high, 5),
+            "choch_type": "Asian Boundary Rejection",
+            "ob_zone": f"Range ({box_low:.5f}-{box_high:.5f})",
+            "fvg_overlap": False,
+            "m3_trigger": "Asian M5 Boundary Rejection",
+            "disp_ratio": 1.0,
+        }
 
     elif htf_bias == "BULLISH" and l <= box_low and close > box_low:
         entry_price = close
         sweep_low = l
         sl_price = round(min(sweep_low - 2.5 * pip_unit, entry_price - 6.5 * pip_unit), 5)
         risk_dist = abs(entry_price - sl_price)
+        tp_price = round(entry_price + risk_dist * 3.0, 5)  # fixed 1:3 RR
 
-        tp_dist = abs(box_high - entry_price)
-        tp_price = round(box_high, 5)
-        rr = tp_dist / risk_dist if risk_dist > 0 else 0
-
-        if rr >= 1.5:
-            return {
-                "valid": True,
-                "symbol": symbol,
-                "direction": "BUY",
-                "entry_price": entry_price,
-                "entry_time": c["time"],
-                "stop_loss": sl_price,
-                "take_profit": tp_price,
-                "rr_val": round(rr, 2),
-                "score": 13,
-                "setup_class": "A+ TRADE (Asian Range Fade)",
-                "session": "Asian",
-                "m15_bias": htf_bias,
-                "m15_location": "Range Low (Discount)",
-                "liquidity_type": "Asian Box Low Sweep",
-                "sweep_price": round(box_low, 5),
-                "choch_type": "Asian Boundary Rejection",
-                "ob_zone": f"Range ({box_low:.5f}-{box_high:.5f})",
-                "fvg_overlap": False,
-                "m3_trigger": "Asian M5 Boundary Rejection",
-                "disp_ratio": 1.0,
-            }
+        return {
+            "valid": True,
+            "symbol": symbol,
+            "direction": "BUY",
+            "entry_price": entry_price,
+            "entry_time": c["time"],
+            "stop_loss": sl_price,
+            "take_profit": tp_price,
+            "rr_val": 3.0,
+            "score": 13,
+            "setup_class": "A+ TRADE (Asian Range Fade)",
+            "session": "Asian",
+            "m15_bias": htf_bias,
+            "m15_location": "Range Low (Discount)",
+            "liquidity_type": "Asian Box Low Sweep",
+            "sweep_price": round(box_low, 5),
+            "choch_type": "Asian Boundary Rejection",
+            "ob_zone": f"Range ({box_low:.5f}-{box_high:.5f})",
+            "fvg_overlap": False,
+            "m3_trigger": "Asian M5 Boundary Rejection",
+            "disp_ratio": 1.0,
+        }
 
     return {**empty, "reason": "no_asian_range_fade_setup"}
 
