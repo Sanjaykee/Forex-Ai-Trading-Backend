@@ -272,14 +272,8 @@ def _session_allowed(symbol: str, session: str) -> bool:
 
     ALLOW_ASIAN=true adds Asian to every group at runtime.
     """
-    # Off-Session gaps (04-07, 11-12, 17-24 UTC) are allowed — backtest trades them.
-    # Only hard-block the weekend (returned as "Off-Session" by _get_session with
-    # the weekend guard already applied, so we never reach here on weekends).
-    if session == "Unknown":
+    if session in ("Unknown", "Off-Session"):
         return False
-    # Off-Session is now permitted — mirrors backtest allowed_sessions=None
-    if session == "Off-Session":
-        return True
     group   = "JPY" if symbol.upper() in _JPY_PAIRS else "other"
     allowed = list(SESSION_RULES[group])
     if ALLOW_ASIAN:
@@ -907,8 +901,10 @@ async def auto_scan_loop():
         wait_s  = _get_wait_seconds()
 
         if session == "Off-Session":
-            logger.info("[AutoScanner] Off-session (%s UTC) - scanning (backtest parity).",
+            logger.info("[AutoScanner] Off-session (%s UTC) - skipping scan.",
                         datetime.now(timezone.utc).strftime("%H:%M"))
+            await asyncio.sleep(_get_wait_seconds())
+            continue
 
         logger.info("[AutoScanner] Scanning - Variant C - session=%s", session)
         db = SessionLocal()
