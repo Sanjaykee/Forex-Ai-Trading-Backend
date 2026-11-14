@@ -327,10 +327,18 @@ def run_backtest(
                 break
             fh = float(fr["high"])
             fl = float(fr["low"])
-            if trade_dir == "BUY"  and fl <= entry:
-                fill_i = i + 1 + fs; fill_time = fr["time"]; break
-            if trade_dir == "SELL" and fh >= entry:
-                fill_i = i + 1 + fs; fill_time = fr["time"]; break
+            if trade_dir == "BUY":
+                if fh >= tp_price and fl > entry:
+                    # Price reached TP without pulling back to entry (missed limit order)
+                    break
+                if fl <= entry:
+                    fill_i = i + 1 + fs; fill_time = fr["time"]; break
+            else:
+                if fl <= tp_price and fh < entry:
+                    # Price reached TP without pulling back to entry (missed limit order)
+                    break
+                if fh >= entry:
+                    fill_i = i + 1 + fs; fill_time = fr["time"]; break
 
         if fill_i is None:
             fc["no_fill"] += 1   # zone never retested — no fill

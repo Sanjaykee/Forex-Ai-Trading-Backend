@@ -1007,6 +1007,8 @@ def run_mtf_smc_backtest(
         "rr_below_min": 0,
         "score_below_threshold": 0,
         "daily_protection_locked": 0,
+        "limit_order_missed": 0,
+        "limit_order_unfilled": 0,
     }
 
     protector = DailyRiskProtector(
@@ -1032,7 +1034,7 @@ def run_mtf_smc_backtest(
                 rejections["daily_protection_locked"] += 1
                 continue
 
-        df5_slice = df5.iloc[:idx + 1]
+        df5_slice = df5[df5['time'] <= t_m5].copy()
 
         setup = evaluate_mtf_smc_setup(
             df15=df15,
@@ -1074,19 +1076,47 @@ def run_mtf_smc_backtest(
         risk_dist   = abs(effective_entry - sl_price)
         reward_dist = abs(tp_price - effective_entry)
 
-        subsequent = df3[df3['time'] > entry_time].head(400)
+        # Signal is confirmed at M5 candle close (t_m5). Forward simulation must start
+        # from candles after t_m5 (the exact moment the order is placed in live trading),
+        # not the historical M3 lookback candle which occurred up to 90 min earlier.
+        signal_time = t_m5
+        subsequent = df3[df3['time'] > signal_time].head(400)
         if subsequent.empty:
-            subsequent = df5[df5['time'] > entry_time].head(150)
+            subsequent = df5[df5['time'] > signal_time].head(150)
 
         outcome    = "OPEN"
         pips       = 0.0
         r_multiple = 0.0
         exit_time  = None
+        is_filled  = False
 
         for _, sub_row in subsequent.iterrows():
             sub_h = float(sub_row["high"])
             sub_l = float(sub_row["low"])
             sub_t = sub_row["time"]
+
+            # ── Limit Order Fill / Miss Check (matches live TradeMonitor) ──
+            if not is_filled:
+                if trade_dir == "BUY":
+                    # If price ran away straight to TP without pulling back to entry: MISSED
+                    if sub_h >= tp_price and sub_l > entry_price:
+                        outcome = "MISSED"
+                        break
+                    # BUY LIMIT fills when price pulls back to or below entry
+                    if sub_l <= entry_price:
+                        is_filled = True
+                    else:
+                        continue
+                else:  # SELL
+                    # If price ran away straight to TP without pulling back to entry: MISSED
+                    if sub_l <= tp_price and sub_h < entry_price:
+                        outcome = "MISSED"
+                        break
+                    # SELL LIMIT fills when price pulls back to or above entry
+                    if sub_h >= entry_price:
+                        is_filled = True
+                    else:
+                        continue
 
             if trade_dir == "SELL":
                 # SL/TP checked against effective (spread-adjusted) entry
@@ -1116,7 +1146,11 @@ def run_mtf_smc_backtest(
                     exit_time  = sub_t
                     break
 
-        if outcome == "OPEN":
+        if outcome in ("OPEN", "MISSED") or not is_filled:
+            if outcome == "MISSED":
+                rejections["limit_order_missed"] += 1
+            else:
+                rejections["limit_order_unfilled"] += 1
             continue
 
         last_exit_time = exit_time

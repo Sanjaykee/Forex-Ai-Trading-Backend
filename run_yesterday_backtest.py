@@ -26,28 +26,33 @@ MIN_RR     = 3.0
 RISK_USD   = 1.0
 SYM_INFO   = {"volume_min": 0.01, "volume_step": 0.01, "volume_max": 100.0}
 
-from app.mt5.source_router import get_candles_fetcher
+from app.mt5.source_router import get_candles_range_fetcher
 from app.signals.signal_logger import load_signals
+from datetime import timedelta
 
-CANDLE_COUNT = {"H1": 1500, "M5": 4500, "M3": 7500}
-_fetcher     = get_candles_fetcher()
+# Context lookback needed before start_date so the strategy has enough history
+_CONTEXT = {"H1": timedelta(days=120), "M5": timedelta(days=30), "M3": timedelta(days=20)}
+
+_range_fetcher = get_candles_range_fetcher()
 _candle_cache: dict = {}
 
+
 def load_candles(symbol: str, tf: str) -> pd.DataFrame:
-    """Fetch candles from MT5 — same source as the live scanner."""
+    """Always fetch by date range: (START_DATE - context) → (END_DATE + 1 day)."""
     key = f"{symbol}_{tf}"
     if key in _candle_cache:
         return _candle_cache[key]
     try:
-        df = _fetcher(symbol, tf, count=CANDLE_COUNT.get(tf, 500))
+        from_dt = datetime.strptime(START_DATE, "%Y-%m-%d") - _CONTEXT.get(tf, timedelta(days=30))
+        to_dt   = datetime.strptime(END_DATE,   "%Y-%m-%d") + timedelta(days=1)
+        df = _range_fetcher(symbol, tf, from_dt, to_dt)
         if df.empty:
             _candle_cache[key] = pd.DataFrame()
             return pd.DataFrame()
         if df["time"].dt.tz is not None:
             df["time"] = df["time"].dt.tz_convert("UTC").dt.tz_localize(None)
         df = df.sort_values("time").reset_index(drop=True)
-        needed = ["time", "open", "high", "low", "close", "volume"]
-        df = df[needed].copy()
+        df = df[["time", "open", "high", "low", "close", "volume"]].copy()
     except Exception as e:
         print(f"  [WARN] MT5 fetch failed for {symbol} {tf}: {e}")
         df = pd.DataFrame()
@@ -133,7 +138,7 @@ def run():
         df15 = load_candles(symbol, "H1")
         df5  = load_candles(symbol, "M5")
         df3  = load_candles(symbol, "M3")
-        print("H1=%d M5=%d M3=%d" % (len(df15), len(df5), len(df3)))
+        print("H1=%d M5=%d M3=%d" % (len(df15), len(df5), len(df3)), flush=True)
 
         if df15.empty or df5.empty or df3.empty:
             print("\n[%s] SKIPPED - no data from active source" % symbol)
@@ -182,8 +187,29 @@ def run():
 
                 outcome   = "OPEN"
                 exit_time = None
+                is_filled = False
                 for _, row in subsequent.iterrows():
                     h, l, t = float(row["high"]), float(row["low"]), row["time"]
+
+                    # ── Limit Order Fill / Miss Check (matches live TradeMonitor) ──
+                    if not is_filled:
+                        if direction == "BUY":
+                            if h >= tp_price and l > entry:
+                                outcome = "MISSED"
+                                break
+                            if l <= entry:
+                                is_filled = True
+                            else:
+                                continue
+                        else:  # SELL
+                            if l <= tp_price and h < entry:
+                                outcome = "MISSED"
+                                break
+                            if h >= entry:
+                                is_filled = True
+                            else:
+                                continue
+
                     if direction == "SELL":
                         if h >= sl_price:  outcome = "LOSS"; exit_time = t; break
                         if l <= tp_price:  outcome = "WIN";  exit_time = t; break
@@ -191,7 +217,7 @@ def run():
                         if l <= sl_price:  outcome = "LOSS"; exit_time = t; break
                         if h >= tp_price:  outcome = "WIN";  exit_time = t; break
 
-                if outcome == "OPEN":
+                if outcome in ("OPEN", "MISSED") or not is_filled:
                     continue
 
                 exit_ist = (exit_time + pd.Timedelta(hours=5, minutes=30)).strftime("%Y-%m-%d %H:%M IST") if exit_time is not None else "?"
@@ -237,6 +263,7 @@ def run():
             losses = result["losses"]
             wr     = result["win_rate"]
             spread_adj_net_r = result.get("spread_adj_net_r", 0.0)
+            missed = result.get("rejections", {}).get("limit_order_missed", 0)
 
         # compute financials per trade
         pair_pnl = 0.0
@@ -257,6 +284,7 @@ def run():
             "wins": wins, "losses": losses,
             "win_rate": wr, "net_pnl": round(pair_pnl, 2),
             "spread_adj_net_r": spread_adj_net_r if not using_log else 0.0,
+            "missed": missed if not using_log else 0,
         })
         all_trades.extend(zip(trades, fin_list))
 
@@ -295,6 +323,9 @@ def run():
     print("  Wins            : %d" % total_wins)
     print("  Losses          : %d" % total_losses)
     print("  Win Rate        : %.1f%%" % win_rate)
+    total_missed  = sum(p.get("missed", 0) for p in pair_results)
+    if total_missed > 0:
+        print("  Missed Orders   : %d  (limit orders cancelled — reached TP before entry fill)" % total_missed)
     print("  Total Risked    : $%.2f  (across all trades)" % total_risked)
     print("  Total Won       : +$%.2f  (from %d winning trades)" % (total_target, total_wins))
     print("  Total Lost      : -$%.2f  (from %d losing trades)"  % (total_lost,   total_losses))

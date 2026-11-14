@@ -1,0 +1,1155 @@
+2026-11-13 10:03:41 | INFO     | app.main | Database tables and columns synced successfully
+2026-11-13 10:03:42 | INFO     | app.main | [Startup] Trade monitor, Auto-Scanner & Pending limit monitor started.
+2026-11-13 10:03:42 | INFO     | app.signals.trade_monitor | [TradeMonitor] Background price monitor started.
+2026-11-13 10:03:42 | INFO     | app.signals.auto_scanner | [AutoScanner] Variant C started (M3 timing, threshold raw>=11 / norm>=78.57).
+2026-11-13 10:03:42 | INFO     | app.signals.auto_scanner | [PendingMonitor] Started.
+2026-11-13 10:04:01 | INFO     | app.main | Database tables and columns synced successfully
+2026-11-13 10:04:02 | INFO     | app.main | [Startup] Trade monitor, Auto-Scanner & Pending limit monitor started.
+2026-11-13 10:04:02 | INFO     | app.signals.trade_monitor | [TradeMonitor] Background price monitor started.
+2026-11-13 10:04:02 | INFO     | app.signals.auto_scanner | [AutoScanner] Variant C started (M3 timing, threshold raw>=11 / norm>=78.57).
+2026-11-13 10:04:02 | INFO     | app.signals.auto_scanner | [PendingMonitor] Started.
+2026-11-13 10:04:32 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (04:34 UTC) - scanning (backtest parity).
+2026-11-13 10:04:32 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=Off-Session
+2026-11-13 10:04:33 | INFO     | app.signals.scanner | [VariantC] GBPJPY M5[479] signal: SELL score=13/14
+2026-11-13 10:04:33 | INFO     | app.signals.auto_scanner | [VariantC] GBPJPY SELL skipped - active trade #67 (PENDING)
+2026-11-13 10:04:33 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=1 | filtered=1 | executed=0
+2026-11-13 10:04:33 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 1.6 min.
+2026-11-13 10:06:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (04:36 UTC) - scanning (backtest parity).
+2026-11-13 10:06:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=Off-Session
+2026-11-13 10:06:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 10:06:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 10:09:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (04:39 UTC) - scanning (backtest parity).
+2026-11-13 10:09:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=Off-Session
+2026-11-13 10:09:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 10:09:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 10:12:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (04:42 UTC) - scanning (backtest parity).
+2026-11-13 10:12:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=Off-Session
+2026-11-13 10:12:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 10:12:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 10:15:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (04:45 UTC) - scanning (backtest parity).
+2026-11-13 10:15:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=Off-Session
+2026-11-13 10:15:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 10:15:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 10:18:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (04:48 UTC) - scanning (backtest parity).
+2026-11-13 10:18:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=Off-Session
+2026-11-13 10:18:13 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 10:18:13 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-13 10:21:05 | INFO     | app.main | Database tables and columns synced successfully
+2026-11-13 10:21:06 | INFO     | app.main | [Startup] Trade monitor, Auto-Scanner & Pending limit monitor started.
+2026-11-13 10:21:06 | INFO     | app.signals.trade_monitor | [TradeMonitor] Background price monitor started.
+2026-11-13 10:21:06 | INFO     | app.signals.auto_scanner | [AutoScanner] Variant C started (M3 timing, threshold raw>=11 / norm>=78.57).
+2026-11-13 10:21:06 | INFO     | app.signals.auto_scanner | [PendingMonitor] Started.
+2026-11-13 10:21:14 | INFO     | app.main | Database tables and columns synced successfully
+2026-11-13 10:21:14 | INFO     | app.main | [Startup] Trade monitor, Auto-Scanner & Pending limit monitor started.
+2026-11-13 10:21:14 | INFO     | app.signals.trade_monitor | [TradeMonitor] Background price monitor started.
+2026-11-13 10:21:14 | INFO     | app.signals.auto_scanner | [AutoScanner] Variant C started (M3 timing, threshold raw>=11 / norm>=78.57).
+2026-11-13 10:21:14 | INFO     | app.signals.auto_scanner | [PendingMonitor] Started.
+2026-11-13 10:21:44 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (04:51 UTC) - scanning (backtest parity).
+2026-11-13 10:21:44 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=Off-Session
+2026-11-13 10:21:46 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 10:21:46 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.4 min.
+2026-11-13 10:24:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (04:54 UTC) - scanning (backtest parity).
+2026-11-13 10:24:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=Off-Session
+2026-11-13 10:24:10 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 10:24:10 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 10:25:13 | INFO     | app.main | Database tables and columns synced successfully
+2026-11-13 10:25:14 | INFO     | app.main | [Startup] Trade monitor, Auto-Scanner & Pending limit monitor started.
+2026-11-13 10:25:14 | INFO     | app.signals.trade_monitor | [TradeMonitor] Background price monitor started.
+2026-11-13 10:25:14 | INFO     | app.signals.auto_scanner | [AutoScanner] Variant C started (M3 timing, threshold raw>=11 / norm>=78.57).
+2026-11-13 10:25:14 | INFO     | app.signals.auto_scanner | [PendingMonitor] Started.
+2026-11-13 10:25:44 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (04:55 UTC) - scanning (backtest parity).
+2026-11-13 10:25:44 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=Off-Session
+2026-11-13 10:25:47 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 10:25:47 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 1.4 min.
+2026-11-13 10:27:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (04:57 UTC) - scanning (backtest parity).
+2026-11-13 10:27:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=Off-Session
+2026-11-13 10:27:19 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 10:27:19 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.8 min.
+2026-11-13 10:30:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (05:00 UTC) - scanning (backtest parity).
+2026-11-13 10:30:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=Off-Session
+2026-11-13 10:30:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 10:30:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 10:33:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (05:03 UTC) - scanning (backtest parity).
+2026-11-13 10:33:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=Off-Session
+2026-11-13 10:33:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 10:33:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 10:36:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (05:06 UTC) - scanning (backtest parity).
+2026-11-13 10:36:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=Off-Session
+2026-11-13 10:36:12 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 10:36:12 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-13 10:39:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (05:09 UTC) - scanning (backtest parity).
+2026-11-13 10:39:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=Off-Session
+2026-11-13 10:39:10 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 10:39:10 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 10:41:35 | INFO     | app.signals.trade_monitor | [TradeMonitor] Pending limit order #67 (GBPJPY) filled at entry 211.627 -> Trade is now OPEN
+2026-11-13 10:42:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (05:12 UTC) - scanning (backtest parity).
+2026-11-13 10:42:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=Off-Session
+2026-11-13 10:42:13 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 10:42:13 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-13 10:45:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (05:15 UTC) - scanning (backtest parity).
+2026-11-13 10:45:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=Off-Session
+2026-11-13 10:45:12 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 10:45:12 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-13 10:48:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (05:18 UTC) - scanning (backtest parity).
+2026-11-13 10:48:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=Off-Session
+2026-11-13 10:48:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 10:48:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 10:51:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (05:21 UTC) - scanning (backtest parity).
+2026-11-13 10:51:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=Off-Session
+2026-11-13 10:51:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 10:51:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 10:54:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (05:24 UTC) - scanning (backtest parity).
+2026-11-13 10:54:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=Off-Session
+2026-11-13 10:54:14 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 10:54:14 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-13 10:57:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (05:27 UTC) - scanning (backtest parity).
+2026-11-13 10:57:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=Off-Session
+2026-11-13 10:57:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 10:57:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 11:00:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (05:30 UTC) - scanning (backtest parity).
+2026-11-13 11:00:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=Off-Session
+2026-11-13 11:00:10 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 11:00:10 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 11:03:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (05:33 UTC) - scanning (backtest parity).
+2026-11-13 11:03:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=Off-Session
+2026-11-13 11:03:12 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 11:03:12 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-13 11:06:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (05:36 UTC) - scanning (backtest parity).
+2026-11-13 11:06:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=Off-Session
+2026-11-13 11:06:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 11:06:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 11:09:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (05:39 UTC) - scanning (backtest parity).
+2026-11-13 11:09:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=Off-Session
+2026-11-13 11:09:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 11:09:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 11:12:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (05:42 UTC) - scanning (backtest parity).
+2026-11-13 11:12:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=Off-Session
+2026-11-13 11:12:13 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 11:12:13 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-13 11:15:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (05:45 UTC) - scanning (backtest parity).
+2026-11-13 11:15:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=Off-Session
+2026-11-13 11:15:11 | INFO     | app.signals.scanner | [VariantC] GBPJPY M5[479] signal: SELL score=13/14
+2026-11-13 11:15:11 | INFO     | app.signals.auto_scanner | [VariantC] GBPJPY SELL skipped - active trade #67 (OPEN)
+2026-11-13 11:15:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=1 | filtered=1 | executed=0
+2026-11-13 11:15:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 11:18:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (05:48 UTC) - scanning (backtest parity).
+2026-11-13 11:18:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=Off-Session
+2026-11-13 11:18:12 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 11:18:12 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-13 11:21:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (05:51 UTC) - scanning (backtest parity).
+2026-11-13 11:21:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=Off-Session
+2026-11-13 11:21:09 | INFO     | app.signals.scanner | [VariantC] GBPJPY M5[479] signal: SELL score=13/14
+2026-11-13 11:21:09 | INFO     | app.signals.auto_scanner | [VariantC] GBPJPY SELL skipped - active trade #67 (OPEN)
+2026-11-13 11:21:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=1 | filtered=1 | executed=0
+2026-11-13 11:21:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 11:24:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (05:54 UTC) - scanning (backtest parity).
+2026-11-13 11:24:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=Off-Session
+2026-11-13 11:24:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 11:24:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 11:27:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (05:57 UTC) - scanning (backtest parity).
+2026-11-13 11:27:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=Off-Session
+2026-11-13 11:27:16 | INFO     | app.signals.scanner | [VariantC] GBPJPY M5[479] signal: SELL score=13/14
+2026-11-13 11:27:16 | INFO     | app.signals.auto_scanner | [VariantC] GBPJPY SELL skipped - active trade #67 (OPEN)
+2026-11-13 11:27:16 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=1 | filtered=1 | executed=0
+2026-11-13 11:27:16 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-13 11:30:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (06:00 UTC) - scanning (backtest parity).
+2026-11-13 11:30:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=Off-Session
+2026-11-13 11:30:10 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 11:30:10 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 11:33:06 | INFO     | app.main | Database tables and columns synced successfully
+2026-11-13 11:33:07 | INFO     | app.main | [Startup] Trade monitor, Auto-Scanner & Pending limit monitor started.
+2026-11-13 11:33:07 | INFO     | app.signals.trade_monitor | [TradeMonitor] Background price monitor started.
+2026-11-13 11:33:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Variant C started (M3 timing, threshold raw>=11 / norm>=78.57).
+2026-11-13 11:33:08 | INFO     | app.signals.auto_scanner | [PendingMonitor] Started.
+2026-11-13 11:33:38 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (06:03 UTC) - scanning (backtest parity).
+2026-11-13 11:33:38 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=Off-Session
+2026-11-13 11:33:39 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 11:33:39 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.5 min.
+2026-11-13 11:34:41 | INFO     | app.main | Database tables and columns synced successfully
+2026-11-13 11:34:41 | INFO     | app.main | [Startup] Trade monitor, Auto-Scanner & Pending limit monitor started.
+2026-11-13 11:34:41 | INFO     | app.signals.trade_monitor | [TradeMonitor] Background price monitor started.
+2026-11-13 11:34:41 | INFO     | app.signals.auto_scanner | [AutoScanner] Variant C started (M3 timing, threshold raw>=11 / norm>=78.57).
+2026-11-13 11:34:41 | INFO     | app.signals.auto_scanner | [PendingMonitor] Started.
+2026-11-13 11:34:49 | INFO     | app.main | Database tables and columns synced successfully
+2026-11-13 11:34:50 | INFO     | app.main | [Startup] Trade monitor, Auto-Scanner & Pending limit monitor started.
+2026-11-13 11:34:50 | INFO     | app.signals.trade_monitor | [TradeMonitor] Background price monitor started.
+2026-11-13 11:34:51 | INFO     | app.signals.auto_scanner | [AutoScanner] Variant C started (M3 timing, threshold raw>=11 / norm>=78.57).
+2026-11-13 11:34:51 | INFO     | app.signals.auto_scanner | [PendingMonitor] Started.
+2026-11-13 11:35:21 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (06:05 UTC) - scanning (backtest parity).
+2026-11-13 11:35:21 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=Off-Session
+2026-11-13 11:35:24 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 11:35:24 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 0.7 min.
+2026-11-13 11:35:49 | INFO     | app.signals.trade_monitor | [TradeMonitor] Trade #67 (GBPJPY) closed at LOSS: $-1.0
+2026-11-13 11:36:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (06:06 UTC) - scanning (backtest parity).
+2026-11-13 11:36:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=Off-Session
+2026-11-13 11:36:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 11:36:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 11:38:52 | INFO     | app.main | Database tables and columns synced successfully
+2026-11-13 11:38:52 | INFO     | app.main | [Startup] Trade monitor, Auto-Scanner & Pending limit monitor started.
+2026-11-13 11:38:52 | INFO     | app.signals.trade_monitor | [TradeMonitor] Background price monitor started.
+2026-11-13 11:38:53 | INFO     | app.signals.auto_scanner | [AutoScanner] Variant C started (M3 timing, threshold raw>=11 / norm>=78.57).
+2026-11-13 11:38:53 | INFO     | app.signals.auto_scanner | [PendingMonitor] Started.
+2026-11-13 11:38:59 | INFO     | app.main | Database tables and columns synced successfully
+2026-11-13 11:38:59 | INFO     | app.main | [Startup] Trade monitor, Auto-Scanner & Pending limit monitor started.
+2026-11-13 11:38:59 | INFO     | app.signals.trade_monitor | [TradeMonitor] Background price monitor started.
+2026-11-13 11:38:59 | INFO     | app.signals.auto_scanner | [AutoScanner] Variant C started (M3 timing, threshold raw>=11 / norm>=78.57).
+2026-11-13 11:38:59 | INFO     | app.signals.auto_scanner | [PendingMonitor] Started.
+2026-11-13 11:39:05 | INFO     | app.main | Database tables and columns synced successfully
+2026-11-13 11:39:05 | INFO     | app.main | [Startup] Trade monitor, Auto-Scanner & Pending limit monitor started.
+2026-11-13 11:39:05 | INFO     | app.signals.trade_monitor | [TradeMonitor] Background price monitor started.
+2026-11-13 11:39:06 | INFO     | app.signals.auto_scanner | [AutoScanner] Variant C started (M3 timing, threshold raw>=11 / norm>=78.57).
+2026-11-13 11:39:06 | INFO     | app.signals.auto_scanner | [PendingMonitor] Started.
+2026-11-13 11:39:36 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (06:09 UTC) - scanning (backtest parity).
+2026-11-13 11:39:36 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=Off-Session
+2026-11-13 11:39:37 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 11:39:37 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.5 min.
+2026-11-13 11:41:07 | INFO     | app.main | Database tables and columns synced successfully
+2026-11-13 11:41:07 | INFO     | app.main | [Startup] Trade monitor, Auto-Scanner & Pending limit monitor started.
+2026-11-13 11:41:07 | INFO     | app.signals.trade_monitor | [TradeMonitor] Background price monitor started.
+2026-11-13 11:41:07 | INFO     | app.signals.auto_scanner | [AutoScanner] Variant C started (M3 timing, threshold raw>=11 / norm>=78.57).
+2026-11-13 11:41:07 | INFO     | app.signals.auto_scanner | [PendingMonitor] Started.
+2026-11-13 11:41:37 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (06:11 UTC) - scanning (backtest parity).
+2026-11-13 11:41:37 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=Off-Session
+2026-11-13 11:41:38 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 11:41:38 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 0.5 min.
+2026-11-13 11:42:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (06:12 UTC) - scanning (backtest parity).
+2026-11-13 11:42:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=Off-Session
+2026-11-13 11:42:10 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 11:42:10 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 11:45:08 | INFO     | app.main | Database tables and columns synced successfully
+2026-11-13 11:45:08 | INFO     | app.main | [Startup] Trade monitor, Auto-Scanner & Pending limit monitor started.
+2026-11-13 11:45:08 | INFO     | app.signals.trade_monitor | [TradeMonitor] Background price monitor started.
+2026-11-13 11:45:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Variant C started (M3 timing, threshold raw>=11 / norm>=78.57).
+2026-11-13 11:45:08 | INFO     | app.signals.auto_scanner | [PendingMonitor] Started.
+2026-11-13 11:45:38 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (06:15 UTC) - scanning (backtest parity).
+2026-11-13 11:45:38 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=Off-Session
+2026-11-13 11:45:40 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 11:45:40 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.5 min.
+2026-11-13 11:47:07 | INFO     | app.main | Database tables and columns synced successfully
+2026-11-13 11:47:07 | INFO     | app.main | [Startup] Trade monitor, Auto-Scanner & Pending limit monitor started.
+2026-11-13 11:47:07 | INFO     | app.signals.trade_monitor | [TradeMonitor] Background price monitor started.
+2026-11-13 11:47:07 | INFO     | app.signals.auto_scanner | [AutoScanner] Variant C started (M3 timing, threshold raw>=11 / norm>=78.57).
+2026-11-13 11:47:07 | INFO     | app.signals.auto_scanner | [PendingMonitor] Started.
+2026-11-13 11:47:37 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (06:17 UTC) - scanning (backtest parity).
+2026-11-13 11:47:37 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=Off-Session
+2026-11-13 11:47:39 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 11:47:39 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 0.5 min.
+2026-11-13 11:48:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (06:18 UTC) - scanning (backtest parity).
+2026-11-13 11:48:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=Off-Session
+2026-11-13 11:48:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 11:48:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 11:51:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (06:21 UTC) - scanning (backtest parity).
+2026-11-13 11:51:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=Off-Session
+2026-11-13 11:51:10 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 11:51:10 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 11:54:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (06:24 UTC) - scanning (backtest parity).
+2026-11-13 11:54:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=Off-Session
+2026-11-13 11:54:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 11:54:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 11:57:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (06:27 UTC) - scanning (backtest parity).
+2026-11-13 11:57:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=Off-Session
+2026-11-13 11:57:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 11:57:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 12:00:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (06:30 UTC) - scanning (backtest parity).
+2026-11-13 12:00:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=Off-Session
+2026-11-13 12:00:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 12:00:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 12:12:39 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (06:42 UTC) - scanning (backtest parity).
+2026-11-13 12:12:39 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=Off-Session
+2026-11-13 12:12:45 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 12:12:45 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.4 min.
+2026-11-13 12:15:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (06:45 UTC) - scanning (backtest parity).
+2026-11-13 12:15:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=Off-Session
+2026-11-13 12:15:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 12:15:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 12:40:00 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-13 12:40:07 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 12:40:07 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.0 min.
+2026-11-13 12:42:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-13 12:42:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 12:42:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 13:07:13 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-13 13:07:16 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 13:07:16 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 1.9 min.
+2026-11-13 13:09:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-13 13:09:08 | WARNING  | app.signals.scanner | [Cache] EURUSD M3 has gap of 12 min (max allowed 6 min) — data may be incomplete
+2026-11-13 13:09:08 | WARNING  | app.signals.scanner | [Cache] GBPUSD M3 has gap of 12 min (max allowed 6 min) — data may be incomplete
+2026-11-13 13:09:08 | WARNING  | app.signals.scanner | [Cache] USDJPY M3 has gap of 12 min (max allowed 6 min) — data may be incomplete
+2026-11-13 13:09:09 | WARNING  | app.signals.scanner | [Cache] AUDUSD M3 has gap of 12 min (max allowed 6 min) — data may be incomplete
+2026-11-13 13:09:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 13:09:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 13:21:49 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-13 13:21:55 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 13:21:55 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.2 min.
+2026-11-13 13:24:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-13 13:24:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 13:24:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 13:27:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-13 13:27:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 13:27:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 13:52:23 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-13 13:52:35 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 13:52:35 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 1.6 min.
+2026-11-13 13:54:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-13 13:54:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 13:54:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 13:57:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-13 13:57:10 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 13:57:10 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 14:00:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-13 14:00:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 14:00:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 14:03:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-13 14:03:10 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 14:03:10 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 14:06:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-13 14:06:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 14:06:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 14:08:06 | INFO     | app.main | Database tables and columns synced successfully
+2026-11-13 14:08:07 | INFO     | app.main | [Startup] Trade monitor, Auto-Scanner & Pending limit monitor started.
+2026-11-13 14:08:07 | INFO     | app.signals.trade_monitor | [TradeMonitor] Background price monitor started.
+2026-11-13 14:08:07 | INFO     | app.signals.auto_scanner | [AutoScanner] Variant C started (M3 timing, threshold raw>=11 / norm>=78.57).
+2026-11-13 14:08:07 | INFO     | app.signals.auto_scanner | [PendingMonitor] Started.
+2026-11-13 14:08:37 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-13 14:08:39 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 14:08:39 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 0.5 min.
+2026-11-13 14:09:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-13 14:09:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 14:09:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 14:12:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-13 14:12:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 14:12:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 14:15:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-13 14:15:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 14:15:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 14:20:26 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-13 14:20:29 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 14:20:29 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 0.7 min.
+2026-11-13 14:21:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-13 14:21:10 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 14:21:10 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 14:24:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-13 14:24:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 14:24:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 14:27:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-13 14:27:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 14:27:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 14:30:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-13 14:30:16 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 14:30:16 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-13 14:33:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-13 14:33:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 14:33:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 14:36:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-13 14:36:12 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 14:36:12 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-13 14:39:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-13 14:39:10 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 14:39:10 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 14:42:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-13 14:42:10 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 14:42:10 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 14:45:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-13 14:45:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 14:45:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 14:48:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-13 14:48:10 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 14:48:10 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 14:51:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-13 14:51:10 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 14:51:10 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 14:54:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-13 14:54:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 14:54:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 14:57:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-13 14:57:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 14:57:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 15:00:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-13 15:00:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 15:00:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 15:03:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-13 15:03:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 15:03:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 15:06:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-13 15:06:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 15:06:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 15:09:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-13 15:09:10 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 15:09:10 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 15:12:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-13 15:12:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 15:12:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 15:15:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-13 15:15:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 15:15:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 15:18:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-13 15:18:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 15:18:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 15:21:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-13 15:21:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 15:21:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 15:24:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-13 15:24:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 15:24:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 15:27:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-13 15:27:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 15:27:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 15:30:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-13 15:30:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 15:30:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 15:33:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-13 15:33:10 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 15:33:10 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 15:36:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-13 15:36:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 15:36:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 15:39:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-13 15:39:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 15:39:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 15:42:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-13 15:42:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 15:42:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 15:45:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-13 15:45:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 15:45:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 15:48:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-13 15:48:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 15:48:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 15:51:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-13 15:51:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 15:51:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 15:54:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-13 15:54:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 15:54:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 15:57:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-13 15:57:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 15:57:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 16:00:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-13 16:00:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 16:00:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 16:03:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-13 16:03:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 16:03:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 16:06:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-13 16:06:10 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 16:06:10 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 16:09:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-13 16:09:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 16:09:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 16:12:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-13 16:12:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 16:12:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 16:15:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-13 16:15:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 16:15:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 16:18:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-13 16:18:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 16:18:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 16:21:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-13 16:21:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 16:21:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 16:24:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-13 16:24:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 16:24:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 17:58:10 | INFO     | app.main | Database tables and columns synced successfully
+2026-11-13 17:58:10 | INFO     | app.main | [Startup] Trade monitor, Auto-Scanner & Pending limit monitor started.
+2026-11-13 17:58:10 | INFO     | app.signals.trade_monitor | [TradeMonitor] Background price monitor started.
+2026-11-13 17:58:41 | INFO     | app.signals.auto_scanner | [AutoScanner] Variant C started (M3 timing, threshold raw>=11 / norm>=78.57).
+2026-11-13 17:58:41 | INFO     | app.signals.auto_scanner | [PendingMonitor] Started.
+2026-11-13 17:59:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=New York
+2026-11-13 17:59:13 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 17:59:13 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 0.9 min.
+2026-11-13 18:00:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=New York
+2026-11-13 18:00:09 | INFO     | app.signals.scanner | [VariantC] EURUSD M5[479] signal: SELL score=13/14
+2026-11-13 18:00:09 | INFO     | app.signals.auto_scanner | [VariantC] EURUSD SELL MARKET order score=13/14 entry=1.10475 eff=1.10475 spread=1.2pips
+2026-11-13 18:00:09 | INFO     | app.signals.auto_scanner | [VariantC] EURUSD SELL LIMIT order submitting lot=0.0100 entry=1.10475 SL=1.10567 TP=1.10199
+2026-11-13 18:00:09 | WARNING  | app.signals.auto_scanner | [VariantC] EURUSD order attempt 1 failed: MT5 rejected (10015): Invalid price
+2026-11-13 18:00:11 | WARNING  | app.signals.auto_scanner | [VariantC] EURUSD order attempt 2 failed: MT5 rejected (10015): Invalid price
+2026-11-13 18:00:11 | ERROR    | app.signals.auto_scanner | [VariantC] EURUSD SELL order FAILED after 2 retries: MT5 rejected (10015): Invalid price
+2026-11-13 18:00:12 | WARNING  | app.signals.scanner | [Cache] USDJPY M5 has gap of 70 min (max allowed 10 min) — data may be incomplete
+2026-11-13 18:00:12 | WARNING  | app.signals.scanner | [Cache] USDJPY M3 has gap of 81 min (max allowed 6 min) — data may be incomplete
+2026-11-13 18:00:12 | WARNING  | app.signals.scanner | [Cache] USDCHF M5 has gap of 70 min (max allowed 10 min) — data may be incomplete
+2026-11-13 18:00:12 | WARNING  | app.signals.scanner | [Cache] AUDUSD M5 has gap of 70 min (max allowed 10 min) — data may be incomplete
+2026-11-13 18:00:13 | WARNING  | app.signals.scanner | [Cache] NZDUSD M5 has gap of 70 min (max allowed 10 min) — data may be incomplete
+2026-11-13 18:00:13 | WARNING  | app.signals.scanner | [Cache] NZDUSD M3 has gap of 81 min (max allowed 6 min) — data may be incomplete
+2026-11-13 18:00:13 | WARNING  | app.signals.scanner | [Cache] EURJPY M5 has gap of 70 min (max allowed 10 min) — data may be incomplete
+2026-11-13 18:00:13 | WARNING  | app.signals.scanner | [Cache] GBPJPY M5 has gap of 70 min (max allowed 10 min) — data may be incomplete
+2026-11-13 18:00:13 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=1 | filtered=0 | executed=1
+2026-11-13 18:00:13 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-13 18:03:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=New York
+2026-11-13 18:03:08 | WARNING  | app.signals.scanner | [Cache] USDJPY M5 has gap of 70 min (max allowed 10 min) — data may be incomplete
+2026-11-13 18:03:08 | WARNING  | app.signals.scanner | [Cache] USDJPY M3 has gap of 81 min (max allowed 6 min) — data may be incomplete
+2026-11-13 18:03:08 | WARNING  | app.signals.scanner | [Cache] USDCHF M5 has gap of 70 min (max allowed 10 min) — data may be incomplete
+2026-11-13 18:03:09 | WARNING  | app.signals.scanner | [Cache] AUDUSD M5 has gap of 70 min (max allowed 10 min) — data may be incomplete
+2026-11-13 18:03:09 | WARNING  | app.signals.scanner | [Cache] NZDUSD M5 has gap of 70 min (max allowed 10 min) — data may be incomplete
+2026-11-13 18:03:09 | WARNING  | app.signals.scanner | [Cache] NZDUSD M3 has gap of 81 min (max allowed 6 min) — data may be incomplete
+2026-11-13 18:03:09 | WARNING  | app.signals.scanner | [Cache] EURJPY M5 has gap of 70 min (max allowed 10 min) — data may be incomplete
+2026-11-13 18:03:09 | WARNING  | app.signals.scanner | [Cache] GBPJPY M5 has gap of 70 min (max allowed 10 min) — data may be incomplete
+2026-11-13 18:03:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 18:03:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 18:06:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=New York
+2026-11-13 18:06:09 | INFO     | app.signals.scanner | [VariantC] EURUSD M5[479] signal: SELL score=13/14
+2026-11-13 18:06:09 | INFO     | app.signals.auto_scanner | [VariantC] EURUSD SELL skipped - duplicate (in-memory)
+2026-11-13 18:06:09 | WARNING  | app.signals.scanner | [Cache] USDJPY M5 has gap of 70 min (max allowed 10 min) — data may be incomplete
+2026-11-13 18:06:10 | WARNING  | app.signals.scanner | [Cache] USDCHF M5 has gap of 70 min (max allowed 10 min) — data may be incomplete
+2026-11-13 18:06:10 | WARNING  | app.signals.scanner | [Cache] AUDUSD M5 has gap of 70 min (max allowed 10 min) — data may be incomplete
+2026-11-13 18:06:10 | WARNING  | app.signals.scanner | [Cache] NZDUSD M5 has gap of 70 min (max allowed 10 min) — data may be incomplete
+2026-11-13 18:06:11 | WARNING  | app.signals.scanner | [Cache] EURJPY M5 has gap of 70 min (max allowed 10 min) — data may be incomplete
+2026-11-13 18:06:12 | WARNING  | app.signals.scanner | [Cache] GBPJPY M5 has gap of 70 min (max allowed 10 min) — data may be incomplete
+2026-11-13 18:06:12 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=1 | filtered=1 | executed=0
+2026-11-13 18:06:12 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-13 18:09:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=New York
+2026-11-13 18:09:09 | WARNING  | app.signals.scanner | [Cache] USDJPY M5 has gap of 70 min (max allowed 10 min) — data may be incomplete
+2026-11-13 18:09:09 | WARNING  | app.signals.scanner | [Cache] USDCHF M5 has gap of 70 min (max allowed 10 min) — data may be incomplete
+2026-11-13 18:09:09 | WARNING  | app.signals.scanner | [Cache] AUDUSD M5 has gap of 70 min (max allowed 10 min) — data may be incomplete
+2026-11-13 18:09:09 | WARNING  | app.signals.scanner | [Cache] NZDUSD M5 has gap of 70 min (max allowed 10 min) — data may be incomplete
+2026-11-13 18:09:10 | WARNING  | app.signals.scanner | [Cache] EURJPY M5 has gap of 70 min (max allowed 10 min) — data may be incomplete
+2026-11-13 18:09:10 | WARNING  | app.signals.scanner | [Cache] GBPJPY M5 has gap of 70 min (max allowed 10 min) — data may be incomplete
+2026-11-13 18:09:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 18:09:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 18:12:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=New York
+2026-11-13 18:12:08 | INFO     | app.signals.scanner | [VariantC] EURUSD M5[479] signal: SELL score=13/14
+2026-11-13 18:12:08 | INFO     | app.signals.auto_scanner | [VariantC] EURUSD SELL skipped - duplicate DB signal #102 < 3 min ago
+2026-11-13 18:12:09 | WARNING  | app.signals.scanner | [Cache] USDJPY M5 has gap of 70 min (max allowed 10 min) — data may be incomplete
+2026-11-13 18:12:09 | WARNING  | app.signals.scanner | [Cache] USDCHF M5 has gap of 70 min (max allowed 10 min) — data may be incomplete
+2026-11-13 18:12:09 | WARNING  | app.signals.scanner | [Cache] AUDUSD M5 has gap of 70 min (max allowed 10 min) — data may be incomplete
+2026-11-13 18:12:10 | WARNING  | app.signals.scanner | [Cache] NZDUSD M5 has gap of 70 min (max allowed 10 min) — data may be incomplete
+2026-11-13 18:12:10 | WARNING  | app.signals.scanner | [Cache] EURJPY M5 has gap of 70 min (max allowed 10 min) — data may be incomplete
+2026-11-13 18:12:11 | WARNING  | app.signals.scanner | [Cache] GBPJPY M5 has gap of 70 min (max allowed 10 min) — data may be incomplete
+2026-11-13 18:12:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=1 | filtered=1 | executed=0
+2026-11-13 18:12:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 18:15:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=New York
+2026-11-13 18:15:08 | INFO     | app.signals.scanner | [VariantC] EURUSD M5[479] signal: SELL score=13/14
+2026-11-13 18:15:08 | INFO     | app.signals.auto_scanner | [VariantC] EURUSD SELL skipped - duplicate DB signal #102 < 3 min ago
+2026-11-13 18:15:08 | WARNING  | app.signals.scanner | [Cache] USDJPY M5 has gap of 70 min (max allowed 10 min) — data may be incomplete
+2026-11-13 18:15:09 | WARNING  | app.signals.scanner | [Cache] USDCHF M5 has gap of 70 min (max allowed 10 min) — data may be incomplete
+2026-11-13 18:15:09 | WARNING  | app.signals.scanner | [Cache] AUDUSD M5 has gap of 70 min (max allowed 10 min) — data may be incomplete
+2026-11-13 18:15:09 | WARNING  | app.signals.scanner | [Cache] NZDUSD M5 has gap of 70 min (max allowed 10 min) — data may be incomplete
+2026-11-13 18:15:10 | WARNING  | app.signals.scanner | [Cache] EURJPY M5 has gap of 70 min (max allowed 10 min) — data may be incomplete
+2026-11-13 18:15:10 | WARNING  | app.signals.scanner | [Cache] GBPJPY M5 has gap of 70 min (max allowed 10 min) — data may be incomplete
+2026-11-13 18:15:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=1 | filtered=1 | executed=0
+2026-11-13 18:15:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 18:18:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=New York
+2026-11-13 18:18:08 | WARNING  | app.signals.scanner | [Cache] USDJPY M5 has gap of 70 min (max allowed 10 min) — data may be incomplete
+2026-11-13 18:18:09 | WARNING  | app.signals.scanner | [Cache] USDCHF M5 has gap of 70 min (max allowed 10 min) — data may be incomplete
+2026-11-13 18:18:09 | WARNING  | app.signals.scanner | [Cache] AUDUSD M5 has gap of 70 min (max allowed 10 min) — data may be incomplete
+2026-11-13 18:18:09 | WARNING  | app.signals.scanner | [Cache] NZDUSD M5 has gap of 70 min (max allowed 10 min) — data may be incomplete
+2026-11-13 18:18:10 | WARNING  | app.signals.scanner | [Cache] EURJPY M5 has gap of 70 min (max allowed 10 min) — data may be incomplete
+2026-11-13 18:18:10 | WARNING  | app.signals.scanner | [Cache] GBPJPY M5 has gap of 70 min (max allowed 10 min) — data may be incomplete
+2026-11-13 18:18:10 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 18:18:10 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 18:20:22 | INFO     | app.main | Database tables and columns synced successfully
+2026-11-13 18:20:22 | INFO     | app.main | [Startup] Trade monitor, Auto-Scanner & Pending limit monitor started.
+2026-11-13 18:20:22 | INFO     | app.signals.trade_monitor | [TradeMonitor] Background price monitor started.
+2026-11-13 18:20:22 | INFO     | app.signals.auto_scanner | [AutoScanner] Variant C started (M3 timing, threshold raw>=11 / norm>=78.57).
+2026-11-13 18:20:22 | INFO     | app.signals.auto_scanner | [PendingMonitor] Started.
+2026-11-13 18:20:52 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=New York
+2026-11-13 18:20:54 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 18:20:54 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 0.2 min.
+2026-11-13 18:21:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=New York
+2026-11-13 18:21:10 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 18:21:10 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 18:24:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=New York
+2026-11-13 18:24:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 18:24:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 18:27:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=New York
+2026-11-13 18:27:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 18:27:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 20:33:26 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=New York
+2026-11-13 20:34:13 | INFO     | app.main | Database tables and columns synced successfully
+2026-11-13 20:34:14 | INFO     | app.main | [Startup] Trade monitor, Auto-Scanner & Pending limit monitor started.
+2026-11-13 20:34:14 | INFO     | app.signals.trade_monitor | [TradeMonitor] Background price monitor started.
+2026-11-13 20:34:15 | INFO     | app.signals.auto_scanner | [AutoScanner] Variant C started (M3 timing, threshold raw>=11 / norm>=78.57).
+2026-11-13 20:34:15 | INFO     | app.signals.auto_scanner | [PendingMonitor] Started.
+2026-11-13 20:34:45 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=New York
+2026-11-13 20:34:47 | WARNING  | app.signals.scanner | [Cache] USDCHF M5 has gap of 125 min (max allowed 10 min) — data may be incomplete
+2026-11-13 20:34:51 | WARNING  | app.signals.scanner | [Cache] EURJPY M5 has gap of 125 min (max allowed 10 min) — data may be incomplete
+2026-11-13 20:34:52 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 20:34:52 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 1.3 min.
+2026-11-13 20:36:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=New York
+2026-11-13 20:36:10 | WARNING  | app.signals.scanner | [Cache] USDJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 20:36:11 | WARNING  | app.signals.scanner | [Cache] USDCHF M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 20:36:11 | WARNING  | app.signals.scanner | [Cache] AUDUSD M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 20:36:13 | WARNING  | app.signals.scanner | [Cache] EURJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 20:36:14 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 20:36:14 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-13 20:39:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=New York
+2026-11-13 20:39:10 | WARNING  | app.signals.scanner | [Cache] USDJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 20:39:11 | WARNING  | app.signals.scanner | [Cache] USDCHF M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 20:39:12 | WARNING  | app.signals.scanner | [Cache] AUDUSD M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 20:39:14 | WARNING  | app.signals.scanner | [Cache] EURJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 20:39:15 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 20:39:15 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-13 20:42:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=New York
+2026-11-13 20:42:10 | WARNING  | app.signals.scanner | [Cache] USDJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 20:42:11 | WARNING  | app.signals.scanner | [Cache] USDCHF M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 20:42:11 | WARNING  | app.signals.scanner | [Cache] AUDUSD M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 20:42:14 | WARNING  | app.signals.scanner | [Cache] EURJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 20:42:15 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 20:42:15 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-13 20:45:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=New York
+2026-11-13 20:45:10 | WARNING  | app.signals.scanner | [Cache] USDJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 20:45:10 | WARNING  | app.signals.scanner | [Cache] USDCHF M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 20:45:11 | WARNING  | app.signals.scanner | [Cache] AUDUSD M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 20:45:13 | WARNING  | app.signals.scanner | [Cache] EURJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 20:45:14 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 20:45:14 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-13 20:48:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=New York
+2026-11-13 20:48:10 | WARNING  | app.signals.scanner | [Cache] USDJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 20:48:11 | WARNING  | app.signals.scanner | [Cache] USDCHF M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 20:48:11 | WARNING  | app.signals.scanner | [Cache] AUDUSD M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 20:48:14 | WARNING  | app.signals.scanner | [Cache] EURJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 20:48:15 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 20:48:15 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-13 20:51:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=New York
+2026-11-13 20:51:09 | WARNING  | app.signals.scanner | [Cache] USDJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 20:51:10 | WARNING  | app.signals.scanner | [Cache] USDCHF M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 20:51:11 | WARNING  | app.signals.scanner | [Cache] AUDUSD M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 20:51:13 | WARNING  | app.signals.scanner | [Cache] EURJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 20:51:14 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 20:51:14 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-13 20:54:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=New York
+2026-11-13 20:54:10 | WARNING  | app.signals.scanner | [Cache] USDJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 20:54:11 | WARNING  | app.signals.scanner | [Cache] USDCHF M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 20:54:11 | WARNING  | app.signals.scanner | [Cache] AUDUSD M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 20:54:13 | WARNING  | app.signals.scanner | [Cache] EURJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 20:54:15 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 20:54:15 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-13 20:57:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=New York
+2026-11-13 20:57:09 | WARNING  | app.signals.scanner | [Cache] USDJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 20:57:10 | WARNING  | app.signals.scanner | [Cache] USDCHF M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 20:57:11 | WARNING  | app.signals.scanner | [Cache] AUDUSD M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 20:57:13 | WARNING  | app.signals.scanner | [Cache] EURJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 20:57:14 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 20:57:14 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-13 21:00:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=New York
+2026-11-13 21:00:10 | WARNING  | app.signals.scanner | [Cache] USDJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 21:00:11 | WARNING  | app.signals.scanner | [Cache] USDCHF M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 21:00:11 | WARNING  | app.signals.scanner | [Cache] AUDUSD M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 21:00:13 | WARNING  | app.signals.scanner | [Cache] EURJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 21:00:14 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 21:00:14 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-13 21:03:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=New York
+2026-11-13 21:03:11 | WARNING  | app.signals.scanner | [Cache] USDJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 21:03:11 | WARNING  | app.signals.scanner | [Cache] USDCHF M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 21:03:12 | WARNING  | app.signals.scanner | [Cache] AUDUSD M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 21:03:14 | WARNING  | app.signals.scanner | [Cache] EURJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 21:03:15 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 21:03:15 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-13 21:06:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=New York
+2026-11-13 21:06:10 | WARNING  | app.signals.scanner | [Cache] USDJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 21:06:11 | WARNING  | app.signals.scanner | [Cache] USDCHF M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 21:06:12 | WARNING  | app.signals.scanner | [Cache] AUDUSD M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 21:06:14 | WARNING  | app.signals.scanner | [Cache] EURJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 21:06:15 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 21:06:15 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-13 21:09:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=New York
+2026-11-13 21:09:10 | WARNING  | app.signals.scanner | [Cache] USDJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 21:09:10 | WARNING  | app.signals.scanner | [Cache] USDCHF M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 21:09:11 | WARNING  | app.signals.scanner | [Cache] AUDUSD M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 21:09:13 | WARNING  | app.signals.scanner | [Cache] EURJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 21:09:14 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 21:09:14 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-13 21:12:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=New York
+2026-11-13 21:12:10 | WARNING  | app.signals.scanner | [Cache] USDJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 21:12:11 | WARNING  | app.signals.scanner | [Cache] USDCHF M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 21:12:12 | WARNING  | app.signals.scanner | [Cache] AUDUSD M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 21:12:14 | WARNING  | app.signals.scanner | [Cache] EURJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 21:12:15 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 21:12:15 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-13 21:15:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=New York
+2026-11-13 21:15:10 | WARNING  | app.signals.scanner | [Cache] USDJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 21:15:10 | WARNING  | app.signals.scanner | [Cache] USDCHF M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 21:15:11 | WARNING  | app.signals.scanner | [Cache] AUDUSD M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 21:15:13 | WARNING  | app.signals.scanner | [Cache] EURJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 21:15:14 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 21:15:14 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-13 21:18:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=New York
+2026-11-13 21:18:10 | WARNING  | app.signals.scanner | [Cache] USDJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 21:18:11 | WARNING  | app.signals.scanner | [Cache] USDCHF M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 21:18:11 | WARNING  | app.signals.scanner | [Cache] AUDUSD M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 21:18:14 | WARNING  | app.signals.scanner | [Cache] EURJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 21:18:15 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 21:18:15 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-13 21:21:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=New York
+2026-11-13 21:21:09 | WARNING  | app.signals.scanner | [Cache] USDJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 21:21:10 | WARNING  | app.signals.scanner | [Cache] USDCHF M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 21:21:11 | WARNING  | app.signals.scanner | [Cache] AUDUSD M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 21:21:13 | WARNING  | app.signals.scanner | [Cache] EURJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 21:21:14 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 21:21:14 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-13 21:24:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=New York
+2026-11-13 21:24:10 | WARNING  | app.signals.scanner | [Cache] USDJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 21:24:11 | WARNING  | app.signals.scanner | [Cache] USDCHF M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 21:24:11 | WARNING  | app.signals.scanner | [Cache] AUDUSD M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 21:24:13 | WARNING  | app.signals.scanner | [Cache] EURJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 21:24:14 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 21:24:14 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-13 21:27:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=New York
+2026-11-13 21:27:10 | WARNING  | app.signals.scanner | [Cache] USDJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 21:27:11 | WARNING  | app.signals.scanner | [Cache] USDCHF M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 21:27:11 | INFO     | app.signals.scanner | [VariantC] USDCHF M5[479] signal: BUY score=13/14
+2026-11-13 21:27:12 | INFO     | app.signals.auto_scanner | [VariantC] USDCHF BUY MARKET order score=13/14 entry=0.83670 eff=0.83670 spread=1.6pips
+2026-11-13 21:27:12 | INFO     | app.signals.auto_scanner | [VariantC] USDCHF BUY LIMIT order submitting lot=0.0100 entry=0.8367 SL=0.83586 TP=0.83922
+2026-11-13 21:27:12 | INFO     | app.signals.auto_scanner | [VariantC] USDCHF BUY confirmed ticket=2088408379 fill=pending lots=0.0100 risk=$1.0039 reward=$3.0118 db_FAILED
+2026-11-13 21:27:20 | ERROR    | app.signals.auto_scanner | [VariantC] Telegram send failed: HTTPSConnectionPool(host='api.telegram.org', port=443): Read timed out. (read timeout=6)
+2026-11-13 21:27:20 | WARNING  | app.signals.scanner | [Cache] AUDUSD M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 21:27:23 | WARNING  | app.signals.scanner | [Cache] EURJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 21:27:24 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=1 | filtered=0 | executed=1
+2026-11-13 21:27:24 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.7 min.
+2026-11-13 21:30:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=New York
+2026-11-13 21:30:08 | INFO     | app.signals.scanner | [VariantC] EURUSD M5[479] signal: SELL score=13/14
+2026-11-13 21:30:08 | INFO     | app.signals.auto_scanner | [VariantC] EURUSD SELL skipped - duplicate DB signal #102 < 3 min ago
+2026-11-13 21:30:09 | WARNING  | app.signals.scanner | [Cache] USDJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 21:30:10 | WARNING  | app.signals.scanner | [Cache] USDCHF M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 21:30:11 | INFO     | app.signals.scanner | [VariantC] USDCHF M5[479] signal: BUY score=13/14
+2026-11-13 21:30:11 | INFO     | app.signals.auto_scanner | [VariantC] USDCHF BUY skipped - active trade #69 (PENDING)
+2026-11-13 21:30:11 | WARNING  | app.signals.scanner | [Cache] AUDUSD M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 21:30:13 | WARNING  | app.signals.scanner | [Cache] EURJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 21:30:14 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=2 | filtered=2 | executed=0
+2026-11-13 21:30:14 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-13 21:33:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=New York
+2026-11-13 21:33:10 | WARNING  | app.signals.scanner | [Cache] USDJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 21:33:11 | WARNING  | app.signals.scanner | [Cache] USDCHF M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 21:33:12 | WARNING  | app.signals.scanner | [Cache] AUDUSD M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 21:33:14 | WARNING  | app.signals.scanner | [Cache] EURJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 21:33:15 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 21:33:15 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-13 21:36:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=New York
+2026-11-13 21:36:09 | INFO     | app.signals.scanner | [VariantC] EURUSD M5[479] signal: SELL score=13/14
+2026-11-13 21:36:09 | INFO     | app.signals.auto_scanner | [VariantC] EURUSD SELL skipped - duplicate DB signal #102 < 3 min ago
+2026-11-13 21:36:10 | WARNING  | app.signals.scanner | [Cache] USDJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 21:36:11 | WARNING  | app.signals.scanner | [Cache] USDCHF M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 21:36:11 | INFO     | app.signals.scanner | [VariantC] USDCHF M5[479] signal: BUY score=13/14
+2026-11-13 21:36:11 | INFO     | app.signals.auto_scanner | [VariantC] USDCHF BUY skipped - active trade #69 (PENDING)
+2026-11-13 21:36:12 | WARNING  | app.signals.scanner | [Cache] AUDUSD M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 21:36:14 | WARNING  | app.signals.scanner | [Cache] EURJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 21:36:15 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=2 | filtered=2 | executed=0
+2026-11-13 21:36:15 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-13 21:39:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=New York
+2026-11-13 21:39:10 | WARNING  | app.signals.scanner | [Cache] USDJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 21:39:10 | WARNING  | app.signals.scanner | [Cache] USDCHF M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 21:39:11 | WARNING  | app.signals.scanner | [Cache] AUDUSD M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 21:39:13 | WARNING  | app.signals.scanner | [Cache] EURJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 21:39:14 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 21:39:14 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-13 21:42:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=New York
+2026-11-13 21:42:10 | WARNING  | app.signals.scanner | [Cache] USDJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 21:42:11 | WARNING  | app.signals.scanner | [Cache] USDCHF M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 21:42:12 | WARNING  | app.signals.scanner | [Cache] AUDUSD M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 21:42:14 | WARNING  | app.signals.scanner | [Cache] EURJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 21:42:15 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 21:42:15 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-13 21:45:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=New York
+2026-11-13 21:45:10 | WARNING  | app.signals.scanner | [Cache] USDJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 21:45:10 | WARNING  | app.signals.scanner | [Cache] USDCHF M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 21:45:11 | WARNING  | app.signals.scanner | [Cache] AUDUSD M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 21:45:13 | WARNING  | app.signals.scanner | [Cache] EURJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 21:45:14 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 21:45:14 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-13 21:48:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=New York
+2026-11-13 21:48:10 | WARNING  | app.signals.scanner | [Cache] USDJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 21:48:11 | WARNING  | app.signals.scanner | [Cache] USDCHF M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 21:48:12 | WARNING  | app.signals.scanner | [Cache] AUDUSD M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 21:48:14 | WARNING  | app.signals.scanner | [Cache] EURJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 21:48:15 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 21:48:15 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-13 21:51:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=New York
+2026-11-13 21:51:10 | WARNING  | app.signals.scanner | [Cache] USDJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 21:51:11 | WARNING  | app.signals.scanner | [Cache] USDCHF M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 21:51:11 | WARNING  | app.signals.scanner | [Cache] AUDUSD M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 21:51:14 | WARNING  | app.signals.scanner | [Cache] EURJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 21:51:15 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 21:51:15 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-13 21:54:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=New York
+2026-11-13 21:54:10 | WARNING  | app.signals.scanner | [Cache] USDJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 21:54:10 | WARNING  | app.signals.scanner | [Cache] USDCHF M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 21:54:11 | WARNING  | app.signals.scanner | [Cache] AUDUSD M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 21:54:14 | WARNING  | app.signals.scanner | [Cache] EURJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 21:54:15 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 21:54:15 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-13 21:57:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=New York
+2026-11-13 21:57:10 | WARNING  | app.signals.scanner | [Cache] USDJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 21:57:10 | WARNING  | app.signals.scanner | [Cache] USDCHF M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 21:57:11 | WARNING  | app.signals.scanner | [Cache] AUDUSD M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 21:57:13 | WARNING  | app.signals.scanner | [Cache] EURJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 21:57:14 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 21:57:14 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-13 22:00:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=New York
+2026-11-13 22:00:10 | WARNING  | app.signals.scanner | [Cache] USDJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 22:00:11 | WARNING  | app.signals.scanner | [Cache] USDCHF M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 22:00:12 | WARNING  | app.signals.scanner | [Cache] AUDUSD M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 22:00:14 | WARNING  | app.signals.scanner | [Cache] EURJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 22:00:15 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 22:00:15 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-13 22:03:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=New York
+2026-11-13 22:03:10 | WARNING  | app.signals.scanner | [Cache] USDJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 22:03:11 | WARNING  | app.signals.scanner | [Cache] USDCHF M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 22:03:12 | WARNING  | app.signals.scanner | [Cache] AUDUSD M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 22:03:14 | WARNING  | app.signals.scanner | [Cache] EURJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 22:03:15 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 22:03:15 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-13 22:06:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=New York
+2026-11-13 22:06:10 | WARNING  | app.signals.scanner | [Cache] USDJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 22:06:11 | WARNING  | app.signals.scanner | [Cache] USDCHF M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 22:06:12 | WARNING  | app.signals.scanner | [Cache] AUDUSD M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 22:06:14 | WARNING  | app.signals.scanner | [Cache] EURJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 22:06:15 | INFO     | app.signals.scanner | [VariantC] GBPJPY M5[479] signal: SELL score=13/14
+2026-11-13 22:06:15 | ERROR    | app.signals.auto_scanner | [AutoScanner] Unexpected error: Cannot compare tz-naive and tz-aware timestamps
+Traceback (most recent call last):
+  File "C:\Users\nts0218\hepl project\Ai Forex Trading\backend\app\signals\auto_scanner.py", line 983, in auto_scan_loop
+    if m5_ts <= last_exit:
+       ^^^^^^^^^^^^^^^^^^
+  File "pandas/_libs/tslibs/timestamps.pyx", line 502, in pandas._libs.tslibs.timestamps._Timestamp.__richcmp__
+TypeError: Cannot compare tz-naive and tz-aware timestamps
+2026-11-13 22:06:15 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-13 22:09:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=New York
+2026-11-13 22:09:10 | WARNING  | app.signals.scanner | [Cache] USDJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 22:09:11 | WARNING  | app.signals.scanner | [Cache] USDCHF M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 22:09:12 | WARNING  | app.signals.scanner | [Cache] AUDUSD M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 22:09:14 | WARNING  | app.signals.scanner | [Cache] EURJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 22:09:15 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 22:09:15 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-13 22:12:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=New York
+2026-11-13 22:12:10 | WARNING  | app.signals.scanner | [Cache] USDJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 22:12:11 | WARNING  | app.signals.scanner | [Cache] USDCHF M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 22:12:12 | WARNING  | app.signals.scanner | [Cache] AUDUSD M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 22:12:14 | WARNING  | app.signals.scanner | [Cache] EURJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 22:12:15 | INFO     | app.signals.scanner | [VariantC] GBPJPY M5[479] signal: SELL score=13/14
+2026-11-13 22:12:15 | ERROR    | app.signals.auto_scanner | [AutoScanner] Unexpected error: Cannot compare tz-naive and tz-aware timestamps
+Traceback (most recent call last):
+  File "C:\Users\nts0218\hepl project\Ai Forex Trading\backend\app\signals\auto_scanner.py", line 983, in auto_scan_loop
+    if m5_ts <= last_exit:
+       ^^^^^^^^^^^^^^^^^^
+  File "pandas/_libs/tslibs/timestamps.pyx", line 502, in pandas._libs.tslibs.timestamps._Timestamp.__richcmp__
+TypeError: Cannot compare tz-naive and tz-aware timestamps
+2026-11-13 22:12:15 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-13 22:15:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=New York
+2026-11-13 22:15:10 | WARNING  | app.signals.scanner | [Cache] USDJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 22:15:11 | WARNING  | app.signals.scanner | [Cache] USDCHF M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 22:15:12 | WARNING  | app.signals.scanner | [Cache] AUDUSD M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 22:15:14 | WARNING  | app.signals.scanner | [Cache] EURJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 22:15:15 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 22:15:15 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-13 22:18:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=New York
+2026-11-13 22:18:10 | WARNING  | app.signals.scanner | [Cache] USDJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 22:18:11 | WARNING  | app.signals.scanner | [Cache] USDCHF M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 22:18:12 | WARNING  | app.signals.scanner | [Cache] AUDUSD M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 22:18:14 | WARNING  | app.signals.scanner | [Cache] EURJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 22:18:15 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 22:18:15 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-13 22:21:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=New York
+2026-11-13 22:21:10 | WARNING  | app.signals.scanner | [Cache] USDJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 22:21:11 | WARNING  | app.signals.scanner | [Cache] USDCHF M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 22:21:12 | WARNING  | app.signals.scanner | [Cache] AUDUSD M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 22:21:14 | WARNING  | app.signals.scanner | [Cache] EURJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 22:21:15 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 22:21:15 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-13 22:24:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=New York
+2026-11-13 22:24:10 | WARNING  | app.signals.scanner | [Cache] USDJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 22:24:11 | WARNING  | app.signals.scanner | [Cache] USDCHF M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 22:24:12 | WARNING  | app.signals.scanner | [Cache] AUDUSD M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 22:24:14 | WARNING  | app.signals.scanner | [Cache] EURJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 22:24:15 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 22:24:15 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-13 22:26:57 | INFO     | app.signals.trade_monitor | [TradeMonitor] Pending limit order #69 (USDCHF) MISSED: Price reached TP without pulling back to entry.
+2026-11-13 22:27:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=New York
+2026-11-13 22:27:10 | WARNING  | app.signals.scanner | [Cache] USDJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 22:27:11 | WARNING  | app.signals.scanner | [Cache] USDCHF M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 22:27:12 | WARNING  | app.signals.scanner | [Cache] AUDUSD M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 22:27:14 | WARNING  | app.signals.scanner | [Cache] EURJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 22:27:15 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 22:27:15 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-13 22:30:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (17:00 UTC) - scanning (backtest parity).
+2026-11-13 22:30:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=Off-Session
+2026-11-13 22:30:11 | WARNING  | app.signals.scanner | [Cache] USDJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 22:30:11 | WARNING  | app.signals.scanner | [Cache] USDCHF M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 22:30:13 | WARNING  | app.signals.scanner | [Cache] AUDUSD M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 22:30:15 | WARNING  | app.signals.scanner | [Cache] EURJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 22:30:16 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 22:30:16 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-13 22:33:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (17:03 UTC) - scanning (backtest parity).
+2026-11-13 22:33:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=Off-Session
+2026-11-13 22:33:10 | WARNING  | app.signals.scanner | [Cache] USDJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 22:33:11 | WARNING  | app.signals.scanner | [Cache] USDCHF M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 22:33:12 | WARNING  | app.signals.scanner | [Cache] AUDUSD M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 22:33:14 | WARNING  | app.signals.scanner | [Cache] EURJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 22:33:15 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 22:33:15 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-13 22:36:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (17:06 UTC) - scanning (backtest parity).
+2026-11-13 22:36:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=Off-Session
+2026-11-13 22:36:11 | WARNING  | app.signals.scanner | [Cache] USDJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 22:36:11 | WARNING  | app.signals.scanner | [Cache] USDCHF M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 22:36:12 | WARNING  | app.signals.scanner | [Cache] AUDUSD M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 22:36:14 | WARNING  | app.signals.scanner | [Cache] EURJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 22:36:16 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 22:36:16 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-13 22:39:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (17:09 UTC) - scanning (backtest parity).
+2026-11-13 22:39:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=Off-Session
+2026-11-13 22:39:10 | WARNING  | app.signals.scanner | [Cache] USDJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 22:39:11 | WARNING  | app.signals.scanner | [Cache] USDCHF M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 22:39:12 | WARNING  | app.signals.scanner | [Cache] AUDUSD M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 22:39:14 | WARNING  | app.signals.scanner | [Cache] EURJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 22:39:15 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 22:39:15 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-13 22:42:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (17:12 UTC) - scanning (backtest parity).
+2026-11-13 22:42:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=Off-Session
+2026-11-13 22:42:11 | WARNING  | app.signals.scanner | [Cache] USDJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 22:42:11 | WARNING  | app.signals.scanner | [Cache] USDCHF M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 22:42:13 | WARNING  | app.signals.scanner | [Cache] AUDUSD M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 22:42:15 | WARNING  | app.signals.scanner | [Cache] EURJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 22:42:16 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 22:42:16 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-13 22:45:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (17:15 UTC) - scanning (backtest parity).
+2026-11-13 22:45:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=Off-Session
+2026-11-13 22:45:10 | WARNING  | app.signals.scanner | [Cache] USDJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 22:45:11 | WARNING  | app.signals.scanner | [Cache] USDCHF M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 22:45:12 | WARNING  | app.signals.scanner | [Cache] AUDUSD M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 22:45:14 | WARNING  | app.signals.scanner | [Cache] EURJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 22:45:15 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 22:45:15 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-13 22:48:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (17:18 UTC) - scanning (backtest parity).
+2026-11-13 22:48:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=Off-Session
+2026-11-13 22:48:10 | WARNING  | app.signals.scanner | [Cache] USDJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 22:48:11 | WARNING  | app.signals.scanner | [Cache] USDCHF M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 22:48:12 | WARNING  | app.signals.scanner | [Cache] AUDUSD M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 22:48:14 | WARNING  | app.signals.scanner | [Cache] EURJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 22:48:16 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 22:48:16 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-13 22:51:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (17:21 UTC) - scanning (backtest parity).
+2026-11-13 22:51:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=Off-Session
+2026-11-13 22:51:10 | WARNING  | app.signals.scanner | [Cache] USDJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 22:51:11 | WARNING  | app.signals.scanner | [Cache] USDCHF M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 22:51:12 | WARNING  | app.signals.scanner | [Cache] AUDUSD M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 22:51:14 | WARNING  | app.signals.scanner | [Cache] EURJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 22:51:15 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 22:51:15 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-13 22:54:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (17:24 UTC) - scanning (backtest parity).
+2026-11-13 22:54:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=Off-Session
+2026-11-13 22:54:11 | WARNING  | app.signals.scanner | [Cache] USDJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 22:54:11 | WARNING  | app.signals.scanner | [Cache] USDCHF M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 22:54:12 | WARNING  | app.signals.scanner | [Cache] AUDUSD M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 22:54:15 | WARNING  | app.signals.scanner | [Cache] EURJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 22:54:16 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 22:54:16 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-13 22:57:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (17:27 UTC) - scanning (backtest parity).
+2026-11-13 22:57:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=Off-Session
+2026-11-13 22:57:10 | WARNING  | app.signals.scanner | [Cache] USDJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 22:57:11 | WARNING  | app.signals.scanner | [Cache] USDCHF M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 22:57:12 | WARNING  | app.signals.scanner | [Cache] AUDUSD M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 22:57:14 | WARNING  | app.signals.scanner | [Cache] EURJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 22:57:15 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 22:57:15 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-13 23:00:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (17:30 UTC) - scanning (backtest parity).
+2026-11-13 23:00:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=Off-Session
+2026-11-13 23:00:09 | WARNING  | app.signals.scanner | [Cache] USDJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 23:00:09 | WARNING  | app.signals.scanner | [Cache] USDCHF M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 23:00:10 | WARNING  | app.signals.scanner | [Cache] AUDUSD M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 23:00:10 | WARNING  | app.signals.scanner | [Cache] EURJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 23:00:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 23:00:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 23:03:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (17:33 UTC) - scanning (backtest parity).
+2026-11-13 23:03:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=Off-Session
+2026-11-13 23:03:08 | WARNING  | app.signals.scanner | [Cache] USDJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 23:03:09 | WARNING  | app.signals.scanner | [Cache] USDCHF M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 23:03:09 | WARNING  | app.signals.scanner | [Cache] AUDUSD M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 23:03:10 | WARNING  | app.signals.scanner | [Cache] EURJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 23:03:10 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 23:03:10 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 23:06:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (17:36 UTC) - scanning (backtest parity).
+2026-11-13 23:06:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=Off-Session
+2026-11-13 23:06:09 | WARNING  | app.signals.scanner | [Cache] USDJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 23:06:09 | WARNING  | app.signals.scanner | [Cache] USDCHF M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 23:06:09 | WARNING  | app.signals.scanner | [Cache] AUDUSD M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 23:06:10 | WARNING  | app.signals.scanner | [Cache] EURJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 23:06:10 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 23:06:10 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 23:09:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (17:39 UTC) - scanning (backtest parity).
+2026-11-13 23:09:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=Off-Session
+2026-11-13 23:09:09 | WARNING  | app.signals.scanner | [Cache] USDJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 23:09:10 | WARNING  | app.signals.scanner | [Cache] USDCHF M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 23:09:10 | WARNING  | app.signals.scanner | [Cache] AUDUSD M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 23:09:11 | WARNING  | app.signals.scanner | [Cache] EURJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 23:09:12 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 23:09:12 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-13 23:12:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (17:42 UTC) - scanning (backtest parity).
+2026-11-13 23:12:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=Off-Session
+2026-11-13 23:12:08 | WARNING  | app.signals.scanner | [Cache] USDJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 23:12:08 | WARNING  | app.signals.scanner | [Cache] USDCHF M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 23:12:09 | WARNING  | app.signals.scanner | [Cache] AUDUSD M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 23:12:09 | WARNING  | app.signals.scanner | [Cache] EURJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 23:12:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 23:12:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 23:15:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (17:45 UTC) - scanning (backtest parity).
+2026-11-13 23:15:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=Off-Session
+2026-11-13 23:15:10 | WARNING  | app.signals.scanner | [Cache] USDJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 23:15:10 | WARNING  | app.signals.scanner | [Cache] USDCHF M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 23:15:10 | WARNING  | app.signals.scanner | [Cache] AUDUSD M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 23:15:11 | WARNING  | app.signals.scanner | [Cache] EURJPY M5 has gap of 105 min (max allowed 10 min) — data may be incomplete
+2026-11-13 23:15:12 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 23:15:12 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-13 23:16:44 | INFO     | app.main | Database tables and columns synced successfully
+2026-11-13 23:16:44 | INFO     | app.main | [Startup] Trade monitor, Auto-Scanner & Pending limit monitor started.
+2026-11-13 23:16:44 | INFO     | app.signals.trade_monitor | [TradeMonitor] Background price monitor started.
+2026-11-13 23:16:44 | INFO     | app.signals.auto_scanner | [AutoScanner] Variant C started (M3 timing, threshold raw>=11 / norm>=78.57).
+2026-11-13 23:16:44 | INFO     | app.signals.auto_scanner | [PendingMonitor] Started.
+2026-11-13 23:16:58 | INFO     | app.main | Database tables and columns synced successfully
+2026-11-13 23:16:59 | INFO     | app.main | [Startup] Trade monitor, Auto-Scanner & Pending limit monitor started.
+2026-11-13 23:16:59 | INFO     | app.signals.trade_monitor | [TradeMonitor] Background price monitor started.
+2026-11-13 23:16:59 | INFO     | app.signals.auto_scanner | [AutoScanner] Variant C started (M3 timing, threshold raw>=11 / norm>=78.57).
+2026-11-13 23:16:59 | INFO     | app.signals.auto_scanner | [PendingMonitor] Started.
+2026-11-13 23:17:29 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (17:47 UTC) - scanning (backtest parity).
+2026-11-13 23:17:29 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=Off-Session
+2026-11-13 23:17:30 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 23:17:30 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 0.6 min.
+2026-11-13 23:18:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (17:48 UTC) - scanning (backtest parity).
+2026-11-13 23:18:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=Off-Session
+2026-11-13 23:18:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 23:18:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 23:21:06 | INFO     | app.main | Database tables and columns synced successfully
+2026-11-13 23:21:07 | INFO     | app.main | [Startup] Trade monitor, Auto-Scanner & Pending limit monitor started.
+2026-11-13 23:21:07 | INFO     | app.signals.trade_monitor | [TradeMonitor] Background price monitor started.
+2026-11-13 23:21:07 | INFO     | app.signals.auto_scanner | [AutoScanner] Variant C started (M3 timing, threshold raw>=11 / norm>=78.57).
+2026-11-13 23:21:08 | INFO     | app.signals.auto_scanner | [PendingMonitor] Started.
+2026-11-13 23:21:17 | INFO     | app.main | Database tables and columns synced successfully
+2026-11-13 23:21:18 | INFO     | app.main | [Startup] Trade monitor, Auto-Scanner & Pending limit monitor started.
+2026-11-13 23:21:18 | INFO     | app.signals.trade_monitor | [TradeMonitor] Background price monitor started.
+2026-11-13 23:21:18 | INFO     | app.signals.auto_scanner | [AutoScanner] Variant C started (M3 timing, threshold raw>=11 / norm>=78.57).
+2026-11-13 23:21:18 | INFO     | app.signals.auto_scanner | [PendingMonitor] Started.
+2026-11-13 23:21:48 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (17:51 UTC) - scanning (backtest parity).
+2026-11-13 23:21:48 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=Off-Session
+2026-11-13 23:21:50 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 23:21:50 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.3 min.
+2026-11-13 23:24:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (17:54 UTC) - scanning (backtest parity).
+2026-11-13 23:24:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=Off-Session
+2026-11-13 23:24:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 23:24:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 23:24:53 | INFO     | app.main | Database tables and columns synced successfully
+2026-11-13 23:24:54 | INFO     | app.main | [Startup] Trade monitor, Auto-Scanner & Pending limit monitor started.
+2026-11-13 23:24:54 | INFO     | app.signals.trade_monitor | [TradeMonitor] Background price monitor started.
+2026-11-13 23:24:54 | INFO     | app.signals.auto_scanner | [AutoScanner] Variant C started (M3 timing, threshold raw>=11 / norm>=78.57).
+2026-11-13 23:24:54 | INFO     | app.signals.auto_scanner | [PendingMonitor] Started.
+2026-11-13 23:25:24 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (17:55 UTC) - scanning (backtest parity).
+2026-11-13 23:25:24 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=Off-Session
+2026-11-13 23:25:27 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 23:25:27 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 1.7 min.
+2026-11-13 23:27:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (17:57 UTC) - scanning (backtest parity).
+2026-11-13 23:27:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=Off-Session
+2026-11-13 23:27:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 23:27:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 23:30:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (18:00 UTC) - scanning (backtest parity).
+2026-11-13 23:30:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=Off-Session
+2026-11-13 23:30:10 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 23:30:10 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 23:30:51 | INFO     | app.main | Database tables and columns synced successfully
+2026-11-13 23:30:53 | INFO     | app.main | [Startup] Trade monitor, Auto-Scanner & Pending limit monitor started.
+2026-11-13 23:30:53 | INFO     | app.signals.trade_monitor | [TradeMonitor] Background price monitor started.
+2026-11-13 23:30:53 | INFO     | app.signals.auto_scanner | [AutoScanner] Variant C started (M3 timing, threshold raw>=11 / norm>=78.57).
+2026-11-13 23:30:53 | INFO     | app.signals.auto_scanner | [PendingMonitor] Started.
+2026-11-13 23:31:23 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (18:01 UTC) - scanning (backtest parity).
+2026-11-13 23:31:23 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=Off-Session
+2026-11-13 23:31:24 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 23:31:24 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 1.7 min.
+2026-11-13 23:33:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (18:03 UTC) - scanning (backtest parity).
+2026-11-13 23:33:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=Off-Session
+2026-11-13 23:33:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 23:33:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 23:36:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (18:06 UTC) - scanning (backtest parity).
+2026-11-13 23:36:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=Off-Session
+2026-11-13 23:36:15 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 23:36:15 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-13 23:39:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (18:09 UTC) - scanning (backtest parity).
+2026-11-13 23:39:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=Off-Session
+2026-11-13 23:39:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 23:39:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 23:40:09 | INFO     | app.main | Database tables and columns synced successfully
+2026-11-13 23:40:12 | INFO     | app.main | [Startup] Trade monitor, Auto-Scanner & Pending limit monitor started.
+2026-11-13 23:40:12 | INFO     | app.signals.trade_monitor | [TradeMonitor] Background price monitor started.
+2026-11-13 23:40:12 | INFO     | app.signals.auto_scanner | [AutoScanner] Variant C started (M3 timing, threshold raw>=11 / norm>=78.57).
+2026-11-13 23:40:12 | INFO     | app.signals.auto_scanner | [PendingMonitor] Started.
+2026-11-13 23:40:26 | INFO     | app.main | Database tables and columns synced successfully
+2026-11-13 23:40:26 | INFO     | app.main | [Startup] Trade monitor, Auto-Scanner & Pending limit monitor started.
+2026-11-13 23:40:26 | INFO     | app.signals.trade_monitor | [TradeMonitor] Background price monitor started.
+2026-11-13 23:40:27 | INFO     | app.signals.auto_scanner | [AutoScanner] Variant C started (M3 timing, threshold raw>=11 / norm>=78.57).
+2026-11-13 23:40:27 | INFO     | app.signals.auto_scanner | [PendingMonitor] Started.
+2026-11-13 23:40:52 | INFO     | app.main | Database tables and columns synced successfully
+2026-11-13 23:40:54 | INFO     | app.main | [Startup] Trade monitor, Auto-Scanner & Pending limit monitor started.
+2026-11-13 23:40:54 | INFO     | app.signals.trade_monitor | [TradeMonitor] Background price monitor started.
+2026-11-13 23:40:54 | INFO     | app.signals.auto_scanner | [AutoScanner] Variant C started (M3 timing, threshold raw>=11 / norm>=78.57).
+2026-11-13 23:40:54 | INFO     | app.signals.auto_scanner | [PendingMonitor] Started.
+2026-11-13 23:41:04 | INFO     | app.main | Database tables and columns synced successfully
+2026-11-13 23:41:04 | INFO     | app.main | [Startup] Trade monitor, Auto-Scanner & Pending limit monitor started.
+2026-11-13 23:41:04 | INFO     | app.signals.trade_monitor | [TradeMonitor] Background price monitor started.
+2026-11-13 23:41:04 | INFO     | app.signals.auto_scanner | [AutoScanner] Variant C started (M3 timing, threshold raw>=11 / norm>=78.57).
+2026-11-13 23:41:04 | INFO     | app.signals.auto_scanner | [PendingMonitor] Started.
+2026-11-13 23:41:15 | INFO     | app.main | Database tables and columns synced successfully
+2026-11-13 23:41:15 | INFO     | app.main | [Startup] Trade monitor, Auto-Scanner & Pending limit monitor started.
+2026-11-13 23:41:15 | INFO     | app.signals.trade_monitor | [TradeMonitor] Background price monitor started.
+2026-11-13 23:41:15 | INFO     | app.signals.auto_scanner | [AutoScanner] Variant C started (M3 timing, threshold raw>=11 / norm>=78.57).
+2026-11-13 23:41:15 | INFO     | app.signals.auto_scanner | [PendingMonitor] Started.
+2026-11-13 23:41:45 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (18:11 UTC) - scanning (backtest parity).
+2026-11-13 23:41:45 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=Off-Session
+2026-11-13 23:41:47 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 23:41:47 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 0.3 min.
+2026-11-13 23:42:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (18:12 UTC) - scanning (backtest parity).
+2026-11-13 23:42:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=Off-Session
+2026-11-13 23:42:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 23:42:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 23:45:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (18:15 UTC) - scanning (backtest parity).
+2026-11-13 23:45:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=Off-Session
+2026-11-13 23:45:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 23:45:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 23:48:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (18:18 UTC) - scanning (backtest parity).
+2026-11-13 23:48:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=Off-Session
+2026-11-13 23:48:12 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 23:48:12 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-13 23:48:25 | INFO     | app.main | Database tables and columns synced successfully
+2026-11-13 23:48:26 | INFO     | app.main | [Startup] Trade monitor, Auto-Scanner & Pending limit monitor started.
+2026-11-13 23:48:26 | INFO     | app.signals.trade_monitor | [TradeMonitor] Background price monitor started.
+2026-11-13 23:48:26 | INFO     | app.signals.auto_scanner | [AutoScanner] Variant C started (M3 timing, threshold raw>=11 / norm>=78.57).
+2026-11-13 23:48:26 | INFO     | app.signals.auto_scanner | [PendingMonitor] Started.
+2026-11-13 23:48:56 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (18:18 UTC) - scanning (backtest parity).
+2026-11-13 23:48:56 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=Off-Session
+2026-11-13 23:48:58 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 23:48:58 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.2 min.
+2026-11-13 23:50:35 | INFO     | app.main | Database tables and columns synced successfully
+2026-11-13 23:50:35 | INFO     | app.main | [Startup] Trade monitor, Auto-Scanner & Pending limit monitor started.
+2026-11-13 23:50:35 | INFO     | app.signals.trade_monitor | [TradeMonitor] Background price monitor started.
+2026-11-13 23:50:36 | INFO     | app.signals.auto_scanner | [AutoScanner] Variant C started (M3 timing, threshold raw>=11 / norm>=78.57).
+2026-11-13 23:50:36 | INFO     | app.signals.auto_scanner | [PendingMonitor] Started.
+2026-11-13 23:51:06 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (18:21 UTC) - scanning (backtest parity).
+2026-11-13 23:51:06 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=Off-Session
+2026-11-13 23:51:07 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 23:51:07 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 23:54:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (18:24 UTC) - scanning (backtest parity).
+2026-11-13 23:54:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=Off-Session
+2026-11-13 23:54:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 23:54:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-13 23:56:57 | INFO     | app.main | Database tables and columns synced successfully
+2026-11-13 23:57:00 | INFO     | app.main | [Startup] Trade monitor, Auto-Scanner & Pending limit monitor started.
+2026-11-13 23:57:00 | INFO     | app.signals.trade_monitor | [TradeMonitor] Background price monitor started.
+2026-11-13 23:57:00 | INFO     | app.signals.auto_scanner | [AutoScanner] Variant C started (M3 timing, threshold raw>=11 / norm>=78.57).
+2026-11-13 23:57:00 | INFO     | app.signals.auto_scanner | [PendingMonitor] Started.
+2026-11-13 23:57:13 | INFO     | app.main | Database tables and columns synced successfully
+2026-11-13 23:57:15 | INFO     | app.main | [Startup] Trade monitor, Auto-Scanner & Pending limit monitor started.
+2026-11-13 23:57:15 | INFO     | app.signals.trade_monitor | [TradeMonitor] Background price monitor started.
+2026-11-13 23:57:15 | INFO     | app.signals.auto_scanner | [AutoScanner] Variant C started (M3 timing, threshold raw>=11 / norm>=78.57).
+2026-11-13 23:57:15 | INFO     | app.signals.auto_scanner | [PendingMonitor] Started.
+2026-11-13 23:57:28 | INFO     | app.main | Database tables and columns synced successfully
+2026-11-13 23:57:29 | INFO     | app.main | [Startup] Trade monitor, Auto-Scanner & Pending limit monitor started.
+2026-11-13 23:57:29 | INFO     | app.signals.trade_monitor | [TradeMonitor] Background price monitor started.
+2026-11-13 23:57:29 | INFO     | app.signals.auto_scanner | [AutoScanner] Variant C started (M3 timing, threshold raw>=11 / norm>=78.57).
+2026-11-13 23:57:29 | INFO     | app.signals.auto_scanner | [PendingMonitor] Started.
+2026-11-13 23:57:59 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (18:27 UTC) - scanning (backtest parity).
+2026-11-13 23:57:59 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=Off-Session
+2026-11-13 23:58:01 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 23:58:01 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.1 min.
+2026-11-13 23:59:23 | INFO     | app.main | Database tables and columns synced successfully
+2026-11-13 23:59:25 | INFO     | app.main | [Startup] Trade monitor, Auto-Scanner & Pending limit monitor started.
+2026-11-13 23:59:25 | INFO     | app.signals.trade_monitor | [TradeMonitor] Background price monitor started.
+2026-11-13 23:59:25 | INFO     | app.signals.auto_scanner | [AutoScanner] Variant C started (M3 timing, threshold raw>=11 / norm>=78.57).
+2026-11-13 23:59:25 | INFO     | app.signals.auto_scanner | [PendingMonitor] Started.
+2026-11-13 23:59:55 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (18:29 UTC) - scanning (backtest parity).
+2026-11-13 23:59:55 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=Off-Session
+2026-11-13 23:59:57 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-13 23:59:57 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 0.2 min.
