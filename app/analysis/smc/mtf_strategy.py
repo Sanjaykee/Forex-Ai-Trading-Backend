@@ -768,7 +768,7 @@ class DailyRiskProtector:
       max_consecutive_losses = 2
     When any condition is hit: Lock trading for the rest of the day.
     """
-    def __init__(self, max_trades: int = 3, max_loss_r: float = 2.0, max_consec_losses: int = 2):
+    def __init__(self, max_trades: int = 3, max_loss_r: float = 2.0, max_consec_losses: int = 5):
         self.max_trades = max_trades
         self.max_loss_r = max_loss_r
         self.max_consec_losses = max_consec_losses

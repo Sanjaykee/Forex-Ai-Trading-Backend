@@ -215,9 +215,9 @@ ORDER_RETRY_DELAY = 2
 # -- Fix 5: Per-pair daily protection — defaults used only as fallback --------
 # Actual values are read from user settings DB in _pair_can_trade().
 # These defaults apply only if the user has never saved settings.
-PAIR_MAX_TRADES_DAY   = 3   # fallback default
-PAIR_MAX_LOSSES_DAY   = 2   # fallback default
-PAIR_MAX_CONSEC_LOSS  = 2   # not configurable via UI — kept fixed
+PAIR_MAX_TRADES_DAY   = 10   # fallback default
+PAIR_MAX_LOSSES_DAY   = 5   # fallback default
+PAIR_MAX_CONSEC_LOSS  = 5   # not configurable via UI — kept fixed
 
 # -- Account/weekly loss guards DISABLED for backtest parity -----------------
 # Backtest has no account-level or weekly drawdown guard.

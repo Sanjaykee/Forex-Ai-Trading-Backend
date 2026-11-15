@@ -26,6 +26,36 @@ MIN_RR     = 3.0
 RISK_USD   = 1.0
 SYM_INFO   = {"volume_min": 0.01, "volume_step": 0.01, "volume_max": 100.0}
 
+# ── Default risk limits (used when no user settings found in DB) ──────────────
+# These match the Settings page defaults shown in the UI.
+DEFAULT_MAX_TRADES_DAY  = 10
+DEFAULT_MAX_LOSSES_DAY  = 5
+DEFAULT_MAX_CONSEC_LOSS = 5   # not configurable via UI
+
+
+def _load_user_risk_settings() -> tuple:
+    """
+    Read max_trades_day and max_losses_day from the first user's DB settings.
+    Falls back to DEFAULT_* values if DB is unavailable or settings not saved.
+    Returns (max_trades_day, max_losses_day, max_consec_loss).
+    """
+    try:
+        from app.db.database import SessionLocal
+        from app.db.models import User
+        from app.db import crud
+        db = SessionLocal()
+        user = db.query(User).first()
+        if user:
+            max_trades = int(crud.get_setting(db, user.id, "max_trades_day") or DEFAULT_MAX_TRADES_DAY)
+            max_losses = int(crud.get_setting(db, user.id, "max_losses_day") or DEFAULT_MAX_LOSSES_DAY)
+        else:
+            max_trades, max_losses = DEFAULT_MAX_TRADES_DAY, DEFAULT_MAX_LOSSES_DAY
+        db.close()
+        return max_trades, max_losses, DEFAULT_MAX_CONSEC_LOSS
+    except Exception:
+        return DEFAULT_MAX_TRADES_DAY, DEFAULT_MAX_LOSSES_DAY, DEFAULT_MAX_CONSEC_LOSS
+
+
 from app.mt5.source_router import get_candles_range_fetcher
 from app.signals.signal_logger import load_signals
 from datetime import timedelta
@@ -131,6 +161,11 @@ def run():
     print("  Source   : %s  |  Risk/Trade: $%.2f  |  Lot step: 0.01" % (source_label, RISK_USD))
     if using_log:
         print("  Signal log found — using exact live entry prices for %s" % START_DATE)
+    print("=" * 65)
+
+    max_trades_day, max_losses_day, max_consec_loss = _load_user_risk_settings()
+    print("  Risk Limits : Max %d trades/day | Max %dR loss/day | Max %d consec losses" % (
+        max_trades_day, max_losses_day, max_consec_loss))
     print("=" * 65)
 
     for symbol in PAIRS:
@@ -257,6 +292,9 @@ def run():
                 min_rr=MIN_RR,
                 allowed_sessions=["Asian", "London", "New York"],
                 apply_daily_protection=True,
+                max_daily_trades=max_trades_day,
+                max_daily_loss_r=float(max_losses_day),
+                max_consec_losses=max_consec_loss,
             )
             trades = result["all_trades"]
             total  = result["total_signals"]
