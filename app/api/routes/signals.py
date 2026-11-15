@@ -107,11 +107,12 @@ def scan_single(symbol: str, tf: str = "M15",
 
 @router.get("/backtest-quick")
 def backtest_quick(days: int = 15, tf: str = "M3", db: Session = Depends(get_db), user=Depends(get_current_user)):
-    """
-    Run backtest across all 9 pairs. Default: 15 days on M15.
-    Params: days (default 15), tf (default M15, options: M5/M15/both)
-    """
     from app.backtest.engine import run_backtest
+
+    # Read user-configured settings from DB
+    rr_ratio    = float(crud.get_setting(db, user.id, "rr_ratio")       or 3.0)
+    max_trades  = int(  crud.get_setting(db, user.id, "max_trades_day") or 3)
+    max_losses  = int(  crud.get_setting(db, user.id, "max_losses_day") or 2)
 
     PAIRS = ["EURUSD", "GBPUSD", "USDJPY", "USDCHF", "AUDUSD",
              "NZDUSD", "USDCAD", "EURJPY", "GBPJPY"]
@@ -124,7 +125,11 @@ def backtest_quick(days: int = 15, tf: str = "M3", db: Session = Depends(get_db)
     for symbol in PAIRS:
         for timeframe in timeframes:
             try:
-                result = run_backtest(symbol=symbol, timeframe=timeframe, days=days, rr_ratio=3.0, min_win_prob=50)
+                result = run_backtest(
+                    symbol=symbol, timeframe=timeframe, days=days,
+                    rr_ratio=rr_ratio, min_win_prob=50,
+                    max_daily_trades=max_trades, max_daily_losses=max_losses,
+                )
                 if result.get("total_signals", 0) > 0:
                     for t in result.get("all_trades", []):
                         t["symbol"] = symbol
@@ -144,6 +149,7 @@ def backtest_quick(days: int = 15, tf: str = "M3", db: Session = Depends(get_db)
     return {
         "days": days,
         "timeframe": tf.upper(),
+        "settings_used": {"rr_ratio": rr_ratio, "max_trades_day": max_trades, "max_losses_day": max_losses},
         "summary": summary,
         "trades": all_trades,
     }

@@ -1,0 +1,16 @@
+2026-11-14 00:00:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (18:30 UTC) - scanning (backtest parity).
+2026-11-14 00:00:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=Off-Session
+2026-11-14 00:00:10 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-14 00:00:10 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-14 00:03:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (18:33 UTC) - scanning (backtest parity).
+2026-11-14 00:03:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=Off-Session
+2026-11-14 00:03:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-14 00:03:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-14 00:06:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (18:36 UTC) - scanning (backtest parity).
+2026-11-14 00:06:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=Off-Session
+2026-11-14 00:06:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-14 00:06:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-14 00:09:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (18:39 UTC) - scanning (backtest parity).
+2026-11-14 00:09:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=Off-Session
+2026-11-14 00:09:10 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-14 00:09:10 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.

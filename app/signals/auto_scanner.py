@@ -212,10 +212,12 @@ MAX_SPREAD_PCT_OF_SL = 0.50
 ORDER_MAX_RETRIES = 2
 ORDER_RETRY_DELAY = 2
 
-# -- Fix 5: Per-pair daily protection matching backtest DailyRiskProtector ----
-PAIR_MAX_TRADES_DAY   = 3   # matches backtest max_daily_trades=3
-PAIR_MAX_LOSSES_DAY   = 2   # matches backtest max_daily_loss_r=2.0
-PAIR_MAX_CONSEC_LOSS  = 2   # matches backtest max_consec_losses=2
+# -- Fix 5: Per-pair daily protection — defaults used only as fallback --------
+# Actual values are read from user settings DB in _pair_can_trade().
+# These defaults apply only if the user has never saved settings.
+PAIR_MAX_TRADES_DAY   = 3   # fallback default
+PAIR_MAX_LOSSES_DAY   = 2   # fallback default
+PAIR_MAX_CONSEC_LOSS  = 2   # not configurable via UI — kept fixed
 
 # -- Account/weekly loss guards DISABLED for backtest parity -----------------
 # Backtest has no account-level or weekly drawdown guard.
@@ -285,8 +287,15 @@ def _session_allowed(symbol: str, session: str) -> bool:
 # through all news events. Keeping it live means missing trades the backtest
 # took. Disabled by default for parity.
 NEWS_FILTER_ENABLED = os.environ.get("NEWS_FILTER", "false").strip().lower() == "true"
-def _resolve_risk_usd(db) -> float:
-    """Return fixed $1.00 risk per trade — matches backtest RISK_USD = 1.0."""
+def _resolve_risk_usd(db, user_id: int = None) -> float:
+    """Return risk per trade from user settings, fallback to $1.00."""
+    if user_id is not None:
+        val = crud.get_setting(db, user_id, "max_risk_usd")
+        if val:
+            try:
+                return float(val)
+            except (ValueError, TypeError):
+                pass
     return BACKTEST_RISK_USD
 
 
@@ -417,13 +426,22 @@ def _account_loss_limit_ok(user) -> tuple:
 
 def _pair_can_trade(db, user_id: int, symbol: str) -> tuple:
     """
-    Issue 7 fix: Only count CLOSED trades (WIN/LOSS) toward daily cap.
-    OPEN/PENDING trades are excluded — they haven't resolved yet.
-    Matches backtest DailyRiskProtector which only records completed trades.
+    Read max_trades_day and max_losses_day from user settings DB.
+    Falls back to PAIR_MAX_TRADES_DAY / PAIR_MAX_LOSSES_DAY if not set.
+    Only counts CLOSED trades (WIN/LOSS) — OPEN/PENDING excluded.
     """
+    # Read user-configured limits from DB settings
+    try:
+        max_trades = int(crud.get_setting(db, user_id, "max_trades_day") or PAIR_MAX_TRADES_DAY)
+    except (ValueError, TypeError):
+        max_trades = PAIR_MAX_TRADES_DAY
+    try:
+        max_losses = int(crud.get_setting(db, user_id, "max_losses_day") or PAIR_MAX_LOSSES_DAY)
+    except (ValueError, TypeError):
+        max_losses = PAIR_MAX_LOSSES_DAY
+
     today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
 
-    # Issue 7: filter to CLOSED trades only (WIN + LOSS), not OPEN/PENDING
     closed_trades = db.query(models.Trade).filter(
         models.Trade.user_id   == user_id,
         models.Trade.symbol    == symbol,
@@ -431,14 +449,14 @@ def _pair_can_trade(db, user_id: int, symbol: str) -> tuple:
         models.Trade.result.in_(["WIN", "LOSS"]),
     ).order_by(models.Trade.open_time.asc()).all()
 
-    if len(closed_trades) >= PAIR_MAX_TRADES_DAY:
-        return False, "%s max trades/day (%d) reached" % (symbol, PAIR_MAX_TRADES_DAY)
+    if len(closed_trades) >= max_trades:
+        return False, "%s max trades/day (%d) reached" % (symbol, max_trades)
 
     losses = sum(1 for t in closed_trades if t.result == "LOSS")
-    if losses >= PAIR_MAX_LOSSES_DAY:
-        return False, "%s max losses/day (%d) reached" % (symbol, PAIR_MAX_LOSSES_DAY)
+    if losses >= max_losses:
+        return False, "%s max losses/day (%d) reached" % (symbol, max_losses)
 
-    # Consecutive losses from end of closed trade list
+    # Consecutive losses (fixed at 2 — not configurable via UI)
     consec = 0
     for t in reversed(closed_trades):
         if t.result == "LOSS":
@@ -958,7 +976,7 @@ async def auto_scan_loop():
                     # Refresh last_exit_time from DB at start of each pair/user
                     _update_pair_last_exit(db, user.id, symbol)
 
-                    risk_usd   = BACKTEST_RISK_USD
+                    risk_usd   = _resolve_risk_usd(db, user.id)
                     rr_setting = float(crud.get_setting(db, user.id, "rr_ratio") or 3.0)
                     exec_mode  = crud.get_setting(db, user.id, "execution_mode") or "manual"
 

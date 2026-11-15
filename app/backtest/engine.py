@@ -158,6 +158,8 @@ def run_backtest(
     rr_ratio:       float = 3.0,
     min_win_prob:   int   = 50,
     ladder_mode:    bool  = False,
+    max_daily_trades: int = 3,
+    max_daily_losses: int = 2,
 ) -> dict:
 
     tf = timeframe.upper()
@@ -199,7 +201,35 @@ def run_backtest(
     total_len = len(df)
     trades    = []
     last_exit = -1
-    fc = {"kz": 0, "no_pattern": 0, "no_ob": 0, "no_fill": 0, "low_score": 0}
+    fc = {"kz": 0, "no_pattern": 0, "no_ob": 0, "no_fill": 0, "low_score": 0, "daily_protection": 0}
+
+    # Daily protection state
+    _day_trades:  dict = {}   # {date: count}
+    _day_losses:  dict = {}   # {date: count}
+    _day_consec:  dict = {}   # {date: consecutive_losses}
+    _day_locked:  set  = set()  # dates locked for the day
+
+    def _day_can_trade(trade_date) -> bool:
+        if trade_date in _day_locked:
+            return False
+        if _day_trades.get(trade_date, 0) >= max_daily_trades:
+            _day_locked.add(trade_date)
+            return False
+        if _day_losses.get(trade_date, 0) >= max_daily_losses:
+            _day_locked.add(trade_date)
+            return False
+        if _day_consec.get(trade_date, 0) >= 2:  # consecutive losses fixed at 2
+            _day_locked.add(trade_date)
+            return False
+        return True
+
+    def _day_record(trade_date, outcome: str):
+        _day_trades[trade_date] = _day_trades.get(trade_date, 0) + 1
+        if outcome == "LOSS":
+            _day_losses[trade_date] = _day_losses.get(trade_date, 0) + 1
+            _day_consec[trade_date] = _day_consec.get(trade_date, 0) + 1
+        else:
+            _day_consec[trade_date] = 0
 
     step = 1
 
@@ -215,6 +245,12 @@ def run_backtest(
         hour    = c_time.hour
         sess    = _session(hour)
         in_kz, kz_name = _in_killzone(hour)
+
+        # Daily protection check
+        trade_date = c_time.date()
+        if not _day_can_trade(trade_date):
+            fc["daily_protection"] += 1
+            continue
 
         # Session filter — skip Off-Session by default (matching live scanner)
         if session_filter:
@@ -376,6 +412,7 @@ def run_backtest(
 
         last_exit = exit_i + 2
         exit_time = str(df.iloc[exit_i]["time"]) if exit_i < len(df) else ""
+        _day_record(trade_date, outcome)
         trades.append({
             "time":        str(fill_time),   # signal time = actual fill candle
             "exit_time":   exit_time,
