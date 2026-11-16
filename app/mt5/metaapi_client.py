@@ -510,9 +510,13 @@ class MetaApiClient:
                     tp_r = round(entry_r + min_sl_dist * 2.0, digits)
                     logger.info("Adjusting BUY TP to %s to meet broker min stop distance", tp_r)
 
-                # Always LIMIT at exact signal entry — backtest only fills on retest
-                action = "ORDER_TYPE_BUY_LIMIT"
-                logger.info("BUY LIMIT at %s (ask=%s)", entry_r, ask)
+                # If live Ask has already pulled back into or through the entry (in retest zone)
+                if ask and ask <= entry_r:
+                    action = "ORDER_TYPE_BUY"
+                    logger.info("BUY MARKET fill in retest zone at ask=%s (entry_ref=%s)", ask, entry_r)
+                else:
+                    action = "ORDER_TYPE_BUY_LIMIT"
+                    logger.info("BUY LIMIT at %s (ask=%s)", entry_r, ask)
 
             else:  # SELL
                 if sl_r and bid >= sl_r:
@@ -526,9 +530,13 @@ class MetaApiClient:
                     tp_r = round(entry_r - min_sl_dist * 2.0, digits)
                     logger.info("Adjusting SELL TP to %s to meet broker min stop distance", tp_r)
 
-                # Always LIMIT at exact signal entry — backtest only fills on retest
-                action = "ORDER_TYPE_SELL_LIMIT"
-                logger.info("SELL LIMIT at %s (bid=%s)", entry_r, bid)
+                # If live Bid has already pulled up into or through the entry (in retest zone)
+                if bid and bid >= entry_r:
+                    action = "ORDER_TYPE_SELL"
+                    logger.info("SELL MARKET fill in retest zone at bid=%s (entry_ref=%s)", bid, entry_r)
+                else:
+                    action = "ORDER_TYPE_SELL_LIMIT"
+                    logger.info("SELL LIMIT at %s (bid=%s)", entry_r, bid)
         else:
             action = "ORDER_TYPE_BUY" if direction.upper() == "BUY" else "ORDER_TYPE_SELL"
 

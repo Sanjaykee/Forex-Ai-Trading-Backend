@@ -842,16 +842,24 @@ async def pending_limit_monitor():
                     ask = float(price.get("ask", 0))
 
                     cancel_reason = None
-                    if direction == "BUY":
-                        if bid >= tp:
-                            cancel_reason = "price ran past TP (bid=%.5f >= tp=%.5f) without retest" % (bid, tp)
-                        elif bid <= sl:
-                            cancel_reason = "price hit SL before entry (bid=%.5f <= sl=%.5f)" % (bid, sl)
-                    else:  # SELL
-                        if ask <= tp:
-                            cancel_reason = "price ran past TP (ask=%.5f <= tp=%.5f) without retest" % (ask, tp)
-                        elif ask >= sl:
-                            cancel_reason = "price hit SL before entry (ask=%.5f >= sl=%.5f)" % (ask, sl)
+
+                    # TTL Rule: Expire pending limit orders older than 6 hours
+                    if trade.open_time:
+                        elapsed_s = (_dt.utcnow() - trade.open_time).total_seconds()
+                        if elapsed_s > 6 * 3600:
+                            cancel_reason = "order TTL expired (> 6.0 hours unfilled, elapsed=%.1fh)" % (elapsed_s / 3600.0)
+
+                    if not cancel_reason:
+                        if direction == "BUY":
+                            if bid >= tp:
+                                cancel_reason = "price ran past TP (bid=%.5f >= tp=%.5f) without retest" % (bid, tp)
+                            elif bid <= sl:
+                                cancel_reason = "price hit SL before entry (bid=%.5f <= sl=%.5f)" % (bid, sl)
+                        else:  # SELL
+                            if ask <= tp:
+                                cancel_reason = "price ran past TP (ask=%.5f <= tp=%.5f) without retest" % (ask, tp)
+                            elif ask >= sl:
+                                cancel_reason = "price hit SL before entry (ask=%.5f >= sl=%.5f)" % (ask, sl)
 
                     if cancel_reason:
                         result = cancel_pending_order(ticket, symbol, direction)

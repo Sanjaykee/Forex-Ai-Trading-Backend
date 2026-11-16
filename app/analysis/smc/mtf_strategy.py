@@ -1250,13 +1250,30 @@ def run_mtf_smc_backtest(
         is_filled  = False
         closest_price = None
 
+        # Check if live price at signal confirmation (t_m5) is already inside or through
+        # the retest zone (Smart Order Router: immediate market fill at candle close)
+        c_m5 = df5_slice.iloc[-1]
+        c_close = float(c_m5["close"])
+        if trade_dir == "BUY":
+            if c_close <= entry_price and c_close > sl_price:
+                is_filled = True
+        else:
+            if c_close >= entry_price and c_close < sl_price:
+                is_filled = True
+
         for _, sub_row in subsequent.iterrows():
             sub_h = float(sub_row["high"])
             sub_l = float(sub_row["low"])
             sub_t = sub_row["time"]
 
-            # ── Limit Order Fill / Miss Check (matches live TradeMonitor) ──
+            # ── Limit Order Fill / Miss Check (matches live TradeMonitor & Smart Order Router) ──
             if not is_filled:
+                # Time-to-Live (TTL): if limit order is unfilled after 6 hours (120 M3 / 72 M5 bars), cancel it
+                time_diff_s = (pd.to_datetime(sub_t) - pd.to_datetime(signal_time)).total_seconds()
+                if time_diff_s > 6 * 3600:
+                    outcome = "MISSED"
+                    break
+
                 if trade_dir == "BUY":
                     if closest_price is None or sub_l < closest_price:
                         closest_price = sub_l

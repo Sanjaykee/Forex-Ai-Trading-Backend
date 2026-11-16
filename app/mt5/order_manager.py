@@ -23,13 +23,53 @@ def _place_order_mt5(symbol: str, direction: str, lot: float, sl: float, tp: flo
         return {"success": False, "error": f"No tick for {symbol} — add it to Market Watch"}
 
     digits = 3 if "JPY" in symbol.upper() else 5
+    pip_val = 0.01 if "JPY" in symbol.upper() else 0.0001
 
     if entry:
-        price      = round(float(entry), digits)
-        order_type = mt5.ORDER_TYPE_BUY_LIMIT if direction.upper() == "BUY" else mt5.ORDER_TYPE_SELL_LIMIT
-        action     = mt5.TRADE_ACTION_PENDING
-        filling    = mt5.ORDER_FILLING_RETURN
-        otype_str  = "ORDER_TYPE_BUY_LIMIT" if direction.upper() == "BUY" else "ORDER_TYPE_SELL_LIMIT"
+        target_entry = round(float(entry), digits)
+        sl_val = round(float(sl), digits) if sl else None
+        tp_val = round(float(tp), digits) if tp else None
+
+        if direction.upper() == "BUY":
+            # Invalidation check: if price already hit or broke SL
+            if sl_val and tick.ask <= sl_val:
+                return {"success": False, "error": f"BUY setup invalidated: live Ask {tick.ask} <= SL {sl_val}"}
+
+            # Check if live Ask has already pulled back into or through the entry (in retest zone)
+            if tick.ask <= target_entry:
+                # Price is at or below target entry (favorable retest) -> Execute immediate MARKET BUY
+                price      = tick.ask
+                order_type = mt5.ORDER_TYPE_BUY
+                action     = mt5.TRADE_ACTION_DEAL
+                filling    = mt5.ORDER_FILLING_IOC
+                otype_str  = "ORDER_TYPE_MARKET"
+            else:
+                # Price is still above entry -> Place standard BUY LIMIT
+                price      = target_entry
+                order_type = mt5.ORDER_TYPE_BUY_LIMIT
+                action     = mt5.TRADE_ACTION_PENDING
+                filling    = mt5.ORDER_FILLING_RETURN
+                otype_str  = "ORDER_TYPE_BUY_LIMIT"
+        else:  # SELL
+            # Invalidation check: if price already hit or broke SL
+            if sl_val and tick.bid >= sl_val:
+                return {"success": False, "error": f"SELL setup invalidated: live Bid {tick.bid} >= SL {sl_val}"}
+
+            # Check if live Bid has already pulled up into or through the entry (in retest zone)
+            if tick.bid >= target_entry:
+                # Price is at or above target entry (favorable retest) -> Execute immediate MARKET SELL
+                price      = tick.bid
+                order_type = mt5.ORDER_TYPE_SELL
+                action     = mt5.TRADE_ACTION_DEAL
+                filling    = mt5.ORDER_FILLING_IOC
+                otype_str  = "ORDER_TYPE_MARKET"
+            else:
+                # Price is still below entry -> Place standard SELL LIMIT
+                price      = target_entry
+                order_type = mt5.ORDER_TYPE_SELL_LIMIT
+                action     = mt5.TRADE_ACTION_PENDING
+                filling    = mt5.ORDER_FILLING_RETURN
+                otype_str  = "ORDER_TYPE_SELL_LIMIT"
     else:
         price      = tick.ask if direction.upper() == "BUY" else tick.bid
         order_type = mt5.ORDER_TYPE_BUY if direction.upper() == "BUY" else mt5.ORDER_TYPE_SELL
