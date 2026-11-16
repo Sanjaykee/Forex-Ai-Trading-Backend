@@ -147,6 +147,7 @@ def print_trade(idx, t, fin):
 
 def run():
     all_trades   = []
+    all_missed   = []
     pair_results = []
     trade_idx    = 0
 
@@ -303,6 +304,8 @@ def run():
             wr     = result["win_rate"]
             spread_adj_net_r = result.get("spread_adj_net_r", 0.0)
             missed = result.get("rejections", {}).get("limit_order_missed", 0)
+            pair_missed_list = result.get("missed_trades", [])
+            all_missed.extend(pair_missed_list)
 
         # compute financials per trade
         pair_pnl = 0.0
@@ -372,17 +375,17 @@ def run():
     print("  Spread-adjusted : %s$%.2f  (after entry spread cost)" % ("+" if spread_adj_pnl >= 0 else "-", abs(spread_adj_pnl)))
     print("=" * 65)
 
-    active = [p for p in pair_results if p["signals"] > 0]
+    active = [p for p in pair_results if p["signals"] > 0 or p.get("missed", 0) > 0]
     if active:
         print("\n  Per-Pair Summary:")
-        print("  %-10s %7s %4s %4s %6s %10s" % (
-            "Pair", "Signals", "W", "L", "WR%", "Net P&L"))
-        print("  " + "-" * 50)
+        print("  %-10s %7s %4s %4s %6s %7s %10s" % (
+            "Pair", "Signals", "W", "L", "WR%", "Missed", "Net P&L"))
+        print("  " + "-" * 58)
         for p in active:
             sign = "+" if p["net_pnl"] >= 0 else ""
-            print("  %-10s %7d %4d %4d %5.1f%%  %s$%.2f" % (
+            print("  %-10s %7d %4d %4d %5.1f%% %7d  %s$%.2f" % (
                 p["symbol"], p["signals"], p["wins"], p["losses"],
-                p["win_rate"], sign, p["net_pnl"]
+                p["win_rate"], p.get("missed", 0), sign, p["net_pnl"]
             ))
 
     # ── Per-Session Summary ───────────────────────────────────────────────────
@@ -411,6 +414,40 @@ def run():
             sign = "+" if d["pnl"] >= 0 else ""
             print("  %-14s %7d %4d %4d %5.1f%%  %s$%.2f" % (
                 sess, d["trades"], d["wins"], d["losses"], wr, sign, abs(d["pnl"])
+            ))
+
+    # ── Missed Orders Detailed Breakdown ──────────────────────────────────────
+    if all_missed:
+        print("\n" + "=" * 65)
+        print("  MISSED ORDERS DETAILED BREAKDOWN (%d Total Missed)" % len(all_missed))
+        print("  (Price retested close to entry, then reached 1:3 TP without fill)")
+        print("=" * 65)
+
+        # 1. Distance Distribution
+        le_1 = sum(1 for m in all_missed if m["missed_pips"] <= 1.0)
+        le_2 = sum(1 for m in all_missed if 1.0 < m["missed_pips"] <= 2.0)
+        le_3 = sum(1 for m in all_missed if 2.0 < m["missed_pips"] <= 3.0)
+        le_5 = sum(1 for m in all_missed if 3.0 < m["missed_pips"] <= 5.0)
+        gt_5 = sum(1 for m in all_missed if m["missed_pips"] > 5.0)
+
+        print("\n  Missed Distance Distribution:")
+        print("    Within <= 1.0 pip  : %2d setups  (Nearly filled! Retest was <= 1 pip away)" % le_1)
+        print("    Within 1.1 - 2.0 p : %2d setups" % le_2)
+        print("    Within 2.1 - 3.0 p : %2d setups" % le_3)
+        print("    Within 3.1 - 5.0 p : %2d setups" % le_5)
+        print("    Farther > 5.0 p    : %2d setups" % gt_5)
+
+        # 2. Individual Missed Setups List
+        print("\n  List of All Missed Setups:")
+        print("  %-3s %-7s %-4s %-16s %-9s %-12s %-10s %-9s" % (
+            "#", "Pair", "Dir", "Time (IST)", "Limit", "Retested To", "Missed By", "TP Target"
+        ))
+        print("  " + "-" * 78)
+        for idx, m in enumerate(all_missed, 1):
+            print("  %-3d %-7s %-4s %-16s %-9s %-12s %-10s %-9s" % (
+                idx, m["pair"], m["direction"], m["timestamp_ist"],
+                m["entry"], m["closest_retest"],
+                "%.1f pips" % m["missed_pips"], m["take_profit"]
             ))
 
 

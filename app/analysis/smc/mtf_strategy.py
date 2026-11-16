@@ -1152,6 +1152,7 @@ def run_mtf_smc_backtest(
     test_indices = m5_test.index.tolist()
 
     trades = []
+    missed_trades = []
     rejections = {
         "outside_session": 0,
         "m15_ranging": 0,
@@ -1247,6 +1248,7 @@ def run_mtf_smc_backtest(
         r_multiple = 0.0
         exit_time  = None
         is_filled  = False
+        closest_price = None
 
         for _, sub_row in subsequent.iterrows():
             sub_h = float(sub_row["high"])
@@ -1256,6 +1258,8 @@ def run_mtf_smc_backtest(
             # ── Limit Order Fill / Miss Check (matches live TradeMonitor) ──
             if not is_filled:
                 if trade_dir == "BUY":
+                    if closest_price is None or sub_l < closest_price:
+                        closest_price = sub_l
                     # If price ran away straight to TP without pulling back to entry: MISSED
                     if sub_h >= tp_price and sub_l > entry_price:
                         outcome = "MISSED"
@@ -1266,6 +1270,8 @@ def run_mtf_smc_backtest(
                     else:
                         continue
                 else:  # SELL
+                    if closest_price is None or sub_h > closest_price:
+                        closest_price = sub_h
                     # If price ran away straight to TP without pulling back to entry: MISSED
                     if sub_l <= tp_price and sub_h < entry_price:
                         outcome = "MISSED"
@@ -1307,6 +1313,26 @@ def run_mtf_smc_backtest(
         if outcome in ("OPEN", "MISSED") or not is_filled:
             if outcome == "MISSED":
                 rejections["limit_order_missed"] += 1
+                if closest_price is not None:
+                    if trade_dir == "BUY":
+                        missed_pips = round((closest_price - entry_price) / pip_size, 1)
+                    else:
+                        missed_pips = round((entry_price - closest_price) / pip_size, 1)
+                else:
+                    missed_pips = 0.0
+                missed_trades.append({
+                    "timestamp":      str(entry_time),
+                    "timestamp_ist":  to_ist_str(entry_time),
+                    "pair":           symbol,
+                    "direction":      trade_dir,
+                    "entry":          entry_price,
+                    "closest_retest": round(closest_price, 5) if closest_price is not None else entry_price,
+                    "missed_pips":    max(0.0, missed_pips),
+                    "stop_loss":      sl_price,
+                    "take_profit":    tp_price,
+                    "session":        setup["session"],
+                    "score":          setup["score"],
+                })
             else:
                 rejections["limit_order_unfilled"] += 1
             continue
@@ -1425,6 +1451,7 @@ def run_mtf_smc_backtest(
         "max_consecutive_wins": max_c_wins,
         "sessions": sess_stats,
         "rejections": rejections,
+        "missed_trades": missed_trades,
         "all_trades": trades,
         "recent_trades": trades[-5:],
     }
