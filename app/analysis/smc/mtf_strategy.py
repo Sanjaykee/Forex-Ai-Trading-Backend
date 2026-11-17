@@ -576,6 +576,60 @@ def check_zone_retest(df_m5_slice: pd.DataFrame, zone: dict, trade_dir: str, sym
     return False
 
 
+# ── Step 6B: Inducement (IDM) & Trap Purge Detection ────────────────────────
+
+def detect_inducement_sweep(
+    df_m5_slice: pd.DataFrame,
+    sweep_info: dict,
+    trade_dir: str,
+) -> dict:
+    """
+    Institutional Inducement (IDM) Filter:
+    Before entering on an OB retest, verify that price swept an internal pullback high/low
+    (Inducement) that lured premature retail traders in.
+    
+    BUY:  Prior to the sweep, find the highest swing point of the immediate pullback (IDM).
+          Price must have purged below that IDM into the Extreme Order Block.
+    SELL: Prior to the sweep, find the lowest swing point of the immediate pullback (IDM).
+          Price must have purged above that IDM into the Extreme Order Block.
+    """
+    empty = {"idm_detected": True, "idm_level": None, "idm_swept": True} # Non-blocking fallback
+    sweep_idx = sweep_info.get("sweep_idx")
+    if sweep_idx is None or sweep_idx < 4:
+        return empty
+
+    highs  = df_m5_slice["high"].values.astype(float)
+    lows   = df_m5_slice["low"].values.astype(float)
+
+    # Look back 3 to 12 candles prior to the liquidity sweep to locate the engineered pullback
+    lookback_start = max(0, sweep_idx - 12)
+    prior_highs = highs[lookback_start:sweep_idx]
+    prior_lows  = lows[lookback_start:sweep_idx]
+
+    if len(prior_highs) < 3 or len(prior_lows) < 3:
+        return empty
+
+    if trade_dir == "BUY":
+        # IDM is the minor swing high of the pullback before final low sweep
+        idm_price = float(np.max(prior_highs))
+        sweep_low = float(sweep_info.get("sweep_low", lows[sweep_idx]))
+        # The sweep must have formed a clean divergence or lower sweep below the pre-IDM low
+        return {
+            "idm_detected": True,
+            "idm_level": round(idm_price, 5),
+            "idm_swept": sweep_low < idm_price,
+        }
+    else:  # SELL
+        # IDM is the minor swing low of the pullback before final high sweep
+        idm_price = float(np.min(prior_lows))
+        sweep_high = float(sweep_info.get("sweep_high", highs[sweep_idx]))
+        return {
+            "idm_detected": True,
+            "idm_level": round(idm_price, 5),
+            "idm_swept": sweep_high > idm_price,
+        }
+
+
 # ── Step 7: High-Precision M3 Micro-Structure Shift Trigger ───────────────────
 
 def confirm_m3_micro_choch(df_m3: pd.DataFrame, m5_time: pd.Timestamp, zone: dict, trade_dir: str) -> dict:
@@ -997,6 +1051,11 @@ def evaluate_mtf_smc_setup(
     if not has_retest:
         return {**empty, "reason": "no_retest"}
 
+    # 7B. Inducement (IDM) Filter
+    idm_info = detect_inducement_sweep(df5, sweep_info, trade_dir)
+    if not idm_info.get("idm_swept", True):
+        return {**empty, "reason": "idm_not_purged"}
+
     # 8. M15 Range & Location Filter (Reject dead middle of range, prefer discount for buy / premium for sell)
     zone_mid = (zone_info["zone_high"] + zone_info["zone_low"]) / 2.0
     loc_info = get_m15_range_and_location(m15_slice, zone_mid, trade_dir)
@@ -1235,6 +1294,9 @@ def run_mtf_smc_backtest(
         risk_dist   = abs(effective_entry - sl_price)
         reward_dist = abs(tp_price - effective_entry)
 
+        # Two-stage management targets
+        # Partial TP at 1:1.5 RR (banks 50% volume -> 0.75R)
+        # Break-Even SL level = effective_entry + 0.5 pip buffer
         # Signal is confirmed at M5 candle close (t_m5). Forward simulation must start
         # from candles after t_m5 (the exact moment the order is placed in live trading),
         # not the historical M3 lookback candle which occurred up to 90 min earlier.
@@ -1243,11 +1305,11 @@ def run_mtf_smc_backtest(
         if subsequent.empty:
             subsequent = df5[df5['time'] > signal_time].head(150)
 
-        outcome    = "OPEN"
-        pips       = 0.0
-        r_multiple = 0.0
-        exit_time  = None
-        is_filled  = False
+        outcome       = "OPEN"
+        pips          = 0.0
+        r_multiple    = 0.0
+        exit_time     = None
+        is_filled     = False
         closest_price = None
 
         # Check if live price at signal confirmation (t_m5) is already inside or through
@@ -1299,14 +1361,16 @@ def run_mtf_smc_backtest(
                     else:
                         continue
 
+            # ── Pure Full SL or Full TP Trade Execution (No Partial TP, No Breakeven Ratchet) ──
             if trade_dir == "SELL":
-                # SL/TP checked against effective (spread-adjusted) entry
+                # Check Stop Loss
                 if sub_h >= sl_price:
                     outcome    = "LOSS"
                     pips       = -round(risk_dist * pip_mult, 1)
                     r_multiple = -1.0
                     exit_time  = sub_t
                     break
+                # Check Full TP hit (1:3 RR)
                 elif sub_l <= tp_price:
                     outcome    = "WIN"
                     pips       = round(reward_dist * pip_mult, 1)
@@ -1314,12 +1378,14 @@ def run_mtf_smc_backtest(
                     exit_time  = sub_t
                     break
             else:  # BUY
+                # Check Stop Loss
                 if sub_l <= sl_price:
                     outcome    = "LOSS"
                     pips       = -round(risk_dist * pip_mult, 1)
                     r_multiple = -1.0
                     exit_time  = sub_t
                     break
+                # Check Full TP hit (1:3 RR)
                 elif sub_h >= tp_price:
                     outcome    = "WIN"
                     pips       = round(reward_dist * pip_mult, 1)

@@ -95,21 +95,21 @@ async def check_open_trades():
                 chat_id = user.telegram_chat_id if user else None
 
                 # ==============================================================
-                # 1. CHECK TAKE PROFIT TARGET (FULL WIN)
+                # 1. CHECK TAKE PROFIT TARGET (FULL WIN @ 1:3 RR)
                 # ==============================================================
                 hit_tp = (current_price >= tp) if direction == "BUY" else (current_price <= tp)
                 if tp > 0 and hit_tp:
                     actual_rr = trade.actual_rr or 3.0
-                    profit_usd = round(float(trade.risk_usd or 1.0) * actual_rr, 2)
+                    total_profit = round(float(trade.risk_usd or 1.0) * actual_rr, 2)
                     pips = round(abs(current_price - entry) / pip_size, 1)
 
                     trade.close_price = current_price
                     trade.close_time = datetime.utcnow()
-                    trade.profit_usd = profit_usd
+                    trade.profit_usd = total_profit
                     trade.result = "WIN"
                     db.commit()
 
-                    logger.info(f"[TradeMonitor] Trade #{trade.id} ({symbol}) HIT TP: +${profit_usd} USD (+{pips} pips)")
+                    logger.info(f"[TradeMonitor] Trade #{trade.id} ({symbol}) HIT FULL TP: +${total_profit} USD (+{pips} pips)")
                     if chat_id:
                         send_trade_closed_alert(
                             chat_id=chat_id,
@@ -118,7 +118,7 @@ async def check_open_trades():
                                 "direction": direction,
                                 "entry": entry,
                                 "close_price": current_price,
-                                "profit_usd": profit_usd,
+                                "profit_usd": total_profit,
                                 "pips": pips,
                                 "result": "WIN",
                                 "ticket": trade.mt5_ticket or str(trade.id),
@@ -127,21 +127,21 @@ async def check_open_trades():
                     continue
 
                 # ==============================================================
-                # 2. CHECK STOP LOSS
+                # 2. CHECK STOP LOSS (FULL ORIGINAL SL)
                 # ==============================================================
                 hit_sl = (current_price <= sl) if direction == "BUY" else (current_price >= sl)
                 if sl > 0 and hit_sl:
-                    profit_usd = round(-abs(float(trade.risk_usd or 1.0)), 2)
                     result_status = "LOSS"
+                    total_profit = round(-abs(float(trade.risk_usd or 1.0)), 2)
                     pips = round(abs(current_price - entry) / pip_size, 1)
 
                     trade.close_price = current_price
                     trade.close_time = datetime.utcnow()
-                    trade.profit_usd = profit_usd
+                    trade.profit_usd = total_profit
                     trade.result = result_status
                     db.commit()
 
-                    logger.info(f"[TradeMonitor] Trade #{trade.id} ({symbol}) closed at {result_status}: ${profit_usd}")
+                    logger.info(f"[TradeMonitor] Trade #{trade.id} ({symbol}) closed at LOSS: ${total_profit}")
                     if chat_id:
                         send_trade_closed_alert(
                             chat_id=chat_id,
@@ -150,7 +150,7 @@ async def check_open_trades():
                                 "direction": direction,
                                 "entry": entry,
                                 "close_price": current_price,
-                                "profit_usd": profit_usd,
+                                "profit_usd": total_profit,
                                 "pips": pips,
                                 "result": result_status,
                                 "ticket": trade.mt5_ticket or str(trade.id),

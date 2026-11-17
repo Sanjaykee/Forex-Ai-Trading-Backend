@@ -108,7 +108,11 @@ def trade_financials(t):
     sl_pips   = round(sl_dist / pip_size, 1)
     tp_pips   = round(tp_dist / pip_size, 1)
 
-    lot       = calculate_lot_size(RISK_USD, entry, sl, SYM_INFO, symbol)
+    if t.get("lot") and float(t["lot"]) > 0:
+        lot = float(t["lot"])
+    else:
+        lot = calculate_lot_size(RISK_USD, entry, sl, SYM_INFO, symbol)
+
     risk_amt  = actual_risk_usd(lot, entry, sl, symbol)
     reward_amt = round(lot * (tp_pips * pip_val), 2)
 
@@ -266,6 +270,7 @@ def run():
                     "entry":         entry,
                     "stop_loss":     sl_price,
                     "take_profit":   tp_price,
+                    "lot":           float(rec.get("lot", 0.01)),
                     "rr":            "1:3.00",
                     "rr_val":        3.0,
                     "score":         score,
