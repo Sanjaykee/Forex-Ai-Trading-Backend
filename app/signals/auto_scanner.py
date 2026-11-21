@@ -25,6 +25,7 @@ import logging.handlers
 import os
 import uuid
 import requests
+import pandas as pd
 from datetime import datetime, timezone, timedelta
 from app.db.database import SessionLocal
 from app.db import models, crud
@@ -372,15 +373,28 @@ def _signal_identity(symbol: str, direction: str, m3_trigger_ts) -> str:
 def _is_duplicate(db, user_id: int, symbol: str, direction: str,
                   m3_trigger_ts=None) -> bool:
     # Block only if a trade is currently OPEN/PENDING on this pair
+    # Check if there is an active trade for this symbol
     active = db.query(models.Trade).filter(
         models.Trade.user_id == user_id,
         models.Trade.symbol  == symbol,
         models.Trade.result.in_(["OPEN", "PENDING"]),
     ).first()
     if active:
-        logger.info("[VariantC] %s %s skipped - active trade #%d (%s)",
-                    symbol, direction, active.id, active.result)
-        return True
+        # Unlock 1-trade lockout: allow fresh setup if active trade has been open for > 4 hours
+        trade_open_time = active.open_time or active.created_at
+        if trade_open_time:
+            age_s = (datetime.now(timezone.utc) - pd.to_datetime(trade_open_time, utc=True)).total_seconds()
+            if age_s < 4 * 3600:
+                logger.info("[VariantC] %s %s skipped - active trade #%d (%s, open %.1fh < 4h)",
+                            symbol, direction, active.id, active.result, age_s / 3600.0)
+                return True
+            else:
+                logger.info("[VariantC] %s %s allowed - active trade #%d has run for %.1fh (>= 4h lockout passed)",
+                            symbol, direction, active.id, age_s / 3600.0)
+        else:
+            logger.info("[VariantC] %s %s skipped - active trade #%d (%s)",
+                        symbol, direction, active.id, active.result)
+            return True
 
     # In-memory identity check (exact same M3 candle timestamp)
     identity = _signal_identity(symbol, direction, m3_trigger_ts)
@@ -891,7 +905,7 @@ async def pending_limit_monitor():
 # last_exit_time:      no new trade evaluated until previous trade has exited.
 # last_scanned_m5_time: tracks which M5 candles have already been evaluated so
 #                       each cycle only replays candles that closed since last scan.
-import pandas as _pd
+_pd = pd
 _pair_last_exit_time:    dict = {}   # {symbol: _pd.Timestamp}
 _pair_last_scanned_m5:   dict = {}   # {symbol: _pd.Timestamp | None}
 

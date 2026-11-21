@@ -33,35 +33,64 @@ DEFAULT_MAX_LOSSES_DAY  = 5
 DEFAULT_MAX_CONSEC_LOSS = 5   # not configurable via UI
 
 
-def _load_user_risk_settings() -> tuple:
+def _load_user_risk_settings(target_email: str = "sanjaykee79@gmail.com") -> tuple:
     """
-    Read max_trades_day and max_losses_day from the first user's DB settings.
+    Read max_trades_day, max_losses_day, max_risk_usd, and rr_ratio from the specified user's DB settings.
+    Defaults to checking sanjaykee79@gmail.com.
     Falls back to DEFAULT_* values if DB is unavailable or settings not saved.
-    Returns (max_trades_day, max_losses_day, max_consec_loss).
+    Returns (max_trades_day, max_losses_day, max_consec_loss, risk_usd, rr_ratio, user_email).
     """
     try:
         from app.db.database import SessionLocal
-        from app.db.models import User
+        from app.db.models import User, Settings
         from app.db import crud
         db = SessionLocal()
-        user = db.query(User).first()
-        if user:
-            max_trades = int(crud.get_setting(db, user.id, "max_trades_day") or DEFAULT_MAX_TRADES_DAY)
-            max_losses = int(crud.get_setting(db, user.id, "max_losses_day") or DEFAULT_MAX_LOSSES_DAY)
+
+        # 1. First look up directly by user email
+        user_obj = db.query(User).filter(User.email.ilike(target_email)).first()
+        
+        # 2. Fallback to user who has configured settings
+        if not user_obj:
+            setting_row = db.query(Settings.user_id).filter(Settings.key == "max_trades_day").order_by(Settings.id.desc()).first()
+            if setting_row:
+                user_obj = db.query(User).filter(User.id == setting_row[0]).first()
+            else:
+                user_obj = db.query(User).order_by(User.id.desc()).first()
+
+        user_email = user_obj.email if user_obj else "default"
+        if user_obj:
+            target_uid = user_obj.id
+            raw_trades = crud.get_setting(db, target_uid, "max_trades_day")
+            raw_losses = crud.get_setting(db, target_uid, "max_losses_day")
+            raw_risk   = crud.get_setting(db, target_uid, "max_risk_usd")
+            raw_rr     = crud.get_setting(db, target_uid, "rr_ratio")
+
+            max_trades = int(raw_trades) if raw_trades else DEFAULT_MAX_TRADES_DAY
+            max_losses = int(raw_losses) if raw_losses else DEFAULT_MAX_LOSSES_DAY
+            risk_usd   = float(raw_risk) if raw_risk else 1.0
+            rr_ratio   = float(raw_rr) if raw_rr else 3.0
         else:
             max_trades, max_losses = DEFAULT_MAX_TRADES_DAY, DEFAULT_MAX_LOSSES_DAY
+            risk_usd, rr_ratio = 1.0, 3.0
+
         db.close()
-        return max_trades, max_losses, DEFAULT_MAX_CONSEC_LOSS
-    except Exception:
-        return DEFAULT_MAX_TRADES_DAY, DEFAULT_MAX_LOSSES_DAY, DEFAULT_MAX_CONSEC_LOSS
+        return max_trades, max_losses, DEFAULT_MAX_CONSEC_LOSS, risk_usd, rr_ratio, user_email
+    except Exception as e:
+        return DEFAULT_MAX_TRADES_DAY, DEFAULT_MAX_LOSSES_DAY, DEFAULT_MAX_CONSEC_LOSS, 1.0, 3.0, f"error: {e}"
 
 
 from app.mt5.source_router import get_candles_range_fetcher
 from app.signals.signal_logger import load_signals
 from datetime import timedelta
 
+try:
+    import MetaTrader5 as mt5
+    mt5.initialize()
+except Exception:
+    pass
+
 # Context lookback needed before start_date so the strategy has enough history
-_CONTEXT = {"H1": timedelta(days=120), "M5": timedelta(days=30), "M3": timedelta(days=20)}
+_CONTEXT = {"H1": timedelta(days=120), "M15": timedelta(days=60), "M5": timedelta(days=30), "M3": timedelta(days=20)}
 
 _range_fetcher = get_candles_range_fetcher()
 _candle_cache: dict = {}
@@ -150,35 +179,39 @@ def print_trade(idx, t, fin):
 
 
 def run():
+    global RISK_USD, MIN_RR
     all_trades   = []
     all_missed   = []
     pair_results = []
     trade_idx    = 0
 
-    # Load signal log for the date range (use START_DATE for single-day)
-    signal_log = load_signals(START_DATE)
-    using_log  = bool(signal_log)
-    source_label = "signal_log" if using_log else "mt5"
+    # Backtest evaluates 100% independently from raw MT5 candle data (NO signal_log bypass)
+    using_log    = False
+    source_label = "mt5"
+
+    max_trades_day, max_losses_day, max_consec_loss, db_risk_usd, db_rr, user_email = _load_user_risk_settings()
+    RISK_USD = db_risk_usd
+    MIN_RR   = db_rr
 
     print("=" * 65)
     print("  VARIANT C BACKTEST  %s to %s" % (START_DATE, END_DATE))
     print("  Strategy : MTF SMC A+  |  RR 1:%.1f  |  Score >= %d/14" % (MIN_RR, MIN_SCORE))
     print("  Source   : %s  |  Risk/Trade: $%.2f  |  Lot step: 0.01" % (source_label, RISK_USD))
+    print("  User Profile : %s (Settings Loaded from Database)" % user_email)
     if using_log:
         print("  Signal log found — using exact live entry prices for %s" % START_DATE)
     print("=" * 65)
-
-    max_trades_day, max_losses_day, max_consec_loss = _load_user_risk_settings()
     print("  Risk Limits : Max %d trades/day | Max %dR loss/day | Max %d consec losses" % (
         max_trades_day, max_losses_day, max_consec_loss))
     print("=" * 65)
 
     for symbol in PAIRS:
         print("  Fetching %s..." % symbol, end=" ", flush=True)
-        df15 = load_candles(symbol, "H1")
-        df5  = load_candles(symbol, "M5")
-        df3  = load_candles(symbol, "M3")
-        print("H1=%d M5=%d M3=%d" % (len(df15), len(df5), len(df3)), flush=True)
+        df15   = load_candles(symbol, "H1")
+        df_m15 = load_candles(symbol, "M15")
+        df5    = load_candles(symbol, "M5")
+        df3    = load_candles(symbol, "M3")
+        print("H1=%d M15=%d M5=%d M3=%d" % (len(df15), len(df_m15), len(df5), len(df3)), flush=True)
 
         if df15.empty or df5.empty or df3.empty:
             print("\n[%s] SKIPPED - no data from active source" % symbol)
@@ -301,6 +334,7 @@ def run():
                 max_daily_trades=max_trades_day,
                 max_daily_loss_r=float(max_losses_day),
                 max_consec_losses=max_consec_loss,
+                df_m15=df_m15,
             )
             trades = result["all_trades"]
             total  = result["total_signals"]

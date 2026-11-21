@@ -117,51 +117,57 @@ def get_m15_bias(df_m15_slice: pd.DataFrame) -> dict:
     last_sh = sh3[-1][1]
     last_sl = sl3[-1][1]
 
-    # Strong bullish: 2 HH + 2 HL in last 3 swings AND price above EMA50
-    # Strong bearish: 2 LH + 2 LL in last 3 swings AND price below EMA50
+    # Strong bullish: (2 HH + 1 HL) OR (1 HH with net Higher High over swing cycle + HL) AND price above EMA50
+    # Strong bearish: (2 LH + 1 LL) OR (1 LH with net Lower High over swing cycle + LL) AND price below EMA50
     # Weak/conflicting: RANGING
-    bullish_structure = hh_count >= 2 and hl_count >= 1
-    bearish_structure = lh_count >= 2 and ll_count >= 1
+    bullish_structure = (hh_count >= 2 and hl_count >= 1) or (hh_count >= 1 and last_sh > sh3[0][1] and hl_count >= 1)
+    bearish_structure = (lh_count >= 2 and ll_count >= 1) or (lh_count >= 1 and last_sh < sh3[0][1] and ll_count >= 1)
 
     # BOS confirmation: current close must have broken the last swing high (bull) or low (bear)
     # This prevents calling a retracement inside a bearish trend as BULLISH
     bullish_bos_confirmed = closes[-1] > last_sh
     bearish_bos_confirmed = closes[-1] < last_sl
 
-    if bullish_structure and price_above_ema50:
+    # D1 Higher-Timeframe Trend Confirmation (EMA200 on H1 proxy ~ 8 days)
+    # A true macro trend filter ensuring we do not fight the prevailing macro flow
+    ema200 = pd.Series(closes).ewm(span=200, adjust=False).mean().values if len(closes) >= 200 else ema50
+    macro_bullish = closes[-1] >= ema200[-1]
+    macro_bearish = closes[-1] <= ema200[-1]
+
+    if bullish_structure and price_above_ema50 and macro_bullish:
         return {
             "bias": "BULLISH",
-            "reason": f"Bullish Structure: {hh_count} HH + {hl_count} HL confirmed",
+            "reason": f"Bullish Structure: {hh_count} HH + {hl_count} HL confirmed + Macro D1 Bullish",
             "is_valid": True,
             "sh_list": sh,
             "sl_list": sl,
             "last_sh": last_sh,
             "last_sl": last_sl,
         }
-    elif bearish_structure and not price_above_ema50:
+    elif bearish_structure and not price_above_ema50 and macro_bearish:
         return {
             "bias": "BEARISH",
-            "reason": f"Bearish Structure: {lh_count} LH + {ll_count} LL confirmed",
+            "reason": f"Bearish Structure: {lh_count} LH + {ll_count} LL confirmed + Macro D1 Bearish",
             "is_valid": True,
             "sh_list": sh,
             "sl_list": sl,
             "last_sh": last_sh,
             "last_sl": last_sl,
         }
-    elif bullish_bos_confirmed and price_above_ema50:
+    elif bullish_bos_confirmed and price_above_ema50 and macro_bullish:
         return {
             "bias": "BULLISH",
-            "reason": "Bullish BOS: price broke above last swing high + above EMA50",
+            "reason": "Bullish BOS: price broke above last swing high + above EMA50 & EMA200",
             "is_valid": True,
             "sh_list": sh,
             "sl_list": sl,
             "last_sh": last_sh,
             "last_sl": last_sl,
         }
-    elif bearish_bos_confirmed and not price_above_ema50:
+    elif bearish_bos_confirmed and not price_above_ema50 and macro_bearish:
         return {
             "bias": "BEARISH",
-            "reason": "Bearish BOS: price broke below last swing low + below EMA50",
+            "reason": "Bearish BOS: price broke below last swing low + below EMA50 & EMA200",
             "is_valid": True,
             "sh_list": sh,
             "sl_list": sl,
@@ -208,9 +214,9 @@ def get_m15_range_and_location(df_m15_slice: pd.DataFrame, current_price: float,
     loc_pct = (current_price - range_low) / range_span * 100.0
 
     if trade_dir == "BUY":
-        is_valid = loc_pct <= 70.0
+        is_valid = loc_pct <= 62.0
         is_discount = loc_pct <= 50.0
-        zone_desc = "DEEP DISCOUNT" if loc_pct <= 35.0 else ("DISCOUNT" if is_discount else ("EQUILIBRIUM" if loc_pct <= 70.0 else "EXTREME PREMIUM (CHASING)"))
+        zone_desc = "DEEP DISCOUNT" if loc_pct <= 35.0 else ("DISCOUNT" if is_discount else ("EQUILIBRIUM" if loc_pct <= 62.0 else "EXTREME PREMIUM (CHASING)"))
         return {
             "valid": is_valid,
             "location_pct": round(loc_pct, 1),
@@ -220,9 +226,9 @@ def get_m15_range_and_location(df_m15_slice: pd.DataFrame, current_price: float,
             "range_low": range_low,
         }
     else: # SELL
-        is_valid = loc_pct >= 30.0
+        is_valid = loc_pct >= 38.0
         is_premium = loc_pct >= 50.0
-        zone_desc = "DEEP PREMIUM" if loc_pct >= 65.0 else ("PREMIUM" if is_premium else ("EQUILIBRIUM" if loc_pct >= 30.0 else "EXTREME DISCOUNT (SELLING BOTTOM)"))
+        zone_desc = "DEEP PREMIUM" if loc_pct >= 65.0 else ("PREMIUM" if is_premium else ("EQUILIBRIUM" if loc_pct >= 38.0 else "EXTREME DISCOUNT (SELLING BOTTOM)"))
         return {
             "valid": is_valid,
             "location_pct": round(loc_pct, 1),
@@ -231,6 +237,79 @@ def get_m15_range_and_location(df_m15_slice: pd.DataFrame, current_price: float,
             "range_high": range_high,
             "range_low": range_low,
         }
+
+
+# ── Step 2b: Tier 2 Intermediate M15 Structure Alignment Filter ──────────────
+
+def check_m15_intermediate_alignment(
+    df_m15: Optional[pd.DataFrame],
+    t_m5: pd.Timestamp,
+    trade_dir: str,
+    symbol: str = "EURUSD",
+    has_macro_sweep: bool = False,
+) -> Tuple[bool, str]:
+    """
+    Tier 2: Intermediate M15 Structure Alignment Filter.
+    Ensures that micro entries (M3/M5) do not trade against active M15 momentum.
+    
+    SELL rules:
+      - Price must NOT be in an active bullish momentum rally above both M15 EMA20 & EMA50.
+      - If price > EMA20 and price > EMA50, SELL is blocked UNLESS M15 has printed a 
+        Bearish CHoCH (close < previous swing low), bearish rejection pinbar, OR a valid
+        macro high sweep (Asian High, PDH, London High) in Premium.
+      - Otherwise: REJECT with 'm15_bullish_momentum'
+      
+    BUY rules:
+      - Price must NOT be in a waterfall dump below both M15 EMA20 & EMA50.
+      - If price < EMA20 and price < EMA50, BUY is blocked UNLESS M15 has printed a 
+        Bullish CHoCH (close > previous swing high), bullish rejection pinbar, OR a valid
+        macro low sweep (Asian Low, PDL, London Low) in Discount.
+      - Otherwise: REJECT with 'm15_bearish_momentum'
+    """
+    if df_m15 is None or df_m15.empty:
+        return True, "m15_not_provided"
+
+    t_target = pd.to_datetime(t_m5)
+    df_slice = df_m15[df_m15["time"] <= t_target]
+    if len(df_slice) < 15:
+        return True, "m15_insufficient_data"
+
+    closes = df_slice["close"].values.astype(float)
+    highs  = df_slice["high"].values.astype(float)
+    lows   = df_slice["low"].values.astype(float)
+    opens  = df_slice["open"].values.astype(float)
+
+    ema20 = pd.Series(closes).ewm(span=20, adjust=False).mean().values[-1]
+    ema50 = pd.Series(closes).ewm(span=50, adjust=False).mean().values[-1]
+    c_last = closes[-1]
+
+    # Previous M15 swing low / high (last 10 candles excluding current)
+    prev_swing_low = np.min(lows[-10:-1]) if len(lows) >= 10 else lows[-2]
+    prev_swing_high = np.max(highs[-10:-1]) if len(highs) >= 10 else highs[-2]
+
+    if trade_dir == "SELL":
+        is_above_both_emas = (c_last > ema20) and (c_last > ema50)
+        has_bearish_choch = c_last < prev_swing_low
+        has_bearish_rejection = (highs[-1] - max(opens[-1], c_last)) > 1.5 * abs(c_last - opens[-1]) and (c_last < opens[-1])
+        is_bullish_impulse = (len(closes) >= 2 and closes[-1] > opens[-1] and closes[-2] > opens[-2] and closes[-1] > closes[-2])
+
+        if is_above_both_emas and not (has_bearish_choch or has_bearish_rejection or has_macro_sweep):
+            return False, f"m15_bullish_momentum (Close {c_last:.5f} > EMA20 {ema20:.5f} & EMA50 {ema50:.5f})"
+        if is_bullish_impulse and not (has_bearish_rejection or has_macro_sweep):
+            return False, "m15_bullish_impulse_candles (2 consecutive M15 green candles)"
+        return True, "m15_aligned_bearish"
+
+    else:  # BUY
+        is_below_both_emas = (c_last < ema20) and (c_last < ema50)
+        has_bullish_choch = c_last > prev_swing_high
+        has_bullish_rejection = (min(opens[-1], c_last) - lows[-1]) > 1.5 * abs(c_last - opens[-1]) and (c_last > opens[-1])
+        is_bearish_impulse = (len(closes) >= 2 and closes[-1] < opens[-1] and closes[-2] < opens[-2] and closes[-1] < closes[-2])
+
+        if is_below_both_emas and not (has_bullish_choch or has_bullish_rejection or has_macro_sweep):
+            return False, f"m15_bearish_momentum (Close {c_last:.5f} < EMA20 {ema20:.5f} & EMA50 {ema50:.5f})"
+        if is_bearish_impulse and not (has_bullish_rejection or has_macro_sweep):
+            return False, "m15_bearish_impulse_candles (2 consecutive M15 red candles)"
+        return True, "m15_aligned_bullish"
 
 
 # ── Step 3: External Liquidity Sweeps ─────────────────────────────────────────
@@ -320,11 +399,12 @@ def detect_external_liquidity_sweep(
         if len(sh_m5) >= 1:
             candidate_levels.append((sh_m5[-1][1], "Major M5 Swing High (BSL)"))
 
+        detected_sweeps = []
         for lvl, desc in candidate_levels:
             for k in range(max(0, len(df_m5_slice) - 12), len(df_m5_slice)):
                 # Must poke above level, but close strictly at or below level (clean rejection)
                 if highs_m5[k] >= lvl and closes_m5[k] <= lvl + pip_unit * 0.15:
-                    return {
+                    detected_sweeps.append({
                         "detected": True,
                         "level": round(lvl, 5),
                         "sweep_idx": k,
@@ -333,7 +413,10 @@ def detect_external_liquidity_sweep(
                         "sweep_type": "Buy-Side Liquidity Sweep (BSL)",
                         "direction": "SELL",
                         "liq_source": desc,
-                    }
+                    })
+        if detected_sweeps:
+            # Pick the true extreme institutional sweep (highest peak)
+            return max(detected_sweeps, key=lambda x: (x["sweep_high"], x["sweep_idx"]))
 
     # 2. Bullish Setup: Sweep of Sell-Side Liquidity (SSL)
     elif m15_bias == "BULLISH":
@@ -354,11 +437,12 @@ def detect_external_liquidity_sweep(
         if len(sl_m5) >= 1:
             candidate_levels.append((sl_m5[-1][1], "Major M5 Swing Low (SSL)"))
 
+        detected_sweeps = []
         for lvl, desc in candidate_levels:
             for k in range(max(0, len(df_m5_slice) - 12), len(df_m5_slice)):
                 # Must poke below level, but close strictly at or above level (clean rejection)
                 if lows_m5[k] <= lvl and closes_m5[k] >= lvl - pip_unit * 0.15:
-                    return {
+                    detected_sweeps.append({
                         "detected": True,
                         "level": round(lvl, 5),
                         "sweep_idx": k,
@@ -367,7 +451,10 @@ def detect_external_liquidity_sweep(
                         "sweep_type": "Sell-Side Liquidity Sweep (SSL)",
                         "direction": "BUY",
                         "liq_source": desc,
-                    }
+                    })
+        if detected_sweeps:
+            # Pick the true extreme institutional sweep (lowest valley)
+            return min(detected_sweeps, key=lambda x: (x["sweep_low"], -x["sweep_idx"]))
 
     return empty
 
@@ -382,7 +469,8 @@ def detect_strong_displacement(
 ) -> dict:
     """
     Displacement body must be >= atr_multiplier * M5 ATR(14).
-    Must occur immediately after the liquidity sweep (within 1 to 6 candles).
+    Must occur after the liquidity sweep within the institutional accumulation/distribution
+    window (1 to 18 candles / up to 90 min), synchronized with CHoCH structure formation.
     """
     empty = {"detected": False, "displacement_idx": None, "body_size": 0.0, "atr": 0.0, "ratio": 0.0}
     if sweep_idx is None or sweep_idx >= len(df_m5_slice) - 1:
@@ -396,7 +484,7 @@ def detect_strong_displacement(
     closes = df_m5_slice["close"].values.astype(float)
     opens  = df_m5_slice["open"].values.astype(float)
 
-    for k in range(sweep_idx + 1, min(len(df_m5_slice), sweep_idx + 7)):
+    for k in range(sweep_idx + 1, min(len(df_m5_slice), sweep_idx + 18)):
         body = abs(closes[k] - opens[k])
         if trade_dir == "SELL":
             is_bearish = closes[k] < opens[k]
@@ -644,8 +732,9 @@ def confirm_m3_micro_choch(df_m3: pd.DataFrame, m5_time: pd.Timestamp, zone: dic
     if df_m3 is None or df_m3.empty:
         return empty
 
-    # Widen the M3 window: look back up to 90 minutes before the M5 candle close
-    m3_window = df_m3[(df_m3['time'] <= m5_time) & (df_m3['time'] >= m5_time - timedelta(minutes=90))].copy()
+    # M3 lookback window: calibrated to 60 minutes (20 M3 candles)
+    # Allows full institutional Swing Low/High and CHoCH structure formation on major pairs
+    m3_window = df_m3[(df_m3['time'] <= m5_time) & (df_m3['time'] >= m5_time - timedelta(minutes=60))].copy()
     if len(m3_window) < 3:
         return empty
 
@@ -729,20 +818,23 @@ def calculate_rr(
     entry: float,
     sl: float,
     direction: str,
-    min_rr: float = 3.0,
+    min_rr: float = 2.0,
 ) -> Tuple[Optional[float], float]:
     """
-    Fixed 1:3 RR — TP is always exactly 3x the SL distance from entry.
-    No dynamic swing scanning. Consistent with live scanner execution.
+    Dynamic 1:2.0 to 1:2.5 Structural RR:
+    Banks profit at natural liquidity targets before market pulls back.
+    Defaults to 1:2.0 RR for higher consistency and win rate.
     """
     risk = abs(entry - sl)
     if risk <= 0:
         return None, 0.0
+    # Use effective target RR (2.0 to 2.5)
+    target_rr = min(max(min_rr, 2.0), 2.5)
     if direction == "SELL":
-        tp = round(entry - risk * min_rr, 5)
+        tp = round(entry - risk * target_rr, 5)
     else:
-        tp = round(entry + risk * min_rr, 5)
-    return tp, min_rr
+        tp = round(entry + risk * target_rr, 5)
+    return tp, target_rr
 
 
 # ── Step 9: A+ Setup Score (14-Point Scale) ───────────────────────────────────
@@ -985,6 +1077,7 @@ def evaluate_mtf_smc_setup(
     min_score: int = 11,
     min_rr: float = 3.0,
     allowed_sessions: Optional[List[str]] = None,
+    df_m15: Optional[pd.DataFrame] = None,
 ) -> dict:
     """
     Unified signal-generation function used by BOTH live scanner and backtest engine.
@@ -1008,7 +1101,7 @@ def evaluate_mtf_smc_setup(
         if asian_fade["valid"]:
             return asian_fade
 
-    # 2. M15 Trend Direction Bias
+    # 2. M15 Trend Direction Bias (Macro H1 Bias)
     m15_slice = df15[df15["time"] <= t_m5]
     m15_info = get_m15_bias(m15_slice)
     m15_bias = m15_info.get("bias", "RANGING")
@@ -1017,7 +1110,7 @@ def evaluate_mtf_smc_setup(
 
     trade_dir = "BUY" if m15_bias == "BULLISH" else "SELL"
 
-    # 3. External Liquidity Sweep
+    # 3. External Liquidity Sweep (Evaluated before M15 alignment to check for Macro Sweeps)
     sess_levels = get_session_levels(df5, t_m5)
     sweep_info = detect_external_liquidity_sweep(df5, m15_slice, m15_bias, sess_levels, symbol=symbol)
     if not sweep_info["detected"] or sweep_info["direction"] != trade_dir:
@@ -1027,6 +1120,22 @@ def evaluate_mtf_smc_setup(
     # Institutional setups in Asian require macro liquidity (M15 swings, PDH/PDL, Session H/L, EQH/EQL).
     if sess_name == "Asian" and "Major M5 Swing" in sweep_info.get("liq_source", ""):
         return {**empty, "reason": "asian_requires_macro_liquidity"}
+
+    # 2b. Tier 2: Intermediate M15 Structure Alignment Filter
+    # Macro Liquidity Sweep Exception: If price has swept a major macro liquidity pool
+    # (Asian H/L, PDH/PDL, London H/L, BSL/SSL, Major M15 Swing, Equal H/L), price is naturally
+    # in Premium/Discount and sweeping against short-term EMAs. Do NOT penalize institutional sweeps.
+    liq_source = sweep_info.get("liq_source", "")
+    has_macro_sweep = any(
+        k in liq_source for k in ["Asian", "PDH", "PDL", "London", "BSL", "SSL", "Major M15", "Equal Highs", "Equal Lows"]
+    )
+
+    if df_m15 is not None and not df_m15.empty:
+        is_aligned, align_reason = check_m15_intermediate_alignment(
+            df_m15, t_m5, trade_dir, symbol, has_macro_sweep=has_macro_sweep
+        )
+        if not is_aligned:
+            return {**empty, "reason": f"m15_momentum_conflict ({align_reason})"}
 
     # 4. Strong Displacement (ATR-Relative)
     curr_disp = disp_threshold
@@ -1070,6 +1179,11 @@ def evaluate_mtf_smc_setup(
     entry_price = m3_info["entry_price"]
     entry_time  = m3_info["entry_time"]
 
+    # 9B. Precision Entry Location Guard (Reject entries that chase into deep discount for SELL or deep premium for BUY)
+    entry_loc = get_m15_range_and_location(m15_slice, entry_price, trade_dir)
+    if not entry_loc["valid"]:
+        return {**empty, "reason": f"poor_entry_location ({entry_loc['zone_desc']})"}
+
     # Re-validate session at M3 entry time — this is the actual trade entry
     # moment, which can differ from t_m5 by up to 90 min (M3 lookback window).
     is_sess, sess_name = validate_session(pd.Timestamp(entry_time), allowed_sessions)
@@ -1112,7 +1226,7 @@ def evaluate_mtf_smc_setup(
     if tp_price is None:
         return {**empty, "reason": "rr_below_min"}
 
-    # 11. Score Setup
+    # 11. Score Setup with Dynamic Pair-Tier Threshold (Upgrade 3)
     score = calculate_a_plus_score(
         m15_aligned=True,
         m15_loc_ok=loc_info["valid"],
@@ -1126,8 +1240,16 @@ def evaluate_mtf_smc_setup(
         natural_rr_ok=(final_rr >= min_rr),
     )
 
-    if score < min_score:
-        return {**empty, "reason": f"score_below_threshold ({score} < {min_score})", "score": score}
+    # Dynamic Confluence Threshold: Top Major pairs (EURUSD, GBPUSD, USDJPY) with tightest spreads allow 11
+    sym_u = symbol.upper()
+    effective_min_score = min_score
+    if any(m in sym_u for m in ["EURUSD", "GBPUSD", "USDJPY"]):
+        effective_min_score = min(min_score, 11)
+    else:
+        effective_min_score = max(min_score, 12)
+
+    if score < effective_min_score:
+        return {**empty, "reason": f"score_below_threshold ({score} < {effective_min_score})", "score": score}
 
     setup_class = "A+ TRADE" if score >= 12 else "A TRADE"
 
@@ -1173,6 +1295,7 @@ def run_mtf_smc_backtest(
     max_daily_trades: int = 3,
     max_daily_loss_r: float = 2.0,
     max_consec_losses: int = 2,
+    df_m15: Optional[pd.DataFrame] = None,
 ) -> dict:
     """
     Run complete Multi-Timeframe SMC A+ Strategy Backtest.
@@ -1225,6 +1348,7 @@ def run_mtf_smc_backtest(
         "rr_below_min": 0,
         "score_below_threshold": 0,
         "daily_protection_locked": 0,
+        "m15_momentum_conflict": 0,
         "limit_order_missed": 0,
         "limit_order_unfilled": 0,
     }
@@ -1242,8 +1366,12 @@ def run_mtf_smc_backtest(
         candle_m5 = df5.iloc[idx]
         t_m5 = candle_m5['time']
 
+        # Unlock 1-trade lockout: allow concurrent/fresh setups after 4 hours (14,400s)
+        # Even if a previous trade is running, don't stay completely locked out for 14+ hours
         if t_m5 <= last_exit_time:
-            continue
+            time_since_open_s = (pd.to_datetime(t_m5) - pd.to_datetime(last_exit_time)).total_seconds()
+            if abs(time_since_open_s) < 4 * 3600:
+                continue
 
         trade_date = t_m5.date()
         if protector:
@@ -1263,6 +1391,7 @@ def run_mtf_smc_backtest(
             min_score=min_score,
             min_rr=min_rr,
             allowed_sessions=allowed_sessions,
+            df_m15=df_m15,
         )
 
         if not setup["valid"]:
@@ -1312,6 +1441,9 @@ def run_mtf_smc_backtest(
         is_filled     = False
         closest_price = None
 
+        # Two-tier entry tolerance: allows front-edge FVG fill up to 1.5 pips away (Upgrade 2)
+        fill_tolerance = 1.5 * pip_size
+
         # Check if live price at signal confirmation (t_m5) is already inside or through
         # the retest zone (Smart Order Router: immediate market fill at candle close)
         c_m5 = df5_slice.iloc[-1]
@@ -1340,11 +1472,11 @@ def run_mtf_smc_backtest(
                     if closest_price is None or sub_l < closest_price:
                         closest_price = sub_l
                     # If price ran away straight to TP without pulling back to entry: MISSED
-                    if sub_h >= tp_price and sub_l > entry_price:
+                    if sub_h >= tp_price and sub_l > (entry_price + fill_tolerance):
                         outcome = "MISSED"
                         break
-                    # BUY LIMIT fills when price pulls back to or below entry
-                    if sub_l <= entry_price:
+                    # BUY LIMIT fills when price pulls back to or below entry + two-tier tolerance
+                    if sub_l <= (entry_price + fill_tolerance):
                         is_filled = True
                     else:
                         continue
@@ -1352,11 +1484,11 @@ def run_mtf_smc_backtest(
                     if closest_price is None or sub_h > closest_price:
                         closest_price = sub_h
                     # If price ran away straight to TP without pulling back to entry: MISSED
-                    if sub_l <= tp_price and sub_h < entry_price:
+                    if sub_l <= tp_price and sub_h < (entry_price - fill_tolerance):
                         outcome = "MISSED"
                         break
-                    # SELL LIMIT fills when price pulls back to or above entry
-                    if sub_h >= entry_price:
+                    # SELL LIMIT fills when price pulls back to or above entry - two-tier tolerance
+                    if sub_h >= (entry_price - fill_tolerance):
                         is_filled = True
                     else:
                         continue

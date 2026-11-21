@@ -493,8 +493,9 @@ def scan_mtf_smc_pair(symbol: str, disp_threshold: float = 0.8, min_score: int =
     """
     # H1 bias (500 candles ~20 days) matches backtest — cleaner trend direction
     # M5 500 candles, M3 400 candles — enough swing history to match backtest depth
-    df15 = _strip_forming(_load_live(symbol, "H1", count=500), "H1")
-    df5  = _strip_forming(_load_live(symbol, "M5", count=500), "M5")
+    df15   = _strip_forming(_load_live(symbol, "H1", count=500), "H1")
+    df_m15 = _strip_forming(_load_live(symbol, "M15", count=200), "M15")
+    df5    = _strip_forming(_load_live(symbol, "M5", count=500), "M5")
 
     if df15.empty or df5.empty:
         logger.debug("[VariantC] %s skipped: H1/M5 data unavailable", symbol)
@@ -533,6 +534,7 @@ def scan_mtf_smc_pair(symbol: str, disp_threshold: float = 0.8, min_score: int =
         df15=df15, df5=df5, df3=df3,
         symbol=symbol, disp_threshold=disp_threshold,
         min_score=min_score, min_rr=min_rr,
+        df_m15=df_m15,
     )
 
     if not setup or not setup.get("valid"):
@@ -746,7 +748,8 @@ def scan_pair_all_m5_candles(
       - enforcing last_exit_time sequencing across the returned signals
       - updating last_scanned_m5_time to the last M5 candle evaluated
     """
-    df15 = _strip_forming(_load_live(symbol, "H1", count=500), "H1")
+    df15     = _strip_forming(_load_live(symbol, "H1", count=500), "H1")
+    df_m15   = _strip_forming(_load_live(symbol, "M15", count=200), "M15")
     df5_full = _strip_forming(_load_live(symbol, "M5", count=500), "M5")
 
     if df15.empty or df5_full.empty:
@@ -782,6 +785,7 @@ def scan_pair_all_m5_candles(
             df15=df15, df5=df5_slice, df3=df3,
             symbol=symbol, disp_threshold=disp_threshold,
             min_score=min_score, min_rr=min_rr,
+            df_m15=df_m15,
         )
 
         if not setup or not setup.get("valid"):
