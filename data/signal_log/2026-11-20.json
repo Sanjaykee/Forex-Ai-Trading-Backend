@@ -1,0 +1,14 @@
+{
+  "GBPUSD": [
+    {
+      "entry": 1.31162,
+      "sl": 1.31305,
+      "tp": 1.30804,
+      "direction": "SELL",
+      "lot": 0.01,
+      "time_ist": "19:45:10 IST",
+      "session": "New York",
+      "score": 12
+    }
+  ]
+}

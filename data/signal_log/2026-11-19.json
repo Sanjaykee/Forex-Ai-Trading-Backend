@@ -1,0 +1,14 @@
+{
+  "AUDUSD": [
+    {
+      "entry": 0.67029,
+      "sl": 0.67209,
+      "tp": 0.66579,
+      "direction": "SELL",
+      "lot": 0.01,
+      "time_ist": "20:24:10 IST",
+      "session": "New York",
+      "score": 12
+    }
+  ]
+}

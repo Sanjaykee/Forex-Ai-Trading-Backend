@@ -29,7 +29,7 @@ def get_settings(db: Session = Depends(get_db), user=Depends(get_current_user)):
     res["has_mt5_password"] = bool(user.mt5_password)
     # Local MT5 desktop account info (balance/currency) when a terminal is running
     res["mt5_connected"] = False
-    if user.mt5_login:
+    if user.mt5_login and res.get("data_source") == "mt5":
         try:
             import MetaTrader5 as _mt5
             _mt5.initialize()
@@ -147,6 +147,18 @@ def setup_mt5(data: MT5Setup, db: Session = Depends(get_db), user=Depends(get_cu
         account = {}
     return {"message": "MT5 connected successfully", "connected": True, "account": account}
 
+@settings_router.post("/mt5/disconnect")
+def disconnect_mt5(db: Session = Depends(get_db), user=Depends(get_current_user)):
+    try:
+        from app.mt5.connection import disconnect
+        disconnect()
+    except Exception:
+        pass
+    current_ds = crud.get_setting(db, user.id, "data_source")
+    if current_ds == "mt5":
+        crud.upsert_setting(db, user.id, "data_source", "")
+    return {"success": True, "connected": False, "message": "MT5 disconnected successfully"}
+
 @settings_router.post("/metaapi")
 def setup_metaapi(data: dict, db: Session = Depends(get_db), user=Depends(get_current_user)):
     from app.db.models import User
@@ -193,6 +205,14 @@ def setup_metaapi(data: dict, db: Session = Depends(get_db), user=Depends(get_cu
         "connected": False,
         "message": info.get("error") or "MetaApi credentials saved, but could not authorize. Check Token and Account ID in app.metaapi.cloud."
     }
+
+@settings_router.post("/metaapi/disconnect")
+def disconnect_metaapi(db: Session = Depends(get_db), user=Depends(get_current_user)):
+    crud.upsert_setting(db, user.id, "metaapi_connected", "false")
+    current_ds = crud.get_setting(db, user.id, "data_source")
+    if current_ds == "metaapi":
+        crud.upsert_setting(db, user.id, "data_source", "")
+    return {"success": True, "connected": False, "message": "MetaApi disconnected successfully"}
 
 @settings_router.post("/ctrader")
 def setup_ctrader(data: dict, db: Session = Depends(get_db), user=Depends(get_current_user)):

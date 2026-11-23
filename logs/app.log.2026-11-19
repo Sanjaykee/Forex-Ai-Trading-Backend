@@ -1,0 +1,744 @@
+2026-11-19 01:29:45 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (19:59 UTC) - skipping scan.
+2026-11-19 09:35:14 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (04:05 UTC) - skipping scan.
+2026-11-19 09:36:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (04:06 UTC) - skipping scan.
+2026-11-19 09:39:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (04:09 UTC) - skipping scan.
+2026-11-19 09:42:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (04:12 UTC) - skipping scan.
+2026-11-19 09:45:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (04:15 UTC) - skipping scan.
+2026-11-19 09:48:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (04:18 UTC) - skipping scan.
+2026-11-19 09:51:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (04:21 UTC) - skipping scan.
+2026-11-19 09:54:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (04:24 UTC) - skipping scan.
+2026-11-19 09:57:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (04:27 UTC) - skipping scan.
+2026-11-19 10:00:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (04:30 UTC) - skipping scan.
+2026-11-19 10:03:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (04:33 UTC) - skipping scan.
+2026-11-19 10:06:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (04:36 UTC) - skipping scan.
+2026-11-19 10:09:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (04:39 UTC) - skipping scan.
+2026-11-19 10:12:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (04:42 UTC) - skipping scan.
+2026-11-19 10:15:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (04:45 UTC) - skipping scan.
+2026-11-19 10:18:50 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (04:48 UTC) - skipping scan.
+2026-11-19 10:21:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (04:51 UTC) - skipping scan.
+2026-11-19 12:45:29 | INFO     | app.main | Database tables and columns synced successfully
+2026-11-19 12:45:30 | INFO     | app.main | [Startup] Trade monitor, Auto-Scanner & Pending limit monitor started.
+2026-11-19 12:45:30 | INFO     | app.signals.trade_monitor | [TradeMonitor] Background price monitor started.
+2026-11-19 12:45:30 | INFO     | app.signals.auto_scanner | [AutoScanner] Variant C started (M3 timing, threshold raw>=11 / norm>=78.57).
+2026-11-19 12:45:30 | INFO     | app.signals.auto_scanner | [PendingMonitor] Started.
+2026-11-19 12:46:00 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-19 12:46:03 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-19 12:46:03 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.1 min.
+2026-11-19 12:47:45 | INFO     | app.main | Database tables and columns synced successfully
+2026-11-19 12:47:46 | INFO     | app.main | [Startup] Trade monitor, Auto-Scanner & Pending limit monitor started.
+2026-11-19 12:47:46 | INFO     | app.signals.trade_monitor | [TradeMonitor] Background price monitor started.
+2026-11-19 12:47:46 | INFO     | app.signals.auto_scanner | [AutoScanner] Variant C started (M3 timing, threshold raw>=11 / norm>=78.57).
+2026-11-19 12:47:46 | INFO     | app.signals.auto_scanner | [PendingMonitor] Started.
+2026-11-19 12:48:16 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-19 12:48:19 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-19 12:48:19 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.8 min.
+2026-11-19 12:51:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-19 12:51:12 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-19 12:51:12 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-19 12:54:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-19 12:54:10 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-19 12:54:10 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-19 12:57:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-19 12:57:12 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-19 12:57:12 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-19 13:00:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-19 13:00:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-19 13:00:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-19 13:03:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-19 13:03:12 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-19 13:03:12 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-19 13:06:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-19 13:06:13 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-19 13:06:13 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-19 13:09:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-19 13:09:12 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-19 13:09:12 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-19 13:53:25 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-19 13:53:26 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 13:53:28 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 13:53:28 | WARNING  | app.signals.scanner | [Cache] Full fetch EURUSD M15 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 13:53:28 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 13:53:28 | WARNING  | app.signals.scanner | [Cache] Full fetch EURUSD M5 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 13:53:28 | WARNING  | app.signals.scanner | [VariantC] EURUSD scan_pair_all_m5_candles: H1/M5 data unavailable
+2026-11-19 13:53:28 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 13:53:29 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 13:53:29 | WARNING  | app.signals.scanner | [Cache] Full fetch GBPUSD M15 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 13:53:30 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 13:53:30 | WARNING  | app.signals.scanner | [Cache] Full fetch GBPUSD M5 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 13:53:30 | WARNING  | app.signals.scanner | [VariantC] GBPUSD scan_pair_all_m5_candles: H1/M5 data unavailable
+2026-11-19 13:53:30 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 13:53:30 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 13:53:30 | WARNING  | app.signals.scanner | [Cache] Full fetch USDJPY M15 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 13:53:31 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 13:53:31 | WARNING  | app.signals.scanner | [Cache] Full fetch USDJPY M5 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 13:53:31 | WARNING  | app.signals.scanner | [VariantC] USDJPY scan_pair_all_m5_candles: H1/M5 data unavailable
+2026-11-19 13:53:31 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 13:53:32 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 13:53:32 | WARNING  | app.signals.scanner | [Cache] Full fetch USDCHF M15 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 13:53:32 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 13:53:32 | WARNING  | app.signals.scanner | [Cache] Full fetch USDCHF M5 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 13:53:32 | WARNING  | app.signals.scanner | [VariantC] USDCHF scan_pair_all_m5_candles: H1/M5 data unavailable
+2026-11-19 13:53:37 | WARNING  | app.signals.scanner | [Cache] GBPJPY M15 has gap of 45 min (max allowed 30 min) — data may be incomplete
+2026-11-19 13:53:37 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-19 13:53:37 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 0.5 min.
+2026-11-19 13:53:53 | INFO     | app.main | Database tables and columns synced successfully
+2026-11-19 13:53:54 | INFO     | app.main | [Startup] Trade monitor, Auto-Scanner & Pending limit monitor started.
+2026-11-19 13:53:54 | INFO     | app.signals.trade_monitor | [TradeMonitor] Background price monitor started.
+2026-11-19 13:53:54 | INFO     | app.signals.auto_scanner | [AutoScanner] Variant C started (M3 timing, threshold raw>=11 / norm>=78.57).
+2026-11-19 13:53:54 | INFO     | app.signals.auto_scanner | [PendingMonitor] Started.
+2026-11-19 13:54:24 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-19 13:54:27 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-19 13:54:27 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.7 min.
+2026-11-19 13:57:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-19 13:57:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-19 13:57:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-19 14:00:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-19 14:00:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-19 14:00:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-19 14:03:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-19 14:03:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-19 14:03:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-19 14:06:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-19 14:06:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-19 14:06:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-19 14:09:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-19 14:09:10 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-19 14:09:10 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-19 14:12:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-19 14:12:10 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-19 14:12:10 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-19 14:15:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-19 14:15:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-19 14:15:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-19 14:18:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-19 14:18:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-19 14:18:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-19 14:21:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-19 14:21:12 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-19 14:21:12 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-19 14:24:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-19 14:24:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-19 14:24:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-19 14:27:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-19 14:27:10 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-19 14:27:10 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-19 14:30:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-19 14:30:10 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-19 14:30:10 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-19 14:33:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-19 14:33:12 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-19 14:33:12 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-19 14:36:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-19 14:36:12 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-19 14:36:12 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-19 14:39:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-19 14:39:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-19 14:39:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-19 14:42:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-19 14:42:10 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-19 14:42:10 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-19 14:45:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-19 14:45:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-19 14:45:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-19 14:48:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-19 14:48:12 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-19 14:48:12 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-19 14:51:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-19 14:51:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-19 14:51:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-19 14:54:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-19 14:54:12 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-19 14:54:12 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-19 15:09:16 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-19 15:09:17 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 15:09:17 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 15:09:17 | WARNING  | app.signals.scanner | [Cache] Full fetch EURUSD M15 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 15:09:17 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 15:09:17 | WARNING  | app.signals.scanner | [Cache] Full fetch EURUSD M5 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 15:09:17 | WARNING  | app.signals.scanner | [VariantC] EURUSD scan_pair_all_m5_candles: H1/M5 data unavailable
+2026-11-19 15:09:18 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 15:09:18 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 15:09:18 | WARNING  | app.signals.scanner | [Cache] Full fetch GBPUSD M15 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 15:09:18 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 15:09:18 | WARNING  | app.signals.scanner | [Cache] Full fetch GBPUSD M5 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 15:09:18 | WARNING  | app.signals.scanner | [VariantC] GBPUSD scan_pair_all_m5_candles: H1/M5 data unavailable
+2026-11-19 15:09:18 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 15:09:18 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 15:09:18 | WARNING  | app.signals.scanner | [Cache] Full fetch USDJPY M15 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 15:09:18 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 15:09:18 | WARNING  | app.signals.scanner | [Cache] Full fetch USDJPY M5 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 15:09:18 | WARNING  | app.signals.scanner | [VariantC] USDJPY scan_pair_all_m5_candles: H1/M5 data unavailable
+2026-11-19 15:09:18 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 15:09:19 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 15:09:19 | WARNING  | app.signals.scanner | [Cache] Full fetch USDCHF M15 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 15:09:19 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 15:09:19 | WARNING  | app.signals.scanner | [Cache] Full fetch USDCHF M5 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 15:09:19 | WARNING  | app.signals.scanner | [VariantC] USDCHF scan_pair_all_m5_candles: H1/M5 data unavailable
+2026-11-19 15:09:19 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 15:09:19 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 15:09:19 | WARNING  | app.signals.scanner | [Cache] Full fetch AUDUSD M15 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 15:09:19 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 15:09:19 | WARNING  | app.signals.scanner | [Cache] Full fetch AUDUSD M5 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 15:09:19 | WARNING  | app.signals.scanner | [VariantC] AUDUSD scan_pair_all_m5_candles: H1/M5 data unavailable
+2026-11-19 15:09:19 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 15:09:20 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 15:09:20 | WARNING  | app.signals.scanner | [Cache] Full fetch NZDUSD M15 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 15:09:20 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 15:09:20 | WARNING  | app.signals.scanner | [Cache] Full fetch NZDUSD M5 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 15:09:20 | WARNING  | app.signals.scanner | [VariantC] NZDUSD scan_pair_all_m5_candles: H1/M5 data unavailable
+2026-11-19 15:09:20 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 15:09:20 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 15:09:20 | WARNING  | app.signals.scanner | [Cache] Full fetch USDCAD M15 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 15:09:20 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 15:09:20 | WARNING  | app.signals.scanner | [Cache] Full fetch USDCAD M5 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 15:09:20 | WARNING  | app.signals.scanner | [VariantC] USDCAD scan_pair_all_m5_candles: H1/M5 data unavailable
+2026-11-19 15:09:20 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 15:09:22 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-19 15:09:22 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.8 min.
+2026-11-19 15:12:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-19 15:12:13 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-19 15:12:13 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-19 15:15:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-19 15:15:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-19 15:15:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-19 15:18:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-19 15:18:12 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-19 15:18:12 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-19 15:21:10 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-19 15:21:13 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-19 15:21:13 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-19 15:21:55 | INFO     | app.main | Database tables and columns synced successfully
+2026-11-19 15:21:56 | INFO     | app.main | [Startup] Trade monitor, Auto-Scanner & Pending limit monitor started.
+2026-11-19 15:21:56 | INFO     | app.signals.trade_monitor | [TradeMonitor] Background price monitor started.
+2026-11-19 15:21:56 | INFO     | app.signals.auto_scanner | [AutoScanner] Variant C started (M3 timing, threshold raw>=11 / norm>=78.57).
+2026-11-19 15:21:56 | INFO     | app.signals.auto_scanner | [PendingMonitor] Started.
+2026-11-19 15:22:26 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-19 15:22:29 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-19 15:22:29 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 1.6 min.
+2026-11-19 15:24:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-19 15:24:12 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-19 15:24:12 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-19 15:27:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-19 15:27:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-19 15:27:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-19 15:30:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-19 15:30:10 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-19 15:30:10 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-19 15:33:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-19 15:33:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-19 15:33:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-19 15:36:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-19 15:36:10 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-19 15:36:10 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-19 15:39:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-19 15:39:10 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-19 15:39:10 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-19 15:42:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-19 15:42:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-19 15:42:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-19 15:47:21 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-19 15:47:21 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 15:47:21 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 15:47:21 | WARNING  | app.signals.scanner | [Cache] Full fetch EURUSD M5 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 15:47:21 | WARNING  | app.signals.scanner | [VariantC] EURUSD scan_pair_all_m5_candles: H1/M5 data unavailable
+2026-11-19 15:47:21 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 15:47:21 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 15:47:22 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 15:47:22 | WARNING  | app.signals.scanner | [Cache] Full fetch GBPUSD M5 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 15:47:22 | WARNING  | app.signals.scanner | [VariantC] GBPUSD scan_pair_all_m5_candles: H1/M5 data unavailable
+2026-11-19 15:47:22 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 15:47:22 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 15:47:22 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 15:47:22 | WARNING  | app.signals.scanner | [Cache] Full fetch USDJPY M5 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 15:47:22 | WARNING  | app.signals.scanner | [VariantC] USDJPY scan_pair_all_m5_candles: H1/M5 data unavailable
+2026-11-19 15:47:22 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 15:47:22 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 15:47:22 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 15:47:22 | WARNING  | app.signals.scanner | [Cache] Full fetch USDCHF M5 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 15:47:22 | WARNING  | app.signals.scanner | [VariantC] USDCHF scan_pair_all_m5_candles: H1/M5 data unavailable
+2026-11-19 15:47:22 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 15:47:22 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 15:47:22 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 15:47:22 | WARNING  | app.signals.scanner | [Cache] Full fetch AUDUSD M5 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 15:47:22 | WARNING  | app.signals.scanner | [VariantC] AUDUSD scan_pair_all_m5_candles: H1/M5 data unavailable
+2026-11-19 15:47:22 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 15:47:23 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 15:47:23 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 15:47:23 | WARNING  | app.signals.scanner | [Cache] Full fetch NZDUSD M5 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 15:47:23 | WARNING  | app.signals.scanner | [VariantC] NZDUSD scan_pair_all_m5_candles: H1/M5 data unavailable
+2026-11-19 15:47:23 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 15:47:23 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 15:47:23 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 15:47:23 | WARNING  | app.signals.scanner | [Cache] Full fetch USDCAD M5 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 15:47:23 | WARNING  | app.signals.scanner | [VariantC] USDCAD scan_pair_all_m5_candles: H1/M5 data unavailable
+2026-11-19 15:47:23 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 15:47:23 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 15:47:23 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 15:47:23 | WARNING  | app.signals.scanner | [Cache] Full fetch EURJPY M5 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 15:47:23 | WARNING  | app.signals.scanner | [VariantC] EURJPY scan_pair_all_m5_candles: H1/M5 data unavailable
+2026-11-19 15:47:23 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 15:47:23 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 15:47:23 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 15:47:23 | WARNING  | app.signals.scanner | [Cache] Full fetch GBPJPY M5 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 15:47:23 | WARNING  | app.signals.scanner | [VariantC] GBPJPY scan_pair_all_m5_candles: H1/M5 data unavailable
+2026-11-19 15:47:23 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-19 15:47:23 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 0.8 min.
+2026-11-19 15:47:41 | INFO     | app.main | Database tables and columns synced successfully
+2026-11-19 15:47:41 | INFO     | app.main | [Startup] Trade monitor, Auto-Scanner & Pending limit monitor started.
+2026-11-19 15:47:41 | INFO     | app.signals.trade_monitor | [TradeMonitor] Background price monitor started.
+2026-11-19 15:47:41 | INFO     | app.signals.auto_scanner | [AutoScanner] Variant C started (M3 timing, threshold raw>=11 / norm>=78.57).
+2026-11-19 15:47:41 | INFO     | app.signals.auto_scanner | [PendingMonitor] Started.
+2026-11-19 15:48:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-19 15:48:13 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-19 15:48:13 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-19 15:51:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-19 15:51:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-19 15:51:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-19 15:54:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-19 15:54:12 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-19 15:54:12 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-19 15:57:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-19 15:57:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-19 15:57:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-19 16:00:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-19 16:00:10 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-19 16:00:10 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-19 16:03:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-19 16:03:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-19 16:03:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-19 16:06:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-19 16:06:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-19 16:06:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-19 16:09:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-19 16:09:12 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-19 16:09:12 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-19 16:12:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-19 16:12:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-19 16:12:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-19 16:15:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=London
+2026-11-19 16:15:12 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-19 16:15:12 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-19 16:58:29 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (11:28 UTC) - skipping scan.
+2026-11-19 17:00:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (11:30 UTC) - skipping scan.
+2026-11-19 17:03:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (11:33 UTC) - skipping scan.
+2026-11-19 17:06:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (11:36 UTC) - skipping scan.
+2026-11-19 17:09:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (11:39 UTC) - skipping scan.
+2026-11-19 17:12:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (11:42 UTC) - skipping scan.
+2026-11-19 18:28:44 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=New York
+2026-11-19 18:28:44 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 18:28:44 | WARNING  | app.signals.scanner | [Cache] Full fetch EURUSD H1 returned 0 candles (min 100 required) — pair skipped
+2026-11-19 18:28:44 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 18:28:44 | WARNING  | app.signals.scanner | [Cache] Full fetch EURUSD M15 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 18:28:44 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 18:28:44 | WARNING  | app.signals.scanner | [Cache] Full fetch EURUSD M5 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 18:28:44 | WARNING  | app.signals.scanner | [VariantC] EURUSD scan_pair_all_m5_candles: H1/M5 data unavailable
+2026-11-19 18:28:44 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 18:28:44 | WARNING  | app.signals.scanner | [Cache] Full fetch GBPUSD H1 returned 0 candles (min 100 required) — pair skipped
+2026-11-19 18:28:44 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 18:28:44 | WARNING  | app.signals.scanner | [Cache] Full fetch GBPUSD M15 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 18:28:45 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 18:28:45 | WARNING  | app.signals.scanner | [Cache] Full fetch GBPUSD M5 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 18:28:45 | WARNING  | app.signals.scanner | [VariantC] GBPUSD scan_pair_all_m5_candles: H1/M5 data unavailable
+2026-11-19 18:28:45 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 18:28:45 | WARNING  | app.signals.scanner | [Cache] Full fetch USDJPY H1 returned 0 candles (min 100 required) — pair skipped
+2026-11-19 18:28:45 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 18:28:45 | WARNING  | app.signals.scanner | [Cache] Full fetch USDJPY M15 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 18:28:45 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 18:28:45 | WARNING  | app.signals.scanner | [Cache] Full fetch USDJPY M5 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 18:28:45 | WARNING  | app.signals.scanner | [VariantC] USDJPY scan_pair_all_m5_candles: H1/M5 data unavailable
+2026-11-19 18:28:45 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 18:28:45 | WARNING  | app.signals.scanner | [Cache] Full fetch USDCHF H1 returned 0 candles (min 100 required) — pair skipped
+2026-11-19 18:28:45 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 18:28:45 | WARNING  | app.signals.scanner | [Cache] Full fetch USDCHF M15 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 18:28:45 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 18:28:45 | WARNING  | app.signals.scanner | [Cache] Full fetch USDCHF M5 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 18:28:45 | WARNING  | app.signals.scanner | [VariantC] USDCHF scan_pair_all_m5_candles: H1/M5 data unavailable
+2026-11-19 18:28:45 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 18:28:45 | WARNING  | app.signals.scanner | [Cache] Full fetch AUDUSD H1 returned 0 candles (min 100 required) — pair skipped
+2026-11-19 18:28:45 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 18:28:45 | WARNING  | app.signals.scanner | [Cache] Full fetch AUDUSD M15 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 18:28:45 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 18:28:45 | WARNING  | app.signals.scanner | [Cache] Full fetch AUDUSD M5 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 18:28:45 | WARNING  | app.signals.scanner | [VariantC] AUDUSD scan_pair_all_m5_candles: H1/M5 data unavailable
+2026-11-19 18:28:45 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 18:28:45 | WARNING  | app.signals.scanner | [Cache] Full fetch NZDUSD H1 returned 0 candles (min 100 required) — pair skipped
+2026-11-19 18:28:46 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 18:28:46 | WARNING  | app.signals.scanner | [Cache] Full fetch NZDUSD M15 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 18:28:46 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 18:28:46 | WARNING  | app.signals.scanner | [Cache] Full fetch NZDUSD M5 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 18:28:46 | WARNING  | app.signals.scanner | [VariantC] NZDUSD scan_pair_all_m5_candles: H1/M5 data unavailable
+2026-11-19 18:28:46 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 18:28:46 | WARNING  | app.signals.scanner | [Cache] Full fetch USDCAD H1 returned 0 candles (min 100 required) — pair skipped
+2026-11-19 18:28:46 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 18:28:46 | WARNING  | app.signals.scanner | [Cache] Full fetch USDCAD M15 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 18:28:46 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 18:28:46 | WARNING  | app.signals.scanner | [Cache] Full fetch USDCAD M5 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 18:28:46 | WARNING  | app.signals.scanner | [VariantC] USDCAD scan_pair_all_m5_candles: H1/M5 data unavailable
+2026-11-19 18:28:46 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 18:28:46 | WARNING  | app.signals.scanner | [Cache] Full fetch EURJPY H1 returned 0 candles (min 100 required) — pair skipped
+2026-11-19 18:28:46 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 18:28:46 | WARNING  | app.signals.scanner | [Cache] Full fetch EURJPY M15 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 18:28:46 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 18:28:46 | WARNING  | app.signals.scanner | [Cache] Full fetch EURJPY M5 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 18:28:46 | WARNING  | app.signals.scanner | [VariantC] EURJPY scan_pair_all_m5_candles: H1/M5 data unavailable
+2026-11-19 18:28:47 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 18:28:47 | WARNING  | app.signals.scanner | [Cache] Full fetch GBPJPY H1 returned 0 candles (min 100 required) — pair skipped
+2026-11-19 18:28:47 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 18:28:47 | WARNING  | app.signals.scanner | [Cache] Full fetch GBPJPY M15 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 18:28:47 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 18:28:47 | WARNING  | app.signals.scanner | [Cache] Full fetch GBPJPY M5 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 18:28:47 | WARNING  | app.signals.scanner | [VariantC] GBPJPY scan_pair_all_m5_candles: H1/M5 data unavailable
+2026-11-19 18:28:47 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-19 18:28:47 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 1.4 min.
+2026-11-19 18:30:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=New York
+2026-11-19 18:30:13 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-19 18:30:13 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-19 19:41:46 | INFO     | app.main | Database tables and columns synced successfully
+2026-11-19 19:41:47 | INFO     | app.main | [Startup] Trade monitor, Auto-Scanner & Pending limit monitor started.
+2026-11-19 19:41:47 | INFO     | app.signals.trade_monitor | [TradeMonitor] Background price monitor started.
+2026-11-19 19:41:47 | INFO     | app.signals.auto_scanner | [AutoScanner] Variant C started (M3 timing, threshold raw>=11 / norm>=78.57).
+2026-11-19 19:41:47 | INFO     | app.signals.auto_scanner | [PendingMonitor] Started.
+2026-11-19 19:42:17 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=New York
+2026-11-19 19:42:22 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-19 19:42:22 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.8 min.
+2026-11-19 19:45:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=New York
+2026-11-19 19:45:10 | WARNING  | app.signals.scanner | [Cache] USDJPY M5 has gap of 35 min (max allowed 10 min) — data may be incomplete
+2026-11-19 19:45:10 | WARNING  | app.signals.scanner | [Cache] USDJPY M3 has gap of 45 min (max allowed 6 min) — data may be incomplete
+2026-11-19 19:45:14 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-19 19:45:14 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-19 19:45:44 | INFO     | app.main | Database tables and columns synced successfully
+2026-11-19 19:45:46 | INFO     | app.main | [Startup] Trade monitor, Auto-Scanner & Pending limit monitor started.
+2026-11-19 19:45:46 | INFO     | app.signals.trade_monitor | [TradeMonitor] Background price monitor started.
+2026-11-19 19:45:46 | INFO     | app.signals.auto_scanner | [AutoScanner] Variant C started (M3 timing, threshold raw>=11 / norm>=78.57).
+2026-11-19 19:45:46 | INFO     | app.signals.auto_scanner | [PendingMonitor] Started.
+2026-11-19 19:46:20 | INFO     | app.main | Database tables and columns synced successfully
+2026-11-19 19:46:31 | INFO     | app.main | [Startup] Trade monitor, Auto-Scanner & Pending limit monitor started.
+2026-11-19 19:46:31 | INFO     | app.signals.trade_monitor | [TradeMonitor] Background price monitor started.
+2026-11-19 19:46:31 | INFO     | app.signals.auto_scanner | [AutoScanner] Variant C started (M3 timing, threshold raw>=11 / norm>=78.57).
+2026-11-19 19:46:31 | INFO     | app.signals.auto_scanner | [PendingMonitor] Started.
+2026-11-19 19:47:01 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=New York
+2026-11-19 19:47:06 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-19 19:47:06 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 1.0 min.
+2026-11-19 19:48:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=New York
+2026-11-19 19:48:13 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-19 19:48:13 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-19 19:51:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=New York
+2026-11-19 19:51:12 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 19:51:12 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 19:51:13 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 19:51:13 | WARNING  | app.signals.scanner | [Cache] Full fetch AUDUSD M3 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 19:51:13 | WARNING  | app.signals.scanner | [VariantC] AUDUSD M3 fetch attempt 1 empty — retrying
+2026-11-19 19:51:13 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 19:51:13 | WARNING  | app.signals.scanner | [Cache] Full fetch AUDUSD M3 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 19:51:13 | WARNING  | app.signals.scanner | [VariantC] AUDUSD skipped: M3 data unavailable after retry
+2026-11-19 19:51:13 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 19:51:13 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 19:51:13 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 19:51:13 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 19:51:13 | WARNING  | app.signals.scanner | [Cache] Full fetch NZDUSD M3 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 19:51:13 | WARNING  | app.signals.scanner | [VariantC] NZDUSD M3 fetch attempt 1 empty — retrying
+2026-11-19 19:51:14 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 19:51:14 | WARNING  | app.signals.scanner | [Cache] Full fetch NZDUSD M3 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 19:51:14 | WARNING  | app.signals.scanner | [VariantC] NZDUSD skipped: M3 data unavailable after retry
+2026-11-19 19:51:14 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 19:51:14 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 19:51:14 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 19:51:16 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-19 19:51:16 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-19 19:52:35 | INFO     | app.main | Database tables and columns synced successfully
+2026-11-19 19:52:36 | INFO     | app.main | [Startup] Trade monitor, Auto-Scanner & Pending limit monitor started.
+2026-11-19 19:52:36 | INFO     | app.signals.trade_monitor | [TradeMonitor] Background price monitor started.
+2026-11-19 19:52:36 | INFO     | app.signals.auto_scanner | [AutoScanner] Variant C started (M3 timing, threshold raw>=11 / norm>=78.57).
+2026-11-19 19:52:36 | INFO     | app.signals.auto_scanner | [PendingMonitor] Started.
+2026-11-19 19:53:06 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=New York
+2026-11-19 19:53:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-19 19:53:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 1.0 min.
+2026-11-19 19:54:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=New York
+2026-11-19 19:54:14 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-19 19:54:14 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-19 19:57:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=New York
+2026-11-19 19:57:12 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-19 19:57:12 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-19 20:00:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=New York
+2026-11-19 20:00:12 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-19 20:00:12 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-19 20:03:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=New York
+2026-11-19 20:03:13 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-19 20:03:13 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-19 20:06:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=New York
+2026-11-19 20:06:12 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-19 20:06:12 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-19 20:09:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=New York
+2026-11-19 20:09:12 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-19 20:09:12 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-19 20:12:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=New York
+2026-11-19 20:12:13 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-19 20:12:13 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-19 20:12:32 | INFO     | app.main | Database tables and columns synced successfully
+2026-11-19 20:12:33 | INFO     | app.main | [Startup] Trade monitor, Auto-Scanner & Pending limit monitor started.
+2026-11-19 20:12:33 | INFO     | app.signals.trade_monitor | [TradeMonitor] Background price monitor started.
+2026-11-19 20:12:33 | INFO     | app.signals.auto_scanner | [AutoScanner] Variant C started (M3 timing, threshold raw>=11 / norm>=78.57).
+2026-11-19 20:12:33 | INFO     | app.signals.auto_scanner | [PendingMonitor] Started.
+2026-11-19 20:12:41 | INFO     | app.main | Database tables and columns synced successfully
+2026-11-19 20:12:43 | INFO     | app.main | [Startup] Trade monitor, Auto-Scanner & Pending limit monitor started.
+2026-11-19 20:12:43 | INFO     | app.signals.trade_monitor | [TradeMonitor] Background price monitor started.
+2026-11-19 20:12:43 | INFO     | app.signals.auto_scanner | [AutoScanner] Variant C started (M3 timing, threshold raw>=11 / norm>=78.57).
+2026-11-19 20:12:43 | INFO     | app.signals.auto_scanner | [PendingMonitor] Started.
+2026-11-19 20:13:13 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=New York
+2026-11-19 20:13:16 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-19 20:13:16 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 1.9 min.
+2026-11-19 20:14:44 | INFO     | app.main | Database tables and columns synced successfully
+2026-11-19 20:15:06 | INFO     | app.main | [Startup] Trade monitor, Auto-Scanner & Pending limit monitor started.
+2026-11-19 20:15:06 | INFO     | app.signals.trade_monitor | [TradeMonitor] Background price monitor started.
+2026-11-19 20:15:06 | INFO     | app.signals.auto_scanner | [AutoScanner] Variant C started (M3 timing, threshold raw>=11 / norm>=78.57).
+2026-11-19 20:15:06 | INFO     | app.signals.auto_scanner | [PendingMonitor] Started.
+2026-11-19 20:15:36 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=New York
+2026-11-19 20:15:36 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 20:15:36 | WARNING  | app.signals.scanner | [Cache] Full fetch EURUSD H1 returned 0 candles (min 100 required) — pair skipped
+2026-11-19 20:15:36 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 20:15:36 | WARNING  | app.signals.scanner | [Cache] Full fetch EURUSD M15 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 20:15:36 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 20:15:36 | WARNING  | app.signals.scanner | [Cache] Full fetch EURUSD M5 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 20:15:36 | WARNING  | app.signals.scanner | [VariantC] EURUSD scan_pair_all_m5_candles: H1/M5 data unavailable
+2026-11-19 20:15:36 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 20:15:36 | WARNING  | app.signals.scanner | [Cache] Full fetch GBPUSD H1 returned 0 candles (min 100 required) — pair skipped
+2026-11-19 20:15:36 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 20:15:36 | WARNING  | app.signals.scanner | [Cache] Full fetch GBPUSD M15 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 20:15:36 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 20:15:36 | WARNING  | app.signals.scanner | [Cache] Full fetch GBPUSD M5 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 20:15:36 | WARNING  | app.signals.scanner | [VariantC] GBPUSD scan_pair_all_m5_candles: H1/M5 data unavailable
+2026-11-19 20:15:36 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 20:15:36 | WARNING  | app.signals.scanner | [Cache] Full fetch USDJPY H1 returned 0 candles (min 100 required) — pair skipped
+2026-11-19 20:15:36 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 20:15:36 | WARNING  | app.signals.scanner | [Cache] Full fetch USDJPY M15 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 20:15:36 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 20:15:36 | WARNING  | app.signals.scanner | [Cache] Full fetch USDJPY M5 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 20:15:36 | WARNING  | app.signals.scanner | [VariantC] USDJPY scan_pair_all_m5_candles: H1/M5 data unavailable
+2026-11-19 20:15:36 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 20:15:36 | WARNING  | app.signals.scanner | [Cache] Full fetch USDCHF H1 returned 0 candles (min 100 required) — pair skipped
+2026-11-19 20:15:36 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 20:15:36 | WARNING  | app.signals.scanner | [Cache] Full fetch USDCHF M15 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 20:15:36 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 20:15:36 | WARNING  | app.signals.scanner | [Cache] Full fetch USDCHF M5 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 20:15:36 | WARNING  | app.signals.scanner | [VariantC] USDCHF scan_pair_all_m5_candles: H1/M5 data unavailable
+2026-11-19 20:15:36 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 20:15:36 | WARNING  | app.signals.scanner | [Cache] Full fetch AUDUSD H1 returned 0 candles (min 100 required) — pair skipped
+2026-11-19 20:15:36 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 20:15:36 | WARNING  | app.signals.scanner | [Cache] Full fetch AUDUSD M15 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 20:15:36 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 20:15:36 | WARNING  | app.signals.scanner | [Cache] Full fetch AUDUSD M5 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 20:15:36 | WARNING  | app.signals.scanner | [VariantC] AUDUSD scan_pair_all_m5_candles: H1/M5 data unavailable
+2026-11-19 20:15:36 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 20:15:36 | WARNING  | app.signals.scanner | [Cache] Full fetch NZDUSD H1 returned 0 candles (min 100 required) — pair skipped
+2026-11-19 20:15:36 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 20:15:36 | WARNING  | app.signals.scanner | [Cache] Full fetch NZDUSD M15 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 20:15:36 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 20:15:36 | WARNING  | app.signals.scanner | [Cache] Full fetch NZDUSD M5 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 20:15:36 | WARNING  | app.signals.scanner | [VariantC] NZDUSD scan_pair_all_m5_candles: H1/M5 data unavailable
+2026-11-19 20:15:36 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 20:15:36 | WARNING  | app.signals.scanner | [Cache] Full fetch USDCAD H1 returned 0 candles (min 100 required) — pair skipped
+2026-11-19 20:15:36 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 20:15:36 | WARNING  | app.signals.scanner | [Cache] Full fetch USDCAD M15 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 20:15:36 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 20:15:36 | WARNING  | app.signals.scanner | [Cache] Full fetch USDCAD M5 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 20:15:36 | WARNING  | app.signals.scanner | [VariantC] USDCAD scan_pair_all_m5_candles: H1/M5 data unavailable
+2026-11-19 20:15:36 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 20:15:36 | WARNING  | app.signals.scanner | [Cache] Full fetch EURJPY H1 returned 0 candles (min 100 required) — pair skipped
+2026-11-19 20:15:36 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 20:15:36 | WARNING  | app.signals.scanner | [Cache] Full fetch EURJPY M15 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 20:15:37 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 20:15:37 | WARNING  | app.signals.scanner | [Cache] Full fetch EURJPY M5 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 20:15:37 | WARNING  | app.signals.scanner | [VariantC] EURJPY scan_pair_all_m5_candles: H1/M5 data unavailable
+2026-11-19 20:15:37 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 20:15:37 | WARNING  | app.signals.scanner | [Cache] Full fetch GBPJPY H1 returned 0 candles (min 100 required) — pair skipped
+2026-11-19 20:15:37 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 20:15:37 | WARNING  | app.signals.scanner | [Cache] Full fetch GBPJPY M15 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 20:15:37 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 20:15:37 | WARNING  | app.signals.scanner | [Cache] Full fetch GBPJPY M5 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 20:15:37 | WARNING  | app.signals.scanner | [VariantC] GBPJPY scan_pair_all_m5_candles: H1/M5 data unavailable
+2026-11-19 20:15:37 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-19 20:15:37 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.5 min.
+2026-11-19 20:17:12 | INFO     | app.main | Database tables and columns synced successfully
+2026-11-19 20:17:14 | INFO     | app.main | [Startup] Trade monitor, Auto-Scanner & Pending limit monitor started.
+2026-11-19 20:17:14 | INFO     | app.signals.trade_monitor | [TradeMonitor] Background price monitor started.
+2026-11-19 20:17:14 | INFO     | app.signals.auto_scanner | [AutoScanner] Variant C started (M3 timing, threshold raw>=11 / norm>=78.57).
+2026-11-19 20:17:14 | INFO     | app.signals.auto_scanner | [PendingMonitor] Started.
+2026-11-19 20:17:44 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=New York
+2026-11-19 20:17:48 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 20:17:48 | WARNING  | app.signals.scanner | [Cache] Full fetch EURJPY M15 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 20:17:48 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 20:17:48 | WARNING  | app.signals.scanner | [Cache] Full fetch EURJPY M5 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 20:17:48 | WARNING  | app.signals.scanner | [VariantC] EURJPY scan_pair_all_m5_candles: H1/M5 data unavailable
+2026-11-19 20:17:48 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 20:17:48 | WARNING  | app.signals.scanner | [Cache] Full fetch GBPJPY H1 returned 0 candles (min 100 required) — pair skipped
+2026-11-19 20:17:48 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 20:17:48 | WARNING  | app.signals.scanner | [Cache] Full fetch GBPJPY M15 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 20:17:48 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 20:17:48 | WARNING  | app.signals.scanner | [Cache] Full fetch GBPJPY M5 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 20:17:48 | WARNING  | app.signals.scanner | [VariantC] GBPJPY scan_pair_all_m5_candles: H1/M5 data unavailable
+2026-11-19 20:17:48 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-19 20:17:48 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 0.3 min.
+2026-11-19 20:18:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=New York
+2026-11-19 20:18:13 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-19 20:18:13 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-19 20:21:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=New York
+2026-11-19 20:21:08 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 20:21:08 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 20:21:08 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 20:21:08 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 20:21:08 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 20:21:08 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 20:21:08 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 20:21:08 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 20:21:08 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 20:21:08 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 20:21:08 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 20:21:08 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 20:21:08 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 20:21:08 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 20:21:08 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 20:21:08 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 20:21:08 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 20:21:08 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 20:21:08 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 20:21:09 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 20:21:09 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 20:21:09 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 20:21:09 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 20:21:09 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 20:21:09 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 20:21:09 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 20:21:09 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 20:21:09 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 20:21:09 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 20:21:09 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 20:21:09 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 20:21:09 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 20:21:09 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 20:21:09 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 20:21:09 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 20:21:09 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 20:21:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-19 20:21:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-19 20:24:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=New York
+2026-11-19 20:24:10 | INFO     | app.signals.scanner | [VariantC] AUDUSD M5[479] signal: SELL score=12/14
+2026-11-19 20:24:10 | WARNING  | app.signals.auto_scanner | [VariantC] AUDUSD lot sizing fell back to min lot 0.01 (risk $1.00 may not be exact)
+2026-11-19 20:24:10 | INFO     | app.signals.auto_scanner | [VariantC] AUDUSD SELL MARKET order score=12/14 entry=0.67029 eff=0.67029 spread=1.4pips
+2026-11-19 20:24:10 | INFO     | app.signals.auto_scanner | [VariantC] AUDUSD SELL LIMIT order submitting lot=0.0100 entry=0.67029 SL=0.67209 TP=0.66579
+2026-11-19 20:24:11 | INFO     | app.signals.auto_scanner | [VariantC] AUDUSD SELL confirmed ticket=2103789983 fill=pending lots=0.0100 risk=$1.8000 reward=$4.5000 db_FAILED
+2026-11-19 20:24:15 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=1 | filtered=0 | executed=1
+2026-11-19 20:24:15 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-19 20:26:08 | INFO     | app.signals.trade_monitor | [TradeMonitor] Pending limit order #79 (AUDUSD) filled at entry 0.67029 -> Trade is now OPEN
+2026-11-19 20:27:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=New York
+2026-11-19 20:27:09 | INFO     | app.signals.scanner | [VariantC] AUDUSD M5[479] signal: SELL score=12/14
+2026-11-19 20:27:09 | ERROR    | app.signals.auto_scanner | [AutoScanner] Unexpected error: name 'pd' is not defined
+Traceback (most recent call last):
+  File "C:\Users\nts0218\hepl project\Ai Forex Trading\backend\app\signals\auto_scanner.py", line 1071, in auto_scan_loop
+    if _is_duplicate(db, user.id, symbol, direction, m3_ts):
+       ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\nts0218\hepl project\Ai Forex Trading\backend\app\signals\auto_scanner.py", line 385, in _is_duplicate
+    age_s = (datetime.now(timezone.utc) - pd.to_datetime(trade_open_time, utc=True)).total_seconds()
+                                          ^^
+NameError: name 'pd' is not defined. Did you mean: '_pd'?
+2026-11-19 20:27:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-19 20:29:13 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 20:30:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=New York
+2026-11-19 20:30:10 | INFO     | app.signals.scanner | [VariantC] AUDUSD M5[479] signal: SELL score=12/14
+2026-11-19 20:30:10 | ERROR    | app.signals.auto_scanner | [AutoScanner] Unexpected error: name 'pd' is not defined
+Traceback (most recent call last):
+  File "C:\Users\nts0218\hepl project\Ai Forex Trading\backend\app\signals\auto_scanner.py", line 1071, in auto_scan_loop
+    if _is_duplicate(db, user.id, symbol, direction, m3_ts):
+       ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\nts0218\hepl project\Ai Forex Trading\backend\app\signals\auto_scanner.py", line 385, in _is_duplicate
+    age_s = (datetime.now(timezone.utc) - pd.to_datetime(trade_open_time, utc=True)).total_seconds()
+                                          ^^
+NameError: name 'pd' is not defined. Did you mean: '_pd'?
+2026-11-19 20:30:10 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-19 20:33:09 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=New York
+2026-11-19 20:33:12 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-19 20:33:12 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 2.9 min.
+2026-11-19 20:36:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=New York
+2026-11-19 20:36:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-19 20:36:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-19 20:37:09 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 20:38:06 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 20:39:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=New York
+2026-11-19 20:39:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-19 20:39:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-19 20:42:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=New York
+2026-11-19 20:42:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-19 20:42:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-19 20:45:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=New York
+2026-11-19 20:45:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-19 20:45:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-19 20:48:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=New York
+2026-11-19 20:48:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-19 20:48:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-19 20:50:20 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 20:51:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=New York
+2026-11-19 20:51:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-19 20:51:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-19 20:54:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=New York
+2026-11-19 20:54:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-19 20:54:11 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-19 20:57:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=New York
+2026-11-19 20:57:10 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-19 20:57:10 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 3.0 min.
+2026-11-19 21:08:05 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 21:08:05 | INFO     | app.signals.auto_scanner | [AutoScanner] Scanning - Variant C - session=New York
+2026-11-19 21:08:05 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 21:08:05 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 21:08:05 | WARNING  | app.signals.scanner | [Cache] Full fetch EURUSD M15 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 21:08:05 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 21:08:05 | WARNING  | app.signals.scanner | [Cache] Full fetch EURUSD M5 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 21:08:05 | WARNING  | app.signals.scanner | [VariantC] EURUSD scan_pair_all_m5_candles: H1/M5 data unavailable
+2026-11-19 21:08:05 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 21:08:06 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 21:08:06 | WARNING  | app.signals.scanner | [Cache] Full fetch GBPUSD M15 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 21:08:06 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 21:08:06 | WARNING  | app.signals.scanner | [Cache] Full fetch GBPUSD M5 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 21:08:06 | WARNING  | app.signals.scanner | [VariantC] GBPUSD scan_pair_all_m5_candles: H1/M5 data unavailable
+2026-11-19 21:08:06 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 21:08:06 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 21:08:06 | WARNING  | app.signals.scanner | [Cache] Full fetch USDJPY M15 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 21:08:06 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 21:08:06 | WARNING  | app.signals.scanner | [Cache] Full fetch USDJPY M5 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 21:08:06 | WARNING  | app.signals.scanner | [VariantC] USDJPY scan_pair_all_m5_candles: H1/M5 data unavailable
+2026-11-19 21:08:06 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 21:08:06 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 21:08:06 | WARNING  | app.signals.scanner | [Cache] Full fetch USDCHF M15 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 21:08:06 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 21:08:06 | WARNING  | app.signals.scanner | [Cache] Full fetch USDCHF M5 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 21:08:06 | WARNING  | app.signals.scanner | [VariantC] USDCHF scan_pair_all_m5_candles: H1/M5 data unavailable
+2026-11-19 21:08:06 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 21:08:07 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 21:08:07 | WARNING  | app.signals.scanner | [Cache] Full fetch AUDUSD M15 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 21:08:07 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 21:08:07 | WARNING  | app.signals.scanner | [Cache] Full fetch AUDUSD M5 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 21:08:07 | WARNING  | app.signals.scanner | [VariantC] AUDUSD scan_pair_all_m5_candles: H1/M5 data unavailable
+2026-11-19 21:08:07 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 21:08:07 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 21:08:07 | WARNING  | app.signals.scanner | [Cache] Full fetch NZDUSD M15 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 21:08:07 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 21:08:07 | WARNING  | app.signals.scanner | [Cache] Full fetch NZDUSD M5 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 21:08:07 | WARNING  | app.signals.scanner | [VariantC] NZDUSD scan_pair_all_m5_candles: H1/M5 data unavailable
+2026-11-19 21:08:07 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 21:08:07 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 21:08:07 | WARNING  | app.signals.scanner | [Cache] Full fetch USDCAD M15 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 21:08:07 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 21:08:07 | WARNING  | app.signals.scanner | [Cache] Full fetch USDCAD M5 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 21:08:07 | WARNING  | app.signals.scanner | [VariantC] USDCAD scan_pair_all_m5_candles: H1/M5 data unavailable
+2026-11-19 21:08:07 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 21:08:08 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 21:08:08 | WARNING  | app.signals.scanner | [Cache] Full fetch EURJPY M15 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 21:08:08 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 21:08:08 | WARNING  | app.signals.scanner | [Cache] Full fetch EURJPY M5 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 21:08:08 | WARNING  | app.signals.scanner | [VariantC] EURJPY scan_pair_all_m5_candles: H1/M5 data unavailable
+2026-11-19 21:08:08 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 21:08:08 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 21:08:08 | WARNING  | app.signals.scanner | [Cache] Full fetch GBPJPY M15 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 21:08:08 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-19 21:08:08 | WARNING  | app.signals.scanner | [Cache] Full fetch GBPJPY M5 returned 0 candles (min 50 required) — pair skipped
+2026-11-19 21:08:08 | WARNING  | app.signals.scanner | [VariantC] GBPJPY scan_pair_all_m5_candles: H1/M5 data unavailable
+2026-11-19 21:08:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Cycle summary: raw=0 | filtered=0 | executed=0
+2026-11-19 21:08:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Scan complete. Next M3 scan in 1.0 min.

@@ -1,0 +1,57 @@
+2026-11-21 00:29:36 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-21 00:29:37 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (18:59 UTC) - skipping scan.
+2026-11-21 12:44:49 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-21 12:44:50 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (07:14 UTC) - skipping scan.
+2026-11-21 12:44:58 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-21 12:45:06 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-21 12:45:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (07:15 UTC) - skipping scan.
+2026-11-21 12:45:14 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-21 12:45:23 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-21 12:45:31 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-21 12:45:39 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-21 12:45:47 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-21 12:45:55 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-21 12:46:03 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-21 12:46:11 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-21 12:46:19 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-21 12:46:27 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-21 12:46:35 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-21 12:46:43 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-21 12:46:51 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-21 12:46:59 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-21 12:47:08 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-21 12:47:16 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-21 12:47:24 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-21 12:48:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (07:18 UTC) - skipping scan.
+2026-11-21 12:51:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (07:21 UTC) - skipping scan.
+2026-11-21 12:52:47 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-21 12:52:55 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-21 12:53:03 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-21 12:53:11 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-21 12:53:19 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-21 12:54:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (07:24 UTC) - skipping scan.
+2026-11-21 12:57:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (07:27 UTC) - skipping scan.
+2026-11-21 12:59:30 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-21 12:59:38 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-21 12:59:46 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-21 12:59:54 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-21 13:00:02 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-21 13:00:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (07:30 UTC) - skipping scan.
+2026-11-21 13:00:10 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-21 13:00:19 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-21 13:00:43 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-21 13:01:39 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-21 13:03:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (07:33 UTC) - skipping scan.
+2026-11-21 13:06:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (07:36 UTC) - skipping scan.
+2026-11-21 13:07:42 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-21 13:07:50 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-21 13:07:58 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-21 13:08:06 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-21 13:08:14 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-21 13:09:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (07:39 UTC) - skipping scan.
+2026-11-21 13:11:11 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-21 13:11:19 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-21 13:12:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (07:42 UTC) - skipping scan.
+2026-11-21 13:15:08 | INFO     | app.signals.auto_scanner | [AutoScanner] Off-session (07:45 UTC) - skipping scan.
+2026-11-21 13:15:29 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
+2026-11-21 13:15:37 | WARNING  | app.mt5.source_router | [SourceRouter] data_source='mt5' but MT5 terminal is not available — no data
