@@ -1366,9 +1366,12 @@ def run_mtf_smc_backtest(
         candle_m5 = df5.iloc[idx]
         t_m5 = candle_m5['time']
 
-        # Prevent concurrent overlapping trades on the same pair while a position is still running
+        # Unlock 1-trade lockout: allow concurrent/fresh setups after 4 hours (14,400s)
+        # Even if a previous trade is running, don't stay completely locked out for 14+ hours
         if t_m5 <= last_exit_time:
-            continue
+            time_since_open_s = (pd.to_datetime(t_m5) - pd.to_datetime(last_exit_time)).total_seconds()
+            if abs(time_since_open_s) < 4 * 3600:
+                continue
 
         trade_date = t_m5.date()
         if protector:
