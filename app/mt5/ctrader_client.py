@@ -160,7 +160,6 @@ class CTraderClient:
                     match = accounts[0]
                 if match:
                     self._ctid_trader_account_id = int(match["ctidTraderAccountId"])
-                    logger.info(f"[cTrader] Resolved login {target_login} -> ctidTraderAccountId {self._ctid_trader_account_id}")
 
         ctid = self._ctid_trader_account_id or int(self.account_id)
 
@@ -180,7 +179,7 @@ class CTraderClient:
             raise RuntimeError(f"cTrader Account Authorization failed for account {ctid}")
 
         self._ws = ws
-        logger.info(f"[cTrader] Successfully connected and authenticated to account {ctid}!")
+        logger.info(f"[cTrader] Connected to {self.ws_url} (Account: {self.account_id} -> ctid: {ctid})")
         return self._ws
 
     def _wait_for_response(self, ws, client_msg_id: str, expected_payload_type: int, timeout: float = 12.0):
@@ -191,7 +190,7 @@ class CTraderClient:
                 raw = ws.recv(timeout=timeout)
                 if not raw:
                     continue
-                logger.info(f"[cTrader IN] {raw[:300]}")
+                logger.debug(f"[cTrader IN] {raw[:300]}")
                 data = json.loads(raw)
                 p_type = data.get("payloadType")
                 msg_id = data.get("clientMsgId")

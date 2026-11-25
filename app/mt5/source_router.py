@@ -55,8 +55,11 @@ def _mt5_available() -> bool:
         return False
 
 
+_cached_ctrader_client = None
+
 def _build_ctrader_client():
-    """Return a configured CTraderClient, or None."""
+    """Return a configured CTraderClient singleton, or None."""
+    global _cached_ctrader_client
     try:
         from app.mt5.ctrader_client import CTraderClient
         from app.config import settings as _cfg
@@ -75,14 +78,16 @@ def _build_ctrader_client():
             ).order_by(User.id.desc()).first()
         finally:
             db.close()
-        if not u:
+        if not u or not u.ctrader_access_token:
             return None
 
-        # cTrader requires an authorized access token from OAuth browser login
-        if not u.ctrader_access_token:
-            return None
+        # Reuse existing client if tokens/account match
+        if _cached_ctrader_client and _cached_ctrader_client.is_configured:
+            if (_cached_ctrader_client.account_id == str(u.ctrader_account_id).strip() and
+                _cached_ctrader_client._token == str(u.ctrader_access_token).strip()):
+                return _cached_ctrader_client
 
-        client = CTraderClient(
+        _cached_ctrader_client = CTraderClient(
             client_id=_cfg.CTRADER_CLIENT_ID,
             client_secret=_cfg.CTRADER_CLIENT_SECRET,
             account_id=u.ctrader_account_id,
@@ -90,7 +95,7 @@ def _build_ctrader_client():
             access_token=u.ctrader_access_token,
             refresh_token=u.ctrader_refresh_token,
         )
-        return client if client.is_configured else None
+        return _cached_ctrader_client if _cached_ctrader_client.is_configured else None
     except Exception:
         return None
 
