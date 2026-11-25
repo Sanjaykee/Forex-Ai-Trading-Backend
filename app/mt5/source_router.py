@@ -78,11 +78,17 @@ def _build_ctrader_client():
         if not u:
             return None
 
+        # cTrader requires an authorized access token from OAuth browser login
+        if not u.ctrader_access_token:
+            return None
+
         client = CTraderClient(
             client_id=_cfg.CTRADER_CLIENT_ID,
             client_secret=_cfg.CTRADER_CLIENT_SECRET,
             account_id=u.ctrader_account_id,
             server=u.ctrader_server or "demo.ctrader.com",
+            access_token=u.ctrader_access_token,
+            refresh_token=u.ctrader_refresh_token,
         )
         return client if client.is_configured else None
     except Exception:

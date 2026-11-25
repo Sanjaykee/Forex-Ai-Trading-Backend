@@ -15,11 +15,10 @@ from datetime import datetime, timedelta
 
 logger = logging.getLogger(__name__)
 
-OAUTH_URL   = "https://connect.ctrader.com/apps/token"
-OAUTH_URL2  = "https://openapi.ctrader.com/apps/token"
-DEMO_HOST   = "demo.ctrader.com"
-LIVE_HOST   = "live.ctrader.com"
-API_PORT    = 5035
+OAUTH_TOKEN_URL = "https://openapi.ctrader.com/oauth/v2/token"
+DEMO_HOST       = "demo.ctrader.com"
+LIVE_HOST       = "live.ctrader.com"
+API_PORT        = 5035
 
 TIMEFRAME_MAP = {
     "M1": 1, "M2": 2, "M3": 3, "M4": 4, "M5": 5,
@@ -29,38 +28,49 @@ TIMEFRAME_MAP = {
 
 
 class CTraderClient:
-    def __init__(self, client_id: str, client_secret: str, account_id: str, server: str = "demo.ctrader.com"):
+    def __init__(self, client_id: str, client_secret: str, account_id: str,
+                 server: str = "demo.ctrader.com", access_token: str = None, refresh_token: str = None):
         self.client_id     = client_id
         self.client_secret = client_secret
         self.account_id    = str(account_id)
         self.host          = server
-        self._token        = None
-        self._token_expiry = 0
+        self._token        = access_token or None
+        self.refresh_token = refresh_token or ""
+        self._token_expiry = time.time() + 86400 if access_token else 0
 
     @property
     def is_configured(self) -> bool:
-        return bool(self.client_id and self.client_secret and self.account_id)
+        return bool(self.client_id and self.client_secret and self.account_id and self._token)
 
     def _get_token(self) -> str:
-        """Get OAuth2 access token using client credentials flow."""
+        """Return OAuth2 access token. If refresh token is available and expired, refresh it."""
         if self._token and time.time() < self._token_expiry - 60:
             return self._token
-        for url in [OAUTH_URL, OAUTH_URL2]:
+
+        # If refresh token exists, refresh using grant_type=refresh_token
+        if self.refresh_token and self.client_id and self.client_secret:
             try:
-                r = requests.post(url, data={
-                    "grant_type":    "client_credentials",
+                r = requests.post(OAUTH_TOKEN_URL, data={
+                    "grant_type":    "refresh_token",
+                    "refresh_token": self.refresh_token,
                     "client_id":     self.client_id,
                     "client_secret": self.client_secret,
                 }, timeout=10)
-                logger.info(f"[cTrader] Token URL={url} Status={r.status_code} Body={r.text[:200]}")
                 data = r.json()
                 if "access_token" in data:
-                    self._token        = data["access_token"]
-                    self._token_expiry = time.time() + data.get("expires_in", 3600)
+                    self._token = data["access_token"]
+                    self._token_expiry = time.time() + data.get("expires_in", 86400)
+                    if "refresh_token" in data:
+                        self.refresh_token = data["refresh_token"]
+                    logger.info("[cTrader] Token refreshed successfully via refresh_token")
                     return self._token
+                else:
+                    logger.warning(f"[cTrader] Token refresh response: {data}")
             except Exception as e:
-                logger.error(f"[cTrader] Token fetch failed at {url}: {e}")
-        return ""
+                logger.error(f"[cTrader] Token refresh failed: {e}")
+
+        # If we have a stored token, return it as fallback
+        return self._token or ""
 
     def test_connection(self) -> dict:
         """Test OAuth token + return account info."""
