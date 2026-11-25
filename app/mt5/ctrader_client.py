@@ -352,6 +352,108 @@ class CTraderClient:
 
             return pd.DataFrame()
 
+    def get_candles_range(self, symbol: str, timeframe: str, from_date: datetime = None, to_date: datetime = None, **kwargs) -> pd.DataFrame:
+        """Fetch historical candles for a specific date range from cTrader Open API via WebSocket.
+        Paginates backwards in batches of 1000 trendbars until from_date is satisfied.
+        Returns a DataFrame sorted ascending by time, with tz-naive UTC timestamps."""
+        if not self.is_configured:
+            return pd.DataFrame()
+
+        from_dt = from_date or kwargs.get("start_dt")
+        to_dt = to_date or kwargs.get("end_dt")
+        if from_dt is None or to_dt is None:
+            return pd.DataFrame()
+
+        from_dt_utc = from_dt if from_dt.tzinfo is not None else from_dt.replace(tzinfo=timezone.utc)
+        to_dt_utc = to_dt if to_dt.tzinfo is not None else to_dt.replace(tzinfo=timezone.utc)
+
+        target_start_ms = int(from_dt_utc.timestamp() * 1000)
+        current_end_ms = int(to_dt_utc.timestamp() * 1000)
+
+        period_id = TIMEFRAME_MAP.get(timeframe.upper(), 7)
+        all_rows = []
+
+        with self._lock:
+            try:
+                ws = self._connect()
+                symbol_id, digits = self._resolve_symbol(ws, symbol)
+
+                max_batches = 25  # up to 25,000 candles
+                for _ in range(max_batches):
+                    msg_id = f"range_{symbol}_{timeframe}_{uuid.uuid4().hex[:6]}"
+                    ws.send(json.dumps({
+                        "clientMsgId": msg_id,
+                        "payloadType": PAYLOAD_GET_TRENDBARS_REQ,
+                        "payload": {
+                            "ctidTraderAccountId": self.ctid_id,
+                            "symbolId": symbol_id,
+                            "period": period_id,
+                            "fromTimestamp": target_start_ms,
+                            "toTimestamp": current_end_ms,
+                            "count": 1000
+                        }
+                    }))
+
+                    payload = self._wait_for_response(ws, msg_id, PAYLOAD_GET_TRENDBARS_RES, timeout=12.0)
+                    if not payload or not isinstance(payload, dict):
+                        time.sleep(1.0)
+                        continue
+
+                    bars = payload.get("trendbar", [])
+                    if not bars or not isinstance(bars, list):
+                        break
+
+                    batch_rows = []
+                    earliest_ms = None
+
+                    for b in bars:
+                        raw_low = float(b.get("low", 0))
+                        low   = round(raw_low / 100000.0, digits)
+                        open_ = round((raw_low + float(b.get("deltaOpen", 0))) / 100000.0, digits)
+                        high  = round((raw_low + float(b.get("deltaHigh", 0))) / 100000.0, digits)
+                        close = round((raw_low + float(b.get("deltaClose", 0))) / 100000.0, digits)
+                        vol   = float(b.get("volume", 1000))
+
+                        if "utcTimestampInMinutes" in b:
+                            bar_ms = b["utcTimestampInMinutes"] * 60 * 1000
+                            t = pd.Timestamp(b["utcTimestampInMinutes"] * 60, unit="s", tz="UTC").tz_localize(None)
+                        else:
+                            bar_ms = b.get("timestamp", current_end_ms)
+                            t = pd.Timestamp(bar_ms, unit="ms", tz="UTC").tz_localize(None)
+
+                        if earliest_ms is None or bar_ms < earliest_ms:
+                            earliest_ms = bar_ms
+
+                        batch_rows.append({
+                            "time":   t,
+                            "open":   open_,
+                            "high":   high,
+                            "low":    low,
+                            "close":  close,
+                            "volume": vol
+                        })
+
+                    all_rows.extend(batch_rows)
+
+                    if len(bars) < 1000 or (earliest_ms and earliest_ms <= target_start_ms):
+                        break
+
+                    current_end_ms = earliest_ms - 1
+                    time.sleep(0.1)
+
+            except Exception as e:
+                logger.error(f"[cTrader] get_candles_range failed for {symbol} {timeframe}: {e}")
+                self._ws = None
+
+        if not all_rows:
+            return pd.DataFrame()
+
+        df = pd.DataFrame(all_rows).drop_duplicates(subset=["time"]).sort_values("time").reset_index(drop=True)
+        cutoff_start = pd.Timestamp(from_dt).tz_localize(None) if getattr(from_dt, "tzinfo", None) else pd.Timestamp(from_dt)
+        cutoff_end = pd.Timestamp(to_dt).tz_localize(None) if getattr(to_dt, "tzinfo", None) else pd.Timestamp(to_dt)
+        df = df[(df["time"] >= cutoff_start) & (df["time"] <= cutoff_end)].reset_index(drop=True)
+        return df
+
     def get_live_price(self, symbol: str) -> dict:
         """Fetch latest market price from latest 1m trendbar."""
         df = self.get_candles(symbol, "M1", count=2)

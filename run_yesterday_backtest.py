@@ -35,10 +35,10 @@ DEFAULT_MAX_CONSEC_LOSS = 5   # not configurable via UI
 
 def _load_user_risk_settings(target_email: str = "sanjaykee79@gmail.com") -> tuple:
     """
-    Read max_trades_day, max_losses_day, max_risk_usd, and rr_ratio from the specified user's DB settings.
+    Read max_trades_day, max_losses_day, max_risk_usd, rr_ratio, and data_source from the specified user's DB settings.
     Defaults to checking sanjaykee79@gmail.com.
     Falls back to DEFAULT_* values if DB is unavailable or settings not saved.
-    Returns (max_trades_day, max_losses_day, max_consec_loss, risk_usd, rr_ratio, user_email).
+    Returns (max_trades_day, max_losses_day, max_consec_loss, risk_usd, rr_ratio, user_email, data_source).
     """
     try:
         from app.db.database import SessionLocal
@@ -64,19 +64,21 @@ def _load_user_risk_settings(target_email: str = "sanjaykee79@gmail.com") -> tup
             raw_losses = crud.get_setting(db, target_uid, "max_losses_day")
             raw_risk   = crud.get_setting(db, target_uid, "max_risk_usd")
             raw_rr     = crud.get_setting(db, target_uid, "rr_ratio")
+            raw_ds     = crud.get_setting(db, target_uid, "data_source")
 
             max_trades = int(raw_trades) if raw_trades else DEFAULT_MAX_TRADES_DAY
             max_losses = int(raw_losses) if raw_losses else DEFAULT_MAX_LOSSES_DAY
             risk_usd   = float(raw_risk) if raw_risk else 1.0
             rr_ratio   = float(raw_rr) if raw_rr else 3.0
+            data_source = raw_ds.strip().lower() if raw_ds else "auto"
         else:
             max_trades, max_losses = DEFAULT_MAX_TRADES_DAY, DEFAULT_MAX_LOSSES_DAY
-            risk_usd, rr_ratio = 1.0, 3.0
+            risk_usd, rr_ratio, data_source = 1.0, 3.0, "auto"
 
         db.close()
-        return max_trades, max_losses, DEFAULT_MAX_CONSEC_LOSS, risk_usd, rr_ratio, user_email
+        return max_trades, max_losses, DEFAULT_MAX_CONSEC_LOSS, risk_usd, rr_ratio, user_email, data_source
     except Exception as e:
-        return DEFAULT_MAX_TRADES_DAY, DEFAULT_MAX_LOSSES_DAY, DEFAULT_MAX_CONSEC_LOSS, 1.0, 3.0, f"error: {e}"
+        return DEFAULT_MAX_TRADES_DAY, DEFAULT_MAX_LOSSES_DAY, DEFAULT_MAX_CONSEC_LOSS, 1.0, 3.0, f"error: {e}", "auto"
 
 
 from app.mt5.source_router import get_candles_range_fetcher, _mt5_available
@@ -92,7 +94,7 @@ except Exception:
 # Context lookback needed before start_date so the strategy has enough history
 _CONTEXT = {"H1": timedelta(days=120), "M15": timedelta(days=60), "M5": timedelta(days=30), "M3": timedelta(days=20)}
 
-_range_fetcher = get_candles_range_fetcher("mt5" if _mt5_available() else "auto")
+_range_fetcher = get_candles_range_fetcher("auto")
 _candle_cache: dict = {}
 
 
@@ -102,7 +104,7 @@ def load_candles(symbol: str, tf: str) -> pd.DataFrame:
     if key in _candle_cache:
         return _candle_cache[key]
     try:
-        from_dt = datetime.strptime(START_DATE, "%Y-%m-%d") - _CONTEXT.get(tf, timedelta(days=30))
+        from_dt = datetime.strptime(START_DATE, "%Y-%m-%d") - _CONTEXT.get(tf, timedelta(days=7))
         to_dt   = datetime.strptime(END_DATE,   "%Y-%m-%d") + timedelta(days=1)
         df = _range_fetcher(symbol, tf, from_dt, to_dt)
         if df.empty:
@@ -113,7 +115,7 @@ def load_candles(symbol: str, tf: str) -> pd.DataFrame:
         df = df.sort_values("time").reset_index(drop=True)
         df = df[["time", "open", "high", "low", "close", "volume"]].copy()
     except Exception as e:
-        print(f"  [WARN] MT5 fetch failed for {symbol} {tf}: {e}")
+        print(f"  [WARN] Data fetch failed for {symbol} {tf}: {e}")
         df = pd.DataFrame()
     _candle_cache[key] = df
     return df
@@ -179,19 +181,36 @@ def print_trade(idx, t, fin):
 
 
 def run():
-    global RISK_USD, MIN_RR
+    global RISK_USD, MIN_RR, _range_fetcher, _CONTEXT
     all_trades   = []
     all_missed   = []
     pair_results = []
     trade_idx    = 0
 
-    # Backtest evaluates 100% independently from raw MT5 candle data (NO signal_log bypass)
     using_log    = False
-    source_label = "mt5"
 
-    max_trades_day, max_losses_day, max_consec_loss, db_risk_usd, db_rr, user_email = _load_user_risk_settings()
+    max_trades_day, max_losses_day, max_consec_loss, db_risk_usd, db_rr, user_email, user_ds = _load_user_risk_settings()
     RISK_USD = db_risk_usd
     MIN_RR   = db_rr
+
+    # Dynamically bind range fetcher and context for active data source
+    _range_fetcher = get_candles_range_fetcher(user_ds)
+
+    effective_ds = user_ds
+    if effective_ds == "auto":
+        if _mt5_available():
+            effective_ds = "mt5"
+        else:
+            effective_ds = "ctrader"
+
+    if effective_ds == "ctrader":
+        source_label = "cTrader Cloud (WebSocket JSON)"
+    elif effective_ds == "metaapi":
+        source_label = "MetaApi Cloud (REST)"
+    elif effective_ds == "mt5":
+        source_label = "Local MT5 Terminal"
+    else:
+        source_label = f"Auto ({effective_ds})"
 
     print("=" * 65)
     print("  VARIANT C BACKTEST  %s to %s" % (START_DATE, END_DATE))
