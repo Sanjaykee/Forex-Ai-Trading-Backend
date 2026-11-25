@@ -128,7 +128,7 @@ class CTraderClient:
             }
         }))
         app_res = self._wait_for_response(ws, app_msg_id, PAYLOAD_APP_AUTH_RES)
-        if not app_res:
+        if app_res is None:
             ws.close()
             raise RuntimeError("cTrader Application Authorization failed")
 
@@ -143,7 +143,7 @@ class CTraderClient:
             }
         }))
         acc_res = self._wait_for_response(ws, acc_msg_id, PAYLOAD_ACCOUNT_AUTH_RES)
-        if not acc_res:
+        if acc_res is None:
             ws.close()
             raise RuntimeError(f"cTrader Account Authorization failed for account {self.account_id}")
 
@@ -151,7 +151,7 @@ class CTraderClient:
         logger.info(f"[cTrader] Successfully connected and authenticated to account {self.account_id}!")
         return self._ws
 
-    def _wait_for_response(self, ws, client_msg_id: str, expected_payload_type: int, timeout: float = 12.0) -> dict:
+    def _wait_for_response(self, ws, client_msg_id: str, expected_payload_type: int, timeout: float = 12.0):
         """Read incoming WebSocket frames until matching clientMsgId or expected_payload_type is found."""
         start = time.time()
         while time.time() - start < timeout:
@@ -159,14 +159,15 @@ class CTraderClient:
                 raw = ws.recv(timeout=timeout)
                 if not raw:
                     continue
+                logger.info(f"[cTrader IN] {raw[:300]}")
                 data = json.loads(raw)
                 p_type = data.get("payloadType")
                 msg_id = data.get("clientMsgId")
 
                 if p_type == PAYLOAD_ERROR_RES:
                     err = data.get("payload", {})
-                    logger.error(f"[cTrader] Server error response: {err}")
-                    return {}
+                    logger.error(f"[cTrader Server Error] {err}")
+                    return None
 
                 if msg_id == client_msg_id or p_type == expected_payload_type:
                     return data.get("payload", {})
@@ -175,7 +176,7 @@ class CTraderClient:
             except Exception as e:
                 logger.error(f"[cTrader] Error receiving message: {e}")
                 break
-        return {}
+        return None
 
     def _ensure_symbols(self, ws) -> dict:
         """Fetch broker symbol list to map instrument names (EURUSD) to numeric symbolId."""
@@ -192,6 +193,8 @@ class CTraderClient:
             }
         }))
         payload = self._wait_for_response(ws, msg_id, PAYLOAD_SYMBOLS_LIST_RES)
+        if not payload or not isinstance(payload, dict):
+            return self._symbol_cache
         symbols = payload.get("symbol", [])
         cache = {}
         for s in symbols:
@@ -273,6 +276,8 @@ class CTraderClient:
                 }))
 
                 payload = self._wait_for_response(ws, msg_id, PAYLOAD_GET_TRENDBARS_RES, timeout=12.0)
+                if not payload or not isinstance(payload, dict):
+                    return pd.DataFrame()
                 bars = payload.get("trendbar", [])
                 if not bars or not isinstance(bars, list):
                     return pd.DataFrame()
