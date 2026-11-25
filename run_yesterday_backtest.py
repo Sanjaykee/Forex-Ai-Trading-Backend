@@ -194,7 +194,9 @@ def run():
     MIN_RR   = db_rr
 
     # Dynamically bind range fetcher and context for active data source
+    global _range_fetcher, _candle_cache
     _range_fetcher = get_candles_range_fetcher(user_ds)
+    _candle_cache.clear()
 
     effective_ds = user_ds
     if effective_ds == "auto":

@@ -122,7 +122,7 @@ class CTraderClient:
                 self._ws = None
 
         logger.info(f"[cTrader] Connecting to {self.ws_url} (Account: {self.account_id})...")
-        ws = ws_connect(self.ws_url, open_timeout=15, close_timeout=5)
+        ws = ws_connect(self.ws_url, open_timeout=15, close_timeout=5, max_size=32 * 1024 * 1024)
 
         # 1. Application Authorization (ProtoOAApplicationAuthReq)
         app_msg_id = f"app_auth_{uuid.uuid4().hex[:8]}"

@@ -170,51 +170,31 @@ def get_candles_fetcher(data_source: str = "auto"):
 
 def get_candles_range_fetcher(data_source: str = "auto"):
     """Return a callable `get_candles_range(symbol, timeframe, from_date, to_date) -> DataFrame`
-    for date-range fetching (no count limit). Dynamically routes to MT5, cTrader, or MetaApi."""
+    for date-range fetching (no count limit). Falls back to no-data when unavailable."""
     ds = _resolve_user_data_source(data_source)
 
-    if ds == "mt5":
-        if _mt5_available():
-            from app.mt5.data_fetcher import get_candles_range as _cr
-            return _cr
-        logger.warning("[SourceRouter] data_source='mt5' but MT5 terminal is not available — no data")
-        return _no_data_candles_range
-
     if ds == "ctrader":
-        client = _build_ctrader_client()
-        if client is not None:
-            return client.get_candles_range
-        logger.warning("[SourceRouter] data_source='ctrader' but cTrader is not connected — no data")
+        c = _build_ctrader_client()
+        if c:
+            return c.get_candles_range
+        logger.warning("[SourceRouter] data_source='ctrader' but cTrader client not configured — no data")
         return _no_data_candles_range
 
-    if ds == "metaapi":
-        from app.mt5.metaapi_client import metaapi_client
-        if metaapi_client.is_configured:
-            def _metaapi_range(sym, tf, f_dt, t_dt):
-                return metaapi_client.get_candles_range(symbol=sym, timeframe=tf, start_dt=f_dt, end_dt=t_dt)
-            return _metaapi_range
-        logger.warning("[SourceRouter] data_source='metaapi' but MetaApi is not configured — no data")
-        return _no_data_candles_range
+    if ds in ("mt5", "auto") and _mt5_available():
+        from app.mt5.data_fetcher import get_candles_range as _cr
+        return _cr
 
     if ds == "auto":
-        # 1. Local MT5 if terminal is running
-        if _mt5_available():
-            from app.mt5.data_fetcher import get_candles_range as _cr
-            return _cr
-        # 2. cTrader Open API if configured
-        client = _build_ctrader_client()
-        if client is not None:
-            return client.get_candles_range
-        # 3. MetaApi cloud if configured
-        from app.mt5.metaapi_client import metaapi_client
-        if metaapi_client.is_configured:
-            def _metaapi_range(sym, tf, f_dt, t_dt):
-                return metaapi_client.get_candles_range(symbol=sym, timeframe=tf, start_dt=f_dt, end_dt=t_dt)
-            return _metaapi_range
-        logger.warning("[SourceRouter] no range data source available — no data")
-        return _no_data_candles_range
+        c = _build_ctrader_client()
+        if c:
+            return c.get_candles_range
 
-    logger.warning("[SourceRouter] unknown data_source=%r — no data", ds)
+    # Fallback to local MT5 if available
+    if _mt5_available():
+        from app.mt5.data_fetcher import get_candles_range as _cr
+        return _cr
+
+    logger.warning("[SourceRouter] get_candles_range_fetcher: no range fetcher available for ds=%r", ds)
     return _no_data_candles_range
 
 
