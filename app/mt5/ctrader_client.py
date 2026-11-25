@@ -37,6 +37,8 @@ PAYLOAD_EXECUTION_EVENT  = 2126
 PAYLOAD_GET_TRENDBARS_REQ= 2137
 PAYLOAD_GET_TRENDBARS_RES= 2138
 PAYLOAD_ERROR_RES        = 2142
+PAYLOAD_GET_ACCOUNTS_REQ = 2149
+PAYLOAD_GET_ACCOUNTS_RES = 2150
 
 TIMEFRAME_MAP = {
     "M1": 1, "M2": 2, "M3": 3, "M4": 4, "M5": 5,
@@ -67,12 +69,17 @@ class CTraderClient:
         self.ws_url = LIVE_WS_URL if is_live else DEMO_WS_URL
 
         self._ws = None
+        self._ctid_trader_account_id = None
         self._lock = threading.Lock()
         self._symbol_cache = {}  # { "EURUSD": (symbol_id, digits) }
 
     @property
     def is_configured(self) -> bool:
         return bool(self.client_id and self.client_secret and self.account_id and self._token)
+
+    @property
+    def ctid_id(self) -> int:
+        return self._ctid_trader_account_id or int(self.account_id)
 
     def _get_token(self) -> str:
         """Return OAuth2 access token. Refresh if expired and refresh_token exists."""
@@ -132,23 +139,48 @@ class CTraderClient:
             ws.close()
             raise RuntimeError("cTrader Application Authorization failed")
 
-        # 2. Account Authorization (ProtoOAAccountAuthReq)
+        # 2. Discover ctidTraderAccountId from Access Token (ProtoOAGetAccountListByAccessTokenReq)
+        if not self._ctid_trader_account_id:
+            disc_msg_id = f"disc_{uuid.uuid4().hex[:8]}"
+            ws.send(json.dumps({
+                "clientMsgId": disc_msg_id,
+                "payloadType": PAYLOAD_GET_ACCOUNTS_REQ,
+                "payload": {"accessToken": token}
+            }))
+            disc_res = self._wait_for_response(ws, disc_msg_id, PAYLOAD_GET_ACCOUNTS_RES)
+            if disc_res and "ctidTraderAccount" in disc_res:
+                accounts = disc_res.get("ctidTraderAccount", [])
+                target_login = str(self.account_id).strip()
+                match = None
+                for acc in accounts:
+                    if str(acc.get("traderLogin")) == target_login or str(acc.get("ctidTraderAccountId")) == target_login:
+                        match = acc
+                        break
+                if not match and accounts:
+                    match = accounts[0]
+                if match:
+                    self._ctid_trader_account_id = int(match["ctidTraderAccountId"])
+                    logger.info(f"[cTrader] Resolved login {target_login} -> ctidTraderAccountId {self._ctid_trader_account_id}")
+
+        ctid = self._ctid_trader_account_id or int(self.account_id)
+
+        # 3. Account Authorization (ProtoOAAccountAuthReq)
         acc_msg_id = f"acc_auth_{uuid.uuid4().hex[:8]}"
         ws.send(json.dumps({
             "clientMsgId": acc_msg_id,
             "payloadType": PAYLOAD_ACCOUNT_AUTH_REQ,
             "payload": {
-                "ctidTraderAccountId": int(self.account_id),
+                "ctidTraderAccountId": ctid,
                 "accessToken":         token
             }
         }))
         acc_res = self._wait_for_response(ws, acc_msg_id, PAYLOAD_ACCOUNT_AUTH_RES)
         if acc_res is None:
             ws.close()
-            raise RuntimeError(f"cTrader Account Authorization failed for account {self.account_id}")
+            raise RuntimeError(f"cTrader Account Authorization failed for account {ctid}")
 
         self._ws = ws
-        logger.info(f"[cTrader] Successfully connected and authenticated to account {self.account_id}!")
+        logger.info(f"[cTrader] Successfully connected and authenticated to account {ctid}!")
         return self._ws
 
     def _wait_for_response(self, ws, client_msg_id: str, expected_payload_type: int, timeout: float = 12.0):
@@ -188,7 +220,7 @@ class CTraderClient:
             "clientMsgId": msg_id,
             "payloadType": PAYLOAD_SYMBOLS_LIST_REQ,
             "payload": {
-                "ctidTraderAccountId": int(self.account_id),
+                "ctidTraderAccountId": self.ctid_id,
                 "includeArchivedSymbols": False
             }
         }))
@@ -252,68 +284,74 @@ class CTraderClient:
             return pd.DataFrame()
 
         with self._lock:
-            try:
-                ws = self._connect()
-                symbol_id, digits = self._resolve_symbol(ws, symbol)
-                period_id = TIMEFRAME_MAP.get(timeframe.upper(), 7)
+            for attempt in range(2):
+                try:
+                    ws = self._connect()
+                    symbol_id, digits = self._resolve_symbol(ws, symbol)
+                    period_id = TIMEFRAME_MAP.get(timeframe.upper(), 7)
 
-                mins = TIMEFRAME_MINUTES.get(period_id, 15)
-                end_ts = int(time.time() * 1000)
-                start_ts = end_ts - (count * mins * 60 * 1000)
+                    mins = TIMEFRAME_MINUTES.get(period_id, 15)
+                    end_ts = int(time.time() * 1000)
+                    start_ts = end_ts - (count * mins * 60 * 1000)
 
-                msg_id = f"bars_{symbol}_{timeframe}_{uuid.uuid4().hex[:6]}"
-                ws.send(json.dumps({
-                    "clientMsgId": msg_id,
-                    "payloadType": PAYLOAD_GET_TRENDBARS_REQ,
-                    "payload": {
-                        "ctidTraderAccountId": int(self.account_id),
-                        "symbolId": symbol_id,
-                        "period": period_id,
-                        "fromTimestamp": start_ts,
-                        "toTimestamp": end_ts,
-                        "count": min(count, 1000)
-                    }
-                }))
+                    msg_id = f"bars_{symbol}_{timeframe}_{uuid.uuid4().hex[:6]}"
+                    ws.send(json.dumps({
+                        "clientMsgId": msg_id,
+                        "payloadType": PAYLOAD_GET_TRENDBARS_REQ,
+                        "payload": {
+                            "ctidTraderAccountId": self.ctid_id,
+                            "symbolId": symbol_id,
+                            "period": period_id,
+                            "fromTimestamp": start_ts,
+                            "toTimestamp": end_ts,
+                            "count": min(count, 1000)
+                        }
+                    }))
 
-                payload = self._wait_for_response(ws, msg_id, PAYLOAD_GET_TRENDBARS_RES, timeout=12.0)
-                if not payload or not isinstance(payload, dict):
-                    return pd.DataFrame()
-                bars = payload.get("trendbar", [])
-                if not bars or not isinstance(bars, list):
-                    return pd.DataFrame()
+                    payload = self._wait_for_response(ws, msg_id, PAYLOAD_GET_TRENDBARS_RES, timeout=12.0)
+                    if payload is None:
+                        # Rate limited or temporary hiccup, pause 1s and retry once
+                        time.sleep(1.0)
+                        continue
 
-                rows = []
-                for b in bars:
-                    # In cTrader, divisor is 100000.0 for all relative trendbars
-                    raw_low = float(b.get("low", 0))
-                    low   = round(raw_low / 100000.0, digits)
-                    open_ = round((raw_low + float(b.get("deltaOpen", 0))) / 100000.0, digits)
-                    high  = round((raw_low + float(b.get("deltaHigh", 0))) / 100000.0, digits)
-                    close = round((raw_low + float(b.get("deltaClose", 0))) / 100000.0, digits)
-                    vol   = float(b.get("volume", 1000))
+                    bars = payload.get("trendbar", [])
+                    if not bars or not isinstance(bars, list):
+                        return pd.DataFrame()
 
-                    if "utcTimestampInMinutes" in b:
-                        t = pd.Timestamp(b["utcTimestampInMinutes"] * 60, unit="s", tz="UTC").tz_localize(None)
-                    else:
-                        ts_ms = b.get("timestamp", end_ts)
-                        t = pd.Timestamp(ts_ms, unit="ms", tz="UTC").tz_localize(None)
+                    rows = []
+                    for b in bars:
+                        # In cTrader, divisor is 100000.0 for all relative trendbars
+                        raw_low = float(b.get("low", 0))
+                        low   = round(raw_low / 100000.0, digits)
+                        open_ = round((raw_low + float(b.get("deltaOpen", 0))) / 100000.0, digits)
+                        high  = round((raw_low + float(b.get("deltaHigh", 0))) / 100000.0, digits)
+                        close = round((raw_low + float(b.get("deltaClose", 0))) / 100000.0, digits)
+                        vol   = float(b.get("volume", 1000))
 
-                    rows.append({
-                        "time":   t,
-                        "open":   open_,
-                        "high":   high,
-                        "low":    low,
-                        "close":  close,
-                        "volume": vol
-                    })
+                        if "utcTimestampInMinutes" in b:
+                            t = pd.Timestamp(b["utcTimestampInMinutes"] * 60, unit="s", tz="UTC").tz_localize(None)
+                        else:
+                            ts_ms = b.get("timestamp", end_ts)
+                            t = pd.Timestamp(ts_ms, unit="ms", tz="UTC").tz_localize(None)
 
-                df = pd.DataFrame(rows).sort_values("time").drop_duplicates(subset=["time"]).reset_index(drop=True)
-                return df
+                        rows.append({
+                            "time":   t,
+                            "open":   open_,
+                            "high":   high,
+                            "low":    low,
+                            "close":  close,
+                            "volume": vol
+                        })
 
-            except Exception as e:
-                logger.error(f"[cTrader] get_candles failed for {symbol} {timeframe}: {e}")
-                self._ws = None
-                return pd.DataFrame()
+                    df = pd.DataFrame(rows).sort_values("time").drop_duplicates(subset=["time"]).reset_index(drop=True)
+                    return df
+
+                except Exception as e:
+                    logger.error(f"[cTrader] get_candles attempt {attempt+1} failed for {symbol} {timeframe}: {e}")
+                    self._ws = None
+                    time.sleep(0.5)
+
+            return pd.DataFrame()
 
     def get_live_price(self, symbol: str) -> dict:
         """Fetch latest market price from latest 1m trendbar."""
@@ -345,7 +383,7 @@ class CTraderClient:
                 trade_side = 1 if direction.upper() == "BUY" else 2  # 1=BUY, 2=SELL
 
                 payload = {
-                    "ctidTraderAccountId": int(self.account_id),
+                    "ctidTraderAccountId": self.ctid_id,
                     "symbolId": symbol_id,
                     "orderType": 1,  # 1=MARKET
                     "tradeSide": trade_side,
@@ -391,7 +429,7 @@ class CTraderClient:
             try:
                 ws = self._connect()
                 payload = {
-                    "ctidTraderAccountId": int(self.account_id),
+                    "ctidTraderAccountId": self.ctid_id,
                     "positionId": int(position_id)
                 }
                 if volume:
@@ -424,7 +462,7 @@ class CTraderClient:
                     "clientMsgId": msg_id,
                     "payloadType": PAYLOAD_RECONCILE_REQ,
                     "payload": {
-                        "ctidTraderAccountId": int(self.account_id)
+                        "ctidTraderAccountId": self.ctid_id
                     }
                 }))
                 res = self._wait_for_response(ws, msg_id, PAYLOAD_RECONCILE_RES, timeout=10.0)
