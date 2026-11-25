@@ -240,7 +240,7 @@ def ctrader_auth(db: Session = Depends(get_db), user=Depends(get_current_user)):
     if not u or not u.ctrader_account_id:
         return {"error": "Save your Account ID first"}
     is_prod      = "localhost" not in settings.FRONTEND_URL
-    base         = "https://forex-ai-trading-backend.onrender.com" if is_prod else "http://localhost:8000"
+    base         = "https://forex-ai-trading-backend.onrender.com" if is_prod else "http://localhost:8001"
     redirect_uri = f"{base}/settings/ctrader/callback"
     auth_url = (
         f"https://openapi.ctrader.com/oauth/v2/auth"
@@ -264,16 +264,24 @@ def ctrader_callback(code: str = None, state: str = None, error: str = None,
 
     if error:
         return HTMLResponse(f"<h2>cTrader connection failed: {error}</h2>")
-    if not code or not state:
-        return HTMLResponse("<h2>Missing code or state</h2>")
+    if not code:
+        return HTMLResponse("<h2>Missing authorization code from cTrader</h2>")
 
-    user_id = int(state)
-    u = db.query(User).filter(User.id == user_id).first()
+    u = None
+    if state and state.strip().isdigit():
+        u = db.query(User).filter(User.id == int(state.strip())).first()
+    if not u:
+        u = db.query(User).filter(
+            User.ctrader_account_id.isnot(None),
+            User.ctrader_account_id != "",
+        ).order_by(User.id.desc()).first()
+    if not u:
+        u = db.query(User).filter(User.email.ilike("sanjaykee79@gmail.com")).first()
     if not u:
         return HTMLResponse("<h2>User not found</h2>")
 
     is_prod     = "localhost" not in settings.FRONTEND_URL
-    base        = "https://forex-ai-trading-backend.onrender.com" if is_prod else "http://localhost:8000"
+    base        = "https://forex-ai-trading-backend.onrender.com" if is_prod else "http://localhost:8001"
     redirect_uri = f"{base}/settings/ctrader/callback"
 
     try:
@@ -291,6 +299,8 @@ def ctrader_callback(code: str = None, state: str = None, error: str = None,
         u.ctrader_access_token  = data["access_token"]
         u.ctrader_refresh_token = data.get("refresh_token", "")
         db.commit()
+        crud.upsert_setting(db, u.id, "ctrader_connected", "true")
+        crud.upsert_setting(db, u.id, "data_source", "ctrader")
         frontend = settings.FRONTEND_URL or "http://localhost:5173"
         return HTMLResponse(
             f"""<html><body>

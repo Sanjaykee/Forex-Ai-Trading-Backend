@@ -79,7 +79,7 @@ def _load_user_risk_settings(target_email: str = "sanjaykee79@gmail.com") -> tup
         return DEFAULT_MAX_TRADES_DAY, DEFAULT_MAX_LOSSES_DAY, DEFAULT_MAX_CONSEC_LOSS, 1.0, 3.0, f"error: {e}"
 
 
-from app.mt5.source_router import get_candles_range_fetcher
+from app.mt5.source_router import get_candles_range_fetcher, _mt5_available
 from app.signals.signal_logger import load_signals
 from datetime import timedelta
 
@@ -92,7 +92,7 @@ except Exception:
 # Context lookback needed before start_date so the strategy has enough history
 _CONTEXT = {"H1": timedelta(days=120), "M15": timedelta(days=60), "M5": timedelta(days=30), "M3": timedelta(days=20)}
 
-_range_fetcher = get_candles_range_fetcher()
+_range_fetcher = get_candles_range_fetcher("mt5" if _mt5_available() else "auto")
 _candle_cache: dict = {}
 
 

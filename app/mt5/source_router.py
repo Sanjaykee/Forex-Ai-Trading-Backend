@@ -166,6 +166,11 @@ def get_candles_range_fetcher(data_source: str = "auto"):
         from app.mt5.data_fetcher import get_candles_range as _cr
         return _cr
 
+    # For historical backtests: if local MT5 is running on PC, use it regardless of cloud execution setting
+    if _mt5_available():
+        from app.mt5.data_fetcher import get_candles_range as _cr
+        return _cr
+
     logger.warning("[SourceRouter] get_candles_range_fetcher: only MT5 supports range fetch — no data")
     return _no_data_candles_range
 
