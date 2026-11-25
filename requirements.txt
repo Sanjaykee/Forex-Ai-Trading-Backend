@@ -20,3 +20,4 @@ joblib
 pytz
 pydantic-settings
 google-generativeai
+websockets
