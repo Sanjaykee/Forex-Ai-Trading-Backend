@@ -293,10 +293,11 @@ def check_m15_intermediate_alignment(
         has_bearish_rejection = (highs[-1] - max(opens[-1], c_last)) > 1.5 * abs(c_last - opens[-1]) and (c_last < opens[-1])
         is_bullish_impulse = (len(closes) >= 2 and closes[-1] > opens[-1] and closes[-2] > opens[-2] and closes[-1] > closes[-2])
 
-        if is_above_both_emas and not (has_bearish_choch or has_bearish_rejection or has_macro_sweep):
-            return False, f"m15_bullish_momentum (Close {c_last:.5f} > EMA20 {ema20:.5f} & EMA50 {ema50:.5f})"
-        if is_bullish_impulse and not (has_bearish_rejection or has_macro_sweep):
-            return False, "m15_bullish_impulse_candles (2 consecutive M15 green candles)"
+        # Pure Pro-Trend: Block counter-trend SELL into active M15 bullish momentum
+        if is_bullish_impulse and not has_bearish_rejection:
+            return False, "m15_bullish_impulse_candles (active M15 green impulse - counter-trend blocked)"
+        if is_above_both_emas and not (has_bearish_choch or has_bearish_rejection):
+            return False, f"m15_bullish_momentum (Close {c_last:.5f} > EMA20 {ema20:.5f} & EMA50 {ema50:.5f} - counter-trend blocked)"
         return True, "m15_aligned_bearish"
 
     else:  # BUY
@@ -305,10 +306,11 @@ def check_m15_intermediate_alignment(
         has_bullish_rejection = (min(opens[-1], c_last) - lows[-1]) > 1.5 * abs(c_last - opens[-1]) and (c_last > opens[-1])
         is_bearish_impulse = (len(closes) >= 2 and closes[-1] < opens[-1] and closes[-2] < opens[-2] and closes[-1] < closes[-2])
 
-        if is_below_both_emas and not (has_bullish_choch or has_bullish_rejection or has_macro_sweep):
-            return False, f"m15_bearish_momentum (Close {c_last:.5f} < EMA20 {ema20:.5f} & EMA50 {ema50:.5f})"
-        if is_bearish_impulse and not (has_bullish_rejection or has_macro_sweep):
-            return False, "m15_bearish_impulse_candles (2 consecutive M15 red candles)"
+        # Pure Pro-Trend: Block counter-trend BUY into active M15 bearish momentum
+        if is_bearish_impulse and not has_bullish_rejection:
+            return False, "m15_bearish_impulse_candles (active M15 red impulse - counter-trend blocked)"
+        if is_below_both_emas and not (has_bullish_choch or has_bullish_rejection):
+            return False, f"m15_bearish_momentum (Close {c_last:.5f} < EMA20 {ema20:.5f} & EMA50 {ema50:.5f} - counter-trend blocked)"
         return True, "m15_aligned_bullish"
 
 
