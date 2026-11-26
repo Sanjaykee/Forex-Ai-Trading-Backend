@@ -194,10 +194,11 @@ def _load_live(symbol: str, tf: str, count: int) -> pd.DataFrame:
         times  = df["time"].values
         if len(times) > 1:
             diffs = pd.Series(pd.to_datetime(times)).diff().dropna()
-            # Filter out weekend gaps: any gap where the earlier candle falls on Friday
-            # (weekday=4) after 21:00 UTC or Saturday (weekday=5)
+            # Filter out normal market pauses:
+            # 1. Weekend gaps: Friday after 21:00 UTC through Sunday 21:00 UTC
+            # 2. Daily rollover gaps: brokers (e.g. IC Markets) pause for 10-15 min between 21:00 and 23:00 UTC daily
             ts_series = pd.Series(pd.to_datetime(times))
-            non_weekend_gaps = []
+            unexpected_gaps = []
             for i in range(1, len(ts_series)):
                 gap_min = (ts_series.iloc[i] - ts_series.iloc[i - 1]).total_seconds() / 60
                 prev_wd = ts_series.iloc[i - 1].weekday()   # 4=Fri, 5=Sat, 6=Sun
@@ -207,14 +208,16 @@ def _load_live(symbol: str, tf: str, count: int) -> pd.DataFrame:
                     prev_wd == 5 or                       # Saturday
                     (prev_wd == 6 and prev_hr < 21)       # Sunday before 21:00
                 )
-                if not is_weekend_gap:
-                    non_weekend_gaps.append(gap_min)
-            if non_weekend_gaps:
-                max_gap_min = max(non_weekend_gaps)
-                if max_gap_min > tf_min * 2:
+                is_daily_rollover = (prev_hr in (21, 22) and gap_min <= 20)
+
+                if not is_weekend_gap and not is_daily_rollover:
+                    unexpected_gaps.append(gap_min)
+            if unexpected_gaps:
+                max_gap_min = max(unexpected_gaps)
+                if max_gap_min > max(tf_min * 3, 20):
                     logger.warning(
                         "[Cache] %s %s has gap of %.0f min (max allowed %d min) — data may be incomplete",
-                        symbol, tf, max_gap_min, tf_min * 2,
+                        symbol, tf, max_gap_min, max(tf_min * 3, 20),
                     )
 
         return add_indicators(df)
