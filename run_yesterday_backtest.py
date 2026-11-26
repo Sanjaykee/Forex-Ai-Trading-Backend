@@ -30,7 +30,7 @@ SYM_INFO   = {"volume_min": 0.01, "volume_step": 0.01, "volume_max": 100.0}
 # These match the Settings page defaults shown in the UI.
 DEFAULT_MAX_TRADES_DAY  = 10
 DEFAULT_MAX_LOSSES_DAY  = 5
-DEFAULT_MAX_CONSEC_LOSS = 5   # not configurable via UI
+DEFAULT_MAX_CONSEC_LOSS = 2   # Max 2 consecutive losses per pair protects against trending breakout traps
 
 
 def _load_user_risk_settings(target_email: str = "sanjaykee79@gmail.com") -> tuple:

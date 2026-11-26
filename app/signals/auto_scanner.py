@@ -218,7 +218,7 @@ ORDER_RETRY_DELAY = 2
 # These defaults apply only if the user has never saved settings.
 PAIR_MAX_TRADES_DAY   = 10   # fallback default
 PAIR_MAX_LOSSES_DAY   = 5   # fallback default
-PAIR_MAX_CONSEC_LOSS  = 5   # not configurable via UI — kept fixed
+PAIR_MAX_CONSEC_LOSS  = 2   # Max 2 consecutive losses per pair protects against breakout traps
 
 # -- Account/weekly loss guards DISABLED for backtest parity -----------------
 # Backtest has no account-level or weekly drawdown guard.
